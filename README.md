@@ -26,43 +26,7 @@ Flo supports two ways to set up and run the components, first is through code. T
 
 Second way it to use yaml. You can write an yaml to define your agentic workflow or RAG and it compiles into a application. See examples below
 
-## By Code
-
-```python
-# initialize the LLM model
-llm = ChatOpenAI(temperature=0, model_name='gpt-4o')
-
-# Define tools
-python_repl_tool = PythonREPLTool()
-bigquery_execution_tool = BigQueryExecutorTool()
-
-# Create first agent
-analyst_agent: FloAgent = FloAgentBuilder(
-    "Analyst", 
-    "You are an analyst who can generate and run SQL queries based on the question asked.",
-    [schema_extraction_tool, bigquery_execution_tool], llm).build()
-
-# Create second agent
-coder_agent: FloAgent = FloAgentBuilder(
-    "Coder", 
-    "You may generate safe python code to analyze data and generate charts using matplotlib from the given input.",
-    [python_repl_tool], llm).build()
-
-# Define a supervisor
-supervisor_agent: FloSupervisor =  FloSupervisorBuilder(llm, [analyst_agent, coder_agent]).build()
-
-# Create your first team
-team = FloTeamBuilder(
-    name="AnalyticsTeam",
-    supervisor=supervisor_agent
-    ).build()
-
-# invoke the team
-team.invoke(input_prompt)
-```
-
-## With Yaml
-
+## Building your first agent by structured yaml
 To create a small team of researcher + blogger for writing blogs
 
 ```python
@@ -90,30 +54,17 @@ input_prompt = """
 Question: Write me an interesting blog about latest advancements in agentic AI
 """
 
-# initialize the flo object
 llm = ChatOpenAI(temperature=0, model_name='gpt-4o')
-flo: Flo = Flo.build_with_yaml(llm, yaml=yaml_data)
-flo.draw_to_file("examples/images/agent-graph.png")
 
-# execute
-for s in flo.stream(input_prompt):
-     if "__end__" not in s:
-        print(s)
-        print("----")
+# Register all the tools at some place and use everywhere in the yaml
+session = FloSession(llm).register_tool(
+    name="TavilySearchResults", 
+    tool=TavilySearchResults()
+)
+
+# Build the final flow and run it
+flo: Flo = Flo.build_with_yaml(session, yaml=yaml_data)
+
+# call invoke or stream
+for s in flo.stream(input_prompt)
 ```
-
-# Components
-
-Here are the list of components or architectures currently implemented:
-
-1. Agents
-2. Agentic Team
-3. Agentic Team of Teams
-4. Plan and Execute
-5. Simple RAG
-6. Self-Querying RAG
-
-Upcoming
-
-1. Reflection
-2. Multi Modal RAG for documents
