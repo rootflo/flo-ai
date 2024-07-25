@@ -21,6 +21,7 @@ pillow = "^10.3.0"
 langchain-mongodb = "^0.1.5"
 langchain-mistralai = "^0.1.7"
 langchain-chroma = "^0.1.1"
+python-dotenv = "^1.0.1"
 
 
 [tool.poetry.group.dev.dependencies]
