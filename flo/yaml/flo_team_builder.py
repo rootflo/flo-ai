@@ -35,8 +35,9 @@ class AgentConfig(BaseModel):
     prompt: str
     tools: List[ToolConfig] = []
 
-class SupervisorConfig(BaseModel):
+class RouterConfig(BaseModel):
     name: str
+    kind: str
 
 class PlannerConfig(BaseModel):
     name: str
@@ -45,7 +46,7 @@ class TeamConfig(BaseModel):
     name: str
     agents: Optional[List[AgentConfig]] = None
     subteams: Optional[List['TeamConfig']] = None
-    supervisor: Optional[SupervisorConfig] = None
+    router: Optional[RouterConfig] = None
     planner: Optional[PlannerConfig] = None
 
 class FloSupervisedTeamConfig(BaseModel):

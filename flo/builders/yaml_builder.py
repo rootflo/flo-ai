@@ -1,13 +1,12 @@
 from flo.models.flo_team import FloTeamBuilder
 from flo.models.flo_agent import FloAgentBuilder, FloAgent
-from langchain_core.language_models import BaseLanguageModel
-from flo.models.flo_supervisor import FloSupervisorBuilder, FloSupervisor
-from flo.yaml.flo_team_builder import (FloSupervisedTeamConfig, TeamConfig, ToolConfig,
+from flo.models.flo_supervisor import FloSupervisorBuilder
+from flo.yaml.flo_team_builder import (FloSupervisedTeamConfig, TeamConfig,
                                         AgentConfig, FloAgentConfig)
 from flo.models.flo_executable import ExecutableFlo
 from flo.models.flo_planner import FloPlannerBuilder
 from flo.state.flo_session import FloSession
-from typing import Union
+from typing import Union, List
 
 def build_supervised_team(
         session: FloSession,
@@ -31,13 +30,11 @@ def parse_and_build_subteams(
         for agent in team.agents:
             flo_agent: FloAgent = create_agent(session, agent, tool_map)
             agents.append(flo_agent)
-        # TODO supervisor is made nevertheless
-        supervisor_name = team.supervisor.name if team.supervisor is not None else "supervisor"
-        supervisor_agent: FloSupervisor = FloSupervisorBuilder(session, supervisor_name, agents).build()
+        router = create_router(session, team, agents)
         flo_team = FloTeamBuilder(
             session=session,
             name=team.name,
-            supervisor=supervisor_agent
+            supervisor=router
         ).build()
         if team.planner is not None:
             return FloPlannerBuilder(session, team.planner.name, flo_team).build()
@@ -46,14 +43,19 @@ def parse_and_build_subteams(
         for subteam in team.subteams:
             flo_subteam = parse_and_build_subteams(session, subteam, tool_map)
             flo_teams.append(flo_subteam)
-        supervisor_name = team.supervisor.name if team.supervisor is not None else "supervisor"
-        sub_team_supervisor_agent: FloSupervisor = FloSupervisorBuilder(session, supervisor_name, flo_teams).build()
+        router = create_router(session, team, agents)
         flo_team = FloTeamBuilder(
             session=session,
             name=team.name,
-            supervisor=sub_team_supervisor_agent
+            supervisor=router
         ).build()
     return flo_team
+
+def create_router(session: FloSession, team_config: TeamConfig, agents: List[FloAgent]):
+    if (team_config.router.kind == "supervisor"):
+            return FloSupervisorBuilder(session, team_config.router.name, agents).build()
+    else:
+        raise Exception("Unknown router type")
         
 def create_agent(session: FloSession, agent: AgentConfig, tool_map) -> FloAgent:
     tools = [tool_map[tool.name] for tool in agent.tools]

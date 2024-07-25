@@ -12,7 +12,7 @@ from flo.helpers.utils import randomize_name
 # TODO, maybe add description about what team members can do
 supervisor_system_message = (
     "You are a supervisor tasked with managing a conversation between the"
-    " following {member_type}:  {members}. Given the following user request,"
+    " following {member_type}: {members}. Given the following user request,"
     " respond with the worker to act next. Each worker will perform a"
     " task and respond with their results and status. When the users question is answered or the assigned task is finished,"
     " respond with FINISH. If both your workers has responded atleast once, then strictly return FINISH "
