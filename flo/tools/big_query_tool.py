@@ -32,7 +32,7 @@ class BigQueryExecutorTool(BaseTool):
             """Executes a BigQuery SQL query and returns formatted results."""
             try:
                 query = sql_query_string.replace("```sql", "").replace("```", "")
-                client = bigquery.Client(project="aesy-330511")
+                client = bigquery.Client()
                 query_job = client.query(query)
                 results = query_job.result()
                 result_str = "Query Results:\n"
