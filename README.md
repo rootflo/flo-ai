@@ -33,7 +33,7 @@ To create a small team of researcher + blogger for writing blogs
 # This yaml defines a team of 2 agents + 1 supervisor
 yaml_data = """
 apiVersion: flo/alpha-v1
-kind: FloSupervisedTeam
+kind: FloRoutedTeam
 name: blogging-team
 team:
     name: BloggingTeam

@@ -1,7 +1,6 @@
 from flo.tools import yaml_tool_map
 from flo.yaml.flo_team_builder import to_supervised_team
-from langchain_core.language_models import BaseLanguageModel
-from flo.builders.yaml_builder import build_supervised_team, FloSupervisedTeamConfig
+from flo.builders.yaml_builder import build_supervised_team, FloRoutedTeamConfig
 from typing import (
     Any,
     Iterator,
@@ -14,7 +13,7 @@ class Flo:
 
     def __init__(self,
                  session: FloSession,
-                 config: FloSupervisedTeamConfig) -> None:
+                 config: FloRoutedTeamConfig) -> None:
         self.config = config
         self.runnable: ExecutableFlo = build_supervised_team(session, config)
 

@@ -1,7 +1,7 @@
 from flo.models.flo_team import FloTeamBuilder
 from flo.models.flo_agent import FloAgentBuilder, FloAgent
 from flo.models.flo_supervisor import FloSupervisorBuilder
-from flo.yaml.flo_team_builder import (FloSupervisedTeamConfig, TeamConfig,
+from flo.yaml.flo_team_builder import (FloRoutedTeamConfig, TeamConfig,
                                         AgentConfig, FloAgentConfig)
 from flo.models.flo_executable import ExecutableFlo
 from flo.models.flo_planner import FloPlannerBuilder
@@ -10,8 +10,8 @@ from typing import Union, List
 
 def build_supervised_team(
         session: FloSession,
-        flo_config: Union[FloSupervisedTeamConfig, FloAgentConfig]) -> ExecutableFlo:
-    if isinstance(flo_config, FloSupervisedTeamConfig):
+        flo_config: Union[FloRoutedTeamConfig, FloAgentConfig]) -> ExecutableFlo:
+    if isinstance(flo_config, FloRoutedTeamConfig):
         team_config: TeamConfig = flo_config.team
         team = parse_and_build_subteams(session, team_config, session.tools)    
         return team

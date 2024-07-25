@@ -6,7 +6,7 @@ from typing import Optional
 from flo.models.exception import FloValidationException
 
 
-KIND_SUPERVISED_TEAM = "FloSupervisedTeam"
+KIND_SUPERVISED_TEAM = "FloRoutedTeam"
 KIND_FLO_AGENT = "FloAgent"
 
 yaml_kinds = [
@@ -49,7 +49,7 @@ class TeamConfig(BaseModel):
     router: Optional[RouterConfig] = None
     planner: Optional[PlannerConfig] = None
 
-class FloSupervisedTeamConfig(BaseModel):
+class FloRoutedTeamConfig(BaseModel):
     apiVersion: str
     kind: str
     name: str
@@ -61,11 +61,11 @@ class FloAgentConfig(BaseModel):
     name: str
     agent: AgentConfig
 
-def to_supervised_team(yaml_str: str) -> FloSupervisedTeamConfig:
+def to_supervised_team(yaml_str: str) -> FloRoutedTeamConfig:
     parsed_data = yaml.safe_load(yaml_str)
     kind = parsed_data["kind"]
     if kind == KIND_SUPERVISED_TEAM:
-        flo_supervised_team = FloSupervisedTeamConfig(**parsed_data)
+        flo_supervised_team = FloRoutedTeamConfig(**parsed_data)
         validate_sup_team_config(flo_supervised_team)
         return flo_supervised_team
     elif kind == KIND_FLO_AGENT:
@@ -75,7 +75,7 @@ def to_supervised_team(yaml_str: str) -> FloSupervisedTeamConfig:
     else:
         raise FloValidationException("Unknown kind: {}".format(kind))
 
-def validate_sup_team_config(flo: FloSupervisedTeamConfig):
+def validate_sup_team_config(flo: FloRoutedTeamConfig):
     if flo.kind == KIND_FLO_AGENT:
         return
     if flo.name is None or not is_valid_name(flo.name):

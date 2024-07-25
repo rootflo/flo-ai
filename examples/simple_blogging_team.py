@@ -8,7 +8,7 @@ load_dotenv()
 
 yaml_data = """
 apiVersion: flo/alpha-v1
-kind: FloSupervisedTeam
+kind: FloRoutedTeam
 name: blogging-team
 team:
     name: BloggingTeam
