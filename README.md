@@ -37,8 +37,9 @@ kind: FloSupervisedTeam
 name: blogging-team
 team:
     name: BloggingTeam
-    supervisor:
-        name: supervisor
+    router:
+        name: TeamLead
+        kind: supervisor
     agents:
       - name: Researcher
         prompt: Do a research on the internet and find articles of relevent to the topic asked by the user, always try to find the latest information on the same
