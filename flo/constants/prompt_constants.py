@@ -1,0 +1,1 @@
+FLO_FINISH = "FINISH"
