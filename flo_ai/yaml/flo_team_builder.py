@@ -3,7 +3,7 @@ from typing import List
 import yaml
 import re
 from typing import Optional
-from flo.models.exception import FloValidationException
+from flo_ai.models.exception import FloValidationException
 
 
 KIND_SUPERVISED_TEAM = "FloRoutedTeam"

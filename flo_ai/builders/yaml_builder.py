@@ -1,11 +1,11 @@
-from flo.models.flo_team import FloTeamBuilder
-from flo.models.flo_agent import FloAgentBuilder, FloAgent
-from flo.models.flo_supervisor import FloSupervisorBuilder
-from flo.yaml.flo_team_builder import (FloRoutedTeamConfig, TeamConfig,
+from flo_ai.models.flo_team import FloTeamBuilder
+from flo_ai.models.flo_agent import FloAgentBuilder, FloAgent
+from flo_ai.models.flo_supervisor import FloSupervisorBuilder
+from flo_ai.yaml.flo_team_builder import (FloRoutedTeamConfig, TeamConfig,
                                         AgentConfig, FloAgentConfig)
-from flo.models.flo_executable import ExecutableFlo
-from flo.models.flo_planner import FloPlannerBuilder
-from flo.state.flo_session import FloSession
+from flo_ai.models.flo_executable import ExecutableFlo
+from flo_ai.models.flo_planner import FloPlannerBuilder
+from flo_ai.state.flo_session import FloSession
 from typing import Union, List
 
 def build_supervised_team(

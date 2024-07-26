@@ -1,4 +1,4 @@
-from flo.models.flo_member import FloMember
+from flo_ai.models.flo_member import FloMember
 from langgraph.graph.graph import CompiledGraph
 from langchain_core.messages import HumanMessage
 

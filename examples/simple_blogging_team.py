@@ -1,6 +1,6 @@
 import os
-from flo.core import Flo
-from flo import FloSession
+from flo_ai.core import Flo
+from flo_ai import FloSession
 from langchain_openai import ChatOpenAI
 from langchain_community.tools.tavily_search.tool import TavilySearchResults
 from dotenv import load_dotenv

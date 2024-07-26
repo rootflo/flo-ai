@@ -3,10 +3,10 @@ from langchain.chains import LLMChain
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from typing import Union
-from flo.models.flo_member import FloMember
-from flo.state.flo_session import FloSession
-from flo.constants.prompt_constants import FLO_FINISH
-from flo.helpers.utils import randomize_name
+from flo_ai.models.flo_member import FloMember
+from flo_ai.state.flo_session import FloSession
+from flo_ai.constants.prompt_constants import FLO_FINISH
+from flo_ai.helpers.utils import randomize_name
 
 
 # TODO, maybe add description about what team members can do

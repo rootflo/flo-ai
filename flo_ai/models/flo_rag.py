@@ -4,12 +4,12 @@ from langchain.tools import Tool
 from langgraph.graph import END, StateGraph
 from langgraph.graph.graph import CompiledGraph
 from langgraph.prebuilt import ToolNode
-from flo.state.flo_state import TeamFloAgentState
+from flo_ai.state.flo_state import TeamFloAgentState
 from langgraph.prebuilt import tools_condition
-from flo.models.flo_executable import ExecutableFlo
+from flo_ai.models.flo_executable import ExecutableFlo
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain import hub
-from flo.helpers.utils import randomize_name
+from flo_ai.helpers.utils import randomize_name
 
 class FloRag(ExecutableFlo):
     def __init__(self, 

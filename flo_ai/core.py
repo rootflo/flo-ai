@@ -1,12 +1,12 @@
-from flo.yaml.flo_team_builder import to_supervised_team
-from flo.builders.yaml_builder import build_supervised_team, FloRoutedTeamConfig
+from flo_ai.yaml.flo_team_builder import to_supervised_team
+from flo_ai.builders.yaml_builder import build_supervised_team, FloRoutedTeamConfig
 from typing import (
     Any,
     Iterator,
     Union
 )
-from flo.state.flo_session import FloSession
-from flo.models.flo_executable import ExecutableFlo
+from flo_ai.state.flo_session import FloSession
+from flo_ai.models.flo_executable import ExecutableFlo
 
 class Flo:
 

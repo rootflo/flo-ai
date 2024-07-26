@@ -4,9 +4,9 @@ from langchain.agents import create_openai_tools_agent
 from langchain_core.runnables import Runnable
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from flo.helpers.utils import randomize_name
-from flo.models.flo_executable import ExecutableFlo
-from flo.state.flo_session import FloSession
+from flo_ai.helpers.utils import randomize_name
+from flo_ai.models.flo_executable import ExecutableFlo
+from flo_ai.state.flo_session import FloSession
 from typing import Union
 
 class FloAgent(ExecutableFlo):

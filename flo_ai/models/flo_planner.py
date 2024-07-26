@@ -1,14 +1,14 @@
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from flo.models.flo_executable import ExecutableFlo
-from flo.state.flo_state import TeamFloAgentStateWithPlan
+from flo_ai.models.flo_executable import ExecutableFlo
+from flo_ai.state.flo_state import TeamFloAgentStateWithPlan
 from langchain_core.pydantic_v1 import BaseModel, Field
 from typing import Union
 from langgraph.graph.graph import CompiledGraph
-from flo.models.flo_team import FloTeam
+from flo_ai.models.flo_team import FloTeam
 from langgraph.graph import StateGraph
-from flo.state.flo_session import FloSession
-from flo.helpers.utils import randomize_name
+from flo_ai.state.flo_session import FloSession
+from flo_ai.helpers.utils import randomize_name
 
 
 class Response(BaseModel):

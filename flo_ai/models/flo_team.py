@@ -4,13 +4,13 @@ from langgraph.graph.graph import CompiledGraph
 from langgraph.graph import StateGraph, END
 from langchain.agents import AgentExecutor
 
-from flo.models.flo_executable import ExecutableFlo
-from flo.models.flo_agent import FloAgent
-from flo.models.flo_supervisor import FloSupervisor
-from flo.constants.prompt_constants import FLO_FINISH
-from flo.state.flo_state import TeamFloAgentState
-from flo.state.flo_session import FloSession
-from flo.helpers.utils import randomize_name
+from flo_ai.models.flo_executable import ExecutableFlo
+from flo_ai.models.flo_agent import FloAgent
+from flo_ai.models.flo_supervisor import FloSupervisor
+from flo_ai.constants.prompt_constants import FLO_FINISH
+from flo_ai.state.flo_state import TeamFloAgentState
+from flo_ai.state.flo_session import FloSession
+from flo_ai.helpers.utils import randomize_name
 
 class FloAgentNode:
     def __init__(self, 
