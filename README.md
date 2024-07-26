@@ -1,3 +1,7 @@
+> **Warning**
+>
+> This project is under active development and we havent release any stable builds yet
+
 # Flo: Composable AI Agents
 
 Flo gives you a composable framework for creating agentic AI architectures. What we intent to do here is to create an easy framework for AI app developers to compose apps using pre-implemented architectural components, at the same time providing the flexibilty to create their own components.

@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "flo"
-version = "0.1.0"
-description = "A easy way to create AI agents"
+name = "flo-ai"
+version = "0.0.1"
+description = "A easy way to create structured AI agents"
 authors = ["vizsatiz <vishnu@rootfor.xyz>"]
 license = "MIT"
 readme = "README.md"
