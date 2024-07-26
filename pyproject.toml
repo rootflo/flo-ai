@@ -30,6 +30,7 @@ torch = "2.0.0"
 sentence-transformers = "^3.0.0"
 pypdf = "^4.2.0"
 lark = "^1.1.9"
+ipykernel = "^6.29.5"
 
 [build-system]
 requires = ["poetry-core"]
