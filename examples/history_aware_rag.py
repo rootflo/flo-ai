@@ -45,16 +45,6 @@ Always talk authoritatively about the information that you have, you are given a
 Do not answer, if you dont have any information about it, just say "Sorry, I don't have enough information to answer your question at the moment."
 """
 
-# qa_system_prompt = get_qa_system_prompt()
-
-qa_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", bank_context + "\n" + qa_shop_context_prompt),
-        # ("system", qa_system_prompt),
-        MessagesPlaceholder(variable_name="chat_history"),
-        ("human", "{question}"),
-    ]
-)
-rag = rag_builder.add_history_awareness().build(qa_prompt)
-print(rag.invoke({"question": "Tell me about corporate loans", "chat_history": []}))
+rag = rag_builder.build()
+print(rag.invoke({ "question": "Tell me about corporate loans" }))
 

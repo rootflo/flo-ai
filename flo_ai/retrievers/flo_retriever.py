@@ -10,10 +10,22 @@ class FloRagBuilder():
         self.session = session
         self.retriever = retriever
     
-        self.history_aware_retriever = None
-        self.is_history_aware = False
+        self.history_aware_retriever = self.__create_history_aware_retriever()
+        self.default_prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", """You are an assistant for question-answering tasks. 
+                 Use the following pieces of retrieved context to answer the question. 
+                 If you don't know the answer, just say that you don't know. 
+                 Use three sentences maximum and keep the answer concise."""),
+                MessagesPlaceholder(variable_name="chat_history"),
+                ("human", "{question}"),
+            ]
+        )
 
-    def add_history_awareness(self):
+    def with_prompt(self, prompt: ChatPromptTemplate):
+        self.default_prompt = prompt
+
+    def __create_history_aware_retriever(self):
         contextualize_q_system_prompt = """Given a chat history and the latest user question \
         which might reference context in the chat history, formulate a standalone question \
         which can be understood without the chat history. Do NOT answer the question, \
@@ -27,7 +39,6 @@ class FloRagBuilder():
             ]
         )
         self.history_aware_retriever = contextualize_q_prompt | self.session.llm | StrOutputParser()
-        self.is_history_aware = True
         return self
 
     def __get_retriever(self):
@@ -36,30 +47,31 @@ class FloRagBuilder():
                 return self.history_aware_retriever
             else:
                 return input_prompt["question"]
-            
-        if self.is_history_aware:
-            return __precontext_retriver | self.retriever
-        return self.retriever
+        return __precontext_retriver | self.retriever
     
     def __format_docs(self, docs):
         return "\n\n".join(doc.page_content for doc in docs)
-
-    def build(self, rag_prompt: str):
+    
+    def __get_optional_chat_history(self, x):
+        return x["chat_history"] if "chat_history" in x else []
+    
+    def __build_history_aware_rag(self):
         rag_chain = (
             RunnablePassthrough.assign(
                 context=(lambda x: x["context"]),
             )
-            | rag_prompt
-            | self.session.llm
-            
+            | self.default_prompt
+            | self.session.llm   
         )
 
         rag_chain_with_source = RunnableParallel(
             {
                 "context": self.__get_retriever() | self.__format_docs,
                 "question": RunnablePassthrough(),
-                "chat_history": lambda x: x["chat_history"]
+                "chat_history": lambda x: self.__get_optional_chat_history(x)
             }
         ).assign(answer=rag_chain)
-
         return rag_chain_with_source
+
+    def build(self):
+        return self.__build_history_aware_rag()
