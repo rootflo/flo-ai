@@ -29,22 +29,13 @@ store = MongoDBAtlasVectorSearch(
 
 llm = ChatOpenAI(temperature=0, model_name='gpt-4o')
 session = FloSession(llm)
-rag_builder = FloRagBuilder(session,
-               store.as_retriever())
-bank_context = """
-You are the co-pilot for a relationship manager at Doha Bank, assisting in selling the bank's products. Talk like you are an expert on the financial products offered by the bank.
-If the currency is not mentioned in the text, then assume the currency to be: "QED"
-"""
-    
-qa_shop_context_prompt = """
-1. Speak as a support bot, addressing the customer in the third person.
-2. Example: "Please request the customer to provide the following documents to apply for a loan."
-3. Answer questions in a list format whenever possible.
+rag_builder = FloRagBuilder(session, store.as_retriever())
 
-Always talk authoritatively about the information that you have, you are given all the information that is avaiable with the banks documents are context.
-Do not answer, if you dont have any information about it, just say "Sorry, I don't have enough information to answer your question at the moment."
-"""
+import logging
 
-rag = rag_builder.build()
+logging.basicConfig()
+logging.getLogger("langchain.retrievers.multi_query").setLevel(logging.INFO)
+
+rag = rag_builder.with_multi_query().build()
 print(rag.invoke({ "question": "Tell me about corporate loans" }))
 

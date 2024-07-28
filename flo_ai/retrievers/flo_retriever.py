@@ -4,13 +4,12 @@ from flo_ai.state.flo_session import FloSession
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from flo_ai.retrievers.flo_multi_query import FloMultiQueryRetriverBuilder, FloMultiQueryRetriever
 
 class FloRagBuilder():
     def __init__(self, session: FloSession, retriever: VectorStoreRetriever) -> None:
         self.session = session
         self.retriever = retriever
-    
-        self.history_aware_retriever = self.__create_history_aware_retriever()
         self.default_prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", """You are an assistant for question-answering tasks. 
@@ -24,6 +23,14 @@ class FloRagBuilder():
 
     def with_prompt(self, prompt: ChatPromptTemplate):
         self.default_prompt = prompt
+
+    def with_multi_query(self, prompt = None):
+        builder = FloMultiQueryRetriverBuilder(session=self.session,
+                                                retriver=self.retriever,
+                                                  query_prompt=prompt)
+        multi_query_retriever = builder.build()
+        self.retriever = multi_query_retriever.retriever
+        return self
 
     def __create_history_aware_retriever(self):
         contextualize_q_system_prompt = """Given a chat history and the latest user question \
@@ -56,6 +63,7 @@ class FloRagBuilder():
         return x["chat_history"] if "chat_history" in x else []
     
     def __build_history_aware_rag(self):
+        self.history_aware_retriever = self.__create_history_aware_retriever()
         rag_chain = (
             RunnablePassthrough.assign(
                 context=(lambda x: x["context"]),
