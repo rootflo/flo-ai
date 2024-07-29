@@ -4,7 +4,10 @@ from flo_ai.state.flo_session import FloSession
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnablePassthrough
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from flo_ai.retrievers.flo_multi_query import FloMultiQueryRetriverBuilder, FloMultiQueryRetriever
+from flo_ai.retrievers.flo_multi_query import FloMultiQueryRetriverBuilder
+from langchain.retrievers import ContextualCompressionRetriever
+from langchain.retrievers.document_compressors import DocumentCompressorPipeline
+from flo_ai.retrievers.flo_compression_pipeline import FloCompressionPipeline
 
 class FloRagBuilder():
     def __init__(self, session: FloSession, retriever: VectorStoreRetriever) -> None:
@@ -30,6 +33,16 @@ class FloRagBuilder():
                                                   query_prompt=prompt)
         multi_query_retriever = builder.build()
         self.retriever = multi_query_retriever.retriever
+        return self
+    
+    def with_compression(self, pipeline: FloCompressionPipeline):
+        pipeline_compressor = DocumentCompressorPipeline(
+            transformers=pipeline
+        )
+        compression_retriever = ContextualCompressionRetriever(
+            base_compressor=pipeline_compressor, base_retriever=self.retriever
+        )
+        self.retriever = compression_retriever
         return self
 
     def __create_history_aware_retriever(self):
