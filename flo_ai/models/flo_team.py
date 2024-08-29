@@ -64,7 +64,7 @@ class FloTeamBuilder:
         agent_func = functools.partial(teamflo_agent_node, agent=flo_agent.executor, name=flo_agent.name)
         return FloAgentNode(agent_func, flo_agent.name)
     
-
+    # TODO re-structure to remove routing logic into corresponding routers and keep the team logic clean
     def build(self):
         if self.router_type == 'linear':
             if self.router.is_agent_supervisor():

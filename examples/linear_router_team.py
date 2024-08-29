@@ -25,17 +25,13 @@ team:
               job: Do a research on the internet and find articles of relevent to the topic asked by the user, always try to find the latest information on the same
               tools:
               - name: TavilySearchResults
-            - name: Blogger
-              job: From the documents provider by the researcher write a blog of 300 words with can be readily published, make in engaging and add reference links to original blogs
-              tools:
-                - name: TavilySearchResults
         - name: WritingTeam
           router:
             name: supervisor
             kind: supervisor
           agents: 
-            - name: Figure
-              job: Do somethinh
+            - name: Blogger
+              job: From the documents provider by the researcher write a blog of 300 words with can be readily published, make in engaging and add reference links to original blogs
               tools:
                 - name: TavilySearchResults
 """
@@ -50,4 +46,8 @@ session = FloSession(llm).register_tool(
     name="TavilySearchResults", tool=TavilySearchResults()
 )
 flo: Flo = Flo.build(session, yaml=yaml_data)
-flo.draw_to_file("Damn.png", xray=False)
+
+for event in flo.stream(input_prompt):
+    for k, v in event.items():
+        if k != "__end__":
+            print(v)
