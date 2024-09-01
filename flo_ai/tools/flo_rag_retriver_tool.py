@@ -6,7 +6,7 @@ from flo_ai.retrievers.flo_compression_pipeline import FloCompressionPipeline
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.vectorstores import VectorStoreRetriever
 
-class FloRagRetriverTool():
+class FloRagRetrieverTool():
 
     def __init__(self) -> None:
         raise ValueError("You are supposed to use Builder, FloRagRetriverTool.Builder()")
