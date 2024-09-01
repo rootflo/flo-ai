@@ -21,11 +21,10 @@ jobs:
 
     - name: Install Poetry
       run: |
-        curl -sSL https://install.python-poetry.org | python3 -
-        echo "::add-path::$(python3 -m site --user-base)/bin"
+        curl -sSL https://install.python-poetry.org | python3
 
     - name: Install dependencies
       run: poetry install
 
-    - name: Run tests
+    - name: Run build
       run: poetry build
