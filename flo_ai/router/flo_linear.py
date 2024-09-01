@@ -1,17 +1,16 @@
 from flo_ai.yaml.flo_team_builder import RouterConfig
-from flo_ai.models.flo_member import FloMember
 from flo_ai.router.flo_router import FloRouter
 from langgraph.graph import StateGraph, END, START
 from flo_ai.state.flo_state import TeamFloAgentState
 from flo_ai.models.flo_routed_team import FloRoutedTeam
 from flo_ai.models.flo_team import FloTeam
 from flo_ai.state.flo_session import FloSession
-from flo_ai.helpers.utils import agent_name_from_randomized_name
+from flo_ai.helpers.utils import agent_name_from_randomized_name, randomize_name
 
 class FloLinear(FloRouter):
 
     def __init__(self, session: FloSession, flo_team: FloTeam, config: RouterConfig):
-        super().__init__(session=session, name=config.name,
+        super().__init__(session=session, name=randomize_name(config.name),
                           flo_team=flo_team, executor=None, config=config)
     
     def build_agent_graph(self):
