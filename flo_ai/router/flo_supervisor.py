@@ -1,5 +1,4 @@
 from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
-from langchain.chains import LLMChain
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from typing import Union
@@ -60,12 +59,12 @@ class FloSupervisor(FloRouter):
         return FloRoutedTeam(self.flo_team.name, workflow_graph)
 
     def build_team_graph(self):
-        flo_team_entry_chains = [self.build_chain_for_teams(flo_agent) for flo_agent in self.members]
+        flo_team_entry_chains = [self.build_node_for_teams(flo_agent) for flo_agent in self.members]
         # Define the graph.
         super_graph = StateGraph(TeamFloAgentState)
         # First add the nodes, which will do the work
         for flo_team_chain in flo_team_entry_chains:
-            super_graph.add_node(flo_team_chain.name, self.get_last_message | flo_team_chain.chain | self.join_graph)
+            super_graph.add_node(flo_team_chain.name, flo_team_chain.func)
         super_graph.add_node(self.router_name, self.executor)
 
         for member in self.member_names:
