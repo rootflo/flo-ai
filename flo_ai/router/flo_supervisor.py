@@ -3,6 +3,7 @@ from langchain.chains import LLMChain
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from typing import Union
+from langchain_core.runnables import Runnable
 from flo_ai.state.flo_session import FloSession
 from flo_ai.constants.prompt_constants import FLO_FINISH
 from flo_ai.helpers.utils import randomize_name
@@ -35,7 +36,7 @@ class FloSupervisor(FloRouter):
     
     def __init__(self,
                  session: FloSession,
-                 executor: LLMChain, 
+                 executor: Runnable, 
                  flo_team: FloTeam,
                  name: str) -> None:
         super().__init__(

@@ -48,6 +48,7 @@ class PlannerConfig(BaseModel):
 
 class TeamConfig(BaseModel):
     name: str
+    kind: Optional[str]
     agents: Optional[List[AgentConfig]] = None
     subteams: Optional[List['TeamConfig']] = None
     router: Optional[RouterConfig] = None
