@@ -29,7 +29,6 @@ class FloLLMAgent(ExecutableFlo):
             # TODO improve to add more context of what other agents are available
             system_prompts = [("system", "You are a {}".format(role)), ("system", prompt)] if role is not None else [("system", prompt)]
             system_prompts.append(MessagesPlaceholder(variable_name="messages"))
-            system_prompts.append(MessagesPlaceholder(variable_name="agent_scratchpad"))
             self.prompt: ChatPromptTemplate = ChatPromptTemplate.from_messages(
                 system_prompts
             ) if isinstance(prompt, str) else prompt
