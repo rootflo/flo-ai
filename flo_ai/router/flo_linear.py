@@ -20,7 +20,6 @@ class FloLinear(FloRouter):
         for flo_agent_node in flo_agent_nodes:
             agent_name = agent_name_from_randomized_name(flo_agent_node.name)
             workflow.add_node(agent_name, flo_agent_node.func)
-
         if self.config.edges is None:
             start_node_name = agent_name_from_randomized_name(flo_agent_nodes[0].name)
             end_node_name = agent_name_from_randomized_name(flo_agent_nodes[-1].name)
