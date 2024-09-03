@@ -49,7 +49,7 @@ class FloSupervisor(FloRouter):
         flo_agent_nodes = [self.build_node(flo_agent) for flo_agent in self.members]
         workflow = StateGraph(TeamFloAgentState)
         for flo_agent_node in flo_agent_nodes:
-            workflow.add_node(flo_agent_node.name, flo_agent_node.agent_node)
+            workflow.add_node(flo_agent_node.name, flo_agent_node.func)
         workflow.add_node(self.router_name, self.executor)
         for member in self.member_names:
             workflow.add_edge(member, self.router_name)
