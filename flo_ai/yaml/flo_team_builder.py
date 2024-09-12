@@ -29,12 +29,18 @@ class ToolConfig(BaseModel):
     properties: Optional[List[KeyValueArgs]] = None
     filters: Optional[List[FilterArgs]] = None
 
+class ReflectionConfig(BaseModel):
+    node: str
+    retries: int
+    next: str
+
 class AgentConfig(BaseModel):
     name: str
     role: Optional[str] = None
     kind: Optional[str] = None
     job: Optional[str] = None
     tools: List[ToolConfig] = []
+    reflection: Optional[ReflectionConfig] = None
 
 class EdgeConfig(BaseModel):
     edge: List[str]

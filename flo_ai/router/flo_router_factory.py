@@ -18,6 +18,6 @@ class FloRouterFactory:
         elif team_config.router.kind == 'llm':
             return FloLLMRouter.Builder(session, team_config.router.name, flo_team).build()
         elif team_config.router.kind == 'custom':
-            return FloCustomRouter(session, flo_team, team_config.router)
+            return FloCustomRouter(session, flo_team, team_config)
         else:
             raise Exception("Unknown router type")

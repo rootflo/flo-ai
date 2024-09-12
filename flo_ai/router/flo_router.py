@@ -3,17 +3,19 @@ import functools
 from abc import ABC, abstractmethod
 from flo_ai.state.flo_session import FloSession
 from flo_ai.models.flo_team import FloTeam
-from flo_ai.yaml.flo_team_builder import RouterConfig
+from flo_ai.yaml.flo_team_builder import RouterConfig, TeamConfig, AgentConfig
 from flo_ai.models.flo_routed_team import FloRoutedTeam
 from flo_ai.models.flo_agent import FloAgent
 from flo_ai.state.flo_state import TeamFloAgentState
 from flo_ai.models.flo_node import FloNode
 from flo_ai.constants.prompt_constants import FLO_FINISH
-from langgraph.graph import END
-
+from langgraph.graph import END,StateGraph
+from typing import List, Tuple
+from flo_ai.models.flo_node import FloNode
+from flo_ai.helpers.utils import agent_name_from_randomized_name
 class FloRouter(ABC):
 
-    def __init__(self, session: FloSession, name: str, flo_team: FloTeam, executor, config: RouterConfig = None):
+    def __init__(self, session: FloSession, name: str, flo_team: FloTeam, executor, config: TeamConfig = None):
         self.router_name = name
         self.session: FloSession = session
         self.flo_team: FloTeam = flo_team
@@ -57,5 +59,64 @@ class FloRouter(ABC):
     def build_node_for_teams(self, flo_team: FloRoutedTeam):
         node_builder = FloNode.Builder()
         return node_builder.build_from_team(flo_team)
+    
+    def differentiate_nodes(self, flo_nodes: List[FloNode], agents: List[AgentConfig] | None) -> Tuple[List[FloNode], List[FloNode]]:
+        node_dict = {}
+        agent_nodes = []
+        reflection_nodes = []
+        
+        for agent in agents:
+            if agent.reflection:
+                node_dict['reflection_nodes'] = agent.name
+            else:
+                node_dict['agent_nodes'] = agent.name
 
+        for node in flo_nodes:
+            node_name = agent_name_from_randomized_name(node.name)
+            if node_name in node_dict['reflection_nodes']:
+                reflection_nodes.append(node)
+            elif node_name in node_dict['agent_nodes']:
+                agent_nodes.append(node)
+
+        return agent_nodes, reflection_nodes
+        
+    
+    def build_reflection_routes(self, workflow: StateGraph, agents: List[AgentConfig] | None, reflection_nodes: List[FloNode]):
+        if len(reflection_nodes) == 0:
+            return
+        
+        reflection_routes = self.__get_reflection_routes(agents)
+
+        for reflection in reflection_routes:
+            parent_node = reflection['nodes'][0]
+            reflection_node = reflection['nodes'][1]
+            next = END if reflection['next'] == 'END' else reflection['next']
+
+            workflow.add_conditional_edges(parent_node, self.__get_refelection_routing_fn(reflection['retries'], parent_node, reflection_node, next), {reflection_node: reflection_node, next: next})
+            workflow.add_edge(reflection_node, parent_node)
+
+    @staticmethod
+    def __get_refelection_routing_fn(retries, parent_node, reflection_node, next):
+        def reflection_routing_fn(state: TeamFloAgentState):
+            if len(state['messages']) > (int(retries)*2)+1 and agent_name_from_randomized_name(state['messages'][-((int(retries)*2)+1)].name) == parent_node:
+                return next
+            return reflection_node
+
+        return reflection_routing_fn
+
+
+    @staticmethod
+    def __get_reflection_routes(agents: List[AgentConfig] | None):
+        reflection_routes = []
+
+        for agent in agents:
+            if agent.reflection:
+                route = {}
+                route['nodes'] = [agent.reflection.node, agent.name]
+                route['retries'] = agent.reflection.retries
+                route['next'] = agent.reflection.next
+                reflection_routes.append(route)
+
+        return reflection_routes
+        
     

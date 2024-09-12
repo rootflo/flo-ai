@@ -1,4 +1,4 @@
-from flo_ai.yaml.flo_team_builder import RouterConfig
+from flo_ai.yaml.flo_team_builder import TeamConfig
 from flo_ai.router.flo_router import FloRouter
 from langgraph.graph import StateGraph, END, START
 from flo_ai.state.flo_state import TeamFloAgentState
@@ -11,10 +11,11 @@ from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsPa
 
 class FloCustomRouter(FloRouter):
 
-    def __init__(self, session: FloSession, flo_team: FloTeam, config: RouterConfig):
+    def __init__(self, session: FloSession, flo_team: FloTeam, config: TeamConfig):
         self.llm = session.llm
         super().__init__(session=session, name=randomize_name(config.name),
                           flo_team=flo_team, executor=None, config=config)
+        self.router_config = config.router
     
     def build_router_fn(self, members, rule):
         def router_fn(state: TeamFloAgentState):
@@ -68,9 +69,9 @@ class FloCustomRouter(FloRouter):
             agent_name = agent_name_from_randomized_name(flo_agent_node.name)
             workflow.add_node(agent_name, flo_agent_node.func)
 
-        config = self.config
-        workflow.add_edge(START, config.start_node)
-        for edge_config in config.edges:
+        router_config = self.router_config
+        workflow.add_edge(START, router_config.start_node)
+        for edge_config in router_config.edges:
             edge = edge_config.edge
             if len(edge) > 2:
                 if edge_config.type == 'conditional_llm':
@@ -80,11 +81,11 @@ class FloCustomRouter(FloRouter):
             else:
                 workflow.add_edge(edge[0], edge[1])
 
-        if isinstance(config.end_node, list):    
-            for node in config.end_node:
+        if isinstance(router_config.end_node, list):    
+            for node in router_config.end_node:
                 workflow.add_edge(node, END)
         else:
-            workflow.add_edge(config.end_node, END)
+            workflow.add_edge(router_config.end_node, END)
 
         workflow_graph = workflow.compile()
 
@@ -99,9 +100,9 @@ class FloCustomRouter(FloRouter):
             agent_name = agent_name_from_randomized_name(flo_team_chain.name)
             super_graph.add_node(agent_name, flo_team_chain.func)
 
-        config = self.config
-        super_graph.add_edge(START, config.start_node)
-        for edge_config in config.edges:
+        router_config = self.router_config
+        super_graph.add_edge(START, router_config.start_node)
+        for edge_config in router_config.edges:
             edge = edge_config.edge
             if len(edge) > 2:
                 teams = edge[1:]
@@ -110,11 +111,11 @@ class FloCustomRouter(FloRouter):
             else:
                 super_graph.add_edge(edge[0], edge[1])
 
-        if isinstance(config.end_node, list):    
-            for node in config.end_node:
+        if isinstance(router_config.end_node, list):    
+            for node in router_config.end_node:
                 super_graph.add_edge(node, END)
         else:
-            super_graph.add_edge(config.end_node, END)
+            super_graph.add_edge(router_config.end_node, END)
 
         workflow_graph = super_graph.compile()
 
