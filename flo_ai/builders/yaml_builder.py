@@ -1,4 +1,4 @@
-from flo_ai.models.flo_team import FloTeamBuilder
+from flo_ai.models.flo_team import FloTeam
 from flo_ai.models.flo_agent import FloAgent
 from flo_ai.yaml.flo_team_builder import (FloRoutedTeamConfig, TeamConfig,
                                         AgentConfig, FloAgentConfig)
@@ -31,7 +31,7 @@ def parse_and_build_subteams(
         for agent in team_config.agents:
             flo_agent: FloAgent = AgentFactory.create(session, agent, tool_map)
             agents.append(flo_agent)
-        flo_team = FloTeamBuilder(
+        flo_team = FloTeam.Builder(
             session=session,
             name=team_config.name,
             members=agents
@@ -45,7 +45,7 @@ def parse_and_build_subteams(
         for subteam in team_config.subteams:
             flo_subteam = parse_and_build_subteams(session, subteam, tool_map)
             flo_teams.append(flo_subteam)
-        flo_team = FloTeamBuilder(
+        flo_team = FloTeam.Builder(
             session=session,
             name=team_config.name,
             members=flo_teams

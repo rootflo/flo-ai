@@ -76,61 +76,61 @@ class FloSupervisor(FloRouter):
         super_graph = super_graph.compile()
         return FloRoutedTeam(self.flo_team.name, super_graph)
 
-class FloSupervisorBuilder:
-    def __init__(self,
-                 session: FloSession,
-                 name: str,
-                 flo_team: FloTeam,
-                 supervisor_prompt: Union[ChatPromptTemplate, None] = None,
-                 llm: Union[BaseLanguageModel, None] = None) -> None:
-        # TODO add validation for reporteess
-        self.name = randomize_name(name)
-        self.session = session
-        self.llm = llm if llm is not None else session.llm
-        self.flo_team = flo_team
-        self.agents = flo_team.members
-        self.members = [agent.name for agent in flo_team.members]
-        self.options = self.members + [FLO_FINISH]
-        member_type = "workers" if flo_team.members[0].type == "agent" else "team members"
-        self.supervisor_prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", supervisor_system_message),
-                MessagesPlaceholder(variable_name="messages"),
-                (
-                    "system",
-                    "Given the conversation above, who should act next?"
-                    " Or should we FINISH if the task is already answered, (do not wait for the entire question to be answered) or there isn't enough information to answer the question, even then return FINISH? Select one of: {options}",
-                ),
-            ]
-        ).partial(options=str(self.options), members=", ".join(self.members), member_type=member_type) if supervisor_prompt is None else  supervisor_prompt
-    
-    def build(self):
-        function_def = {
-            "name": "route",
-            "description": "Select the next role.",
-            "parameters": {
-                "title": "routeSchema",
-                "type": "object",
-                "properties": {
-                    "next": {
-                        "title": "Next",
-                        "anyOf": [
-                            {"enum": self.options},
-                        ],
-                    }
-                },
-                "required": ["next"],
+    class Builder:
+        def __init__(self,
+                    session: FloSession,
+                    name: str,
+                    flo_team: FloTeam,
+                    supervisor_prompt: Union[ChatPromptTemplate, None] = None,
+                    llm: Union[BaseLanguageModel, None] = None) -> None:
+            # TODO add validation for reporteess
+            self.name = randomize_name(name)
+            self.session = session
+            self.llm = llm if llm is not None else session.llm
+            self.flo_team = flo_team
+            self.agents = flo_team.members
+            self.members = [agent.name for agent in flo_team.members]
+            self.options = self.members + [FLO_FINISH]
+            member_type = "workers" if flo_team.members[0].type == "agent" else "team members"
+            self.supervisor_prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", supervisor_system_message),
+                    MessagesPlaceholder(variable_name="messages"),
+                    (
+                        "system",
+                        "Given the conversation above, who should act next?"
+                        " Or should we FINISH if the task is already answered, (do not wait for the entire question to be answered) or there isn't enough information to answer the question, even then return FINISH? Select one of: {options}",
+                    ),
+                ]
+            ).partial(options=str(self.options), members=", ".join(self.members), member_type=member_type) if supervisor_prompt is None else  supervisor_prompt
+        
+        def build(self):
+            function_def = {
+                "name": "route",
+                "description": "Select the next role.",
+                "parameters": {
+                    "title": "routeSchema",
+                    "type": "object",
+                    "properties": {
+                        "next": {
+                            "title": "Next",
+                            "anyOf": [
+                                {"enum": self.options},
+                            ],
+                        }
+                    },
+                    "required": ["next"],
+                }
             }
-        }
-            
-        chain = (
-            self.supervisor_prompt
-            | self.llm.bind_functions(functions=[function_def], function_call="route")
-            | JsonOutputFunctionsParser()
-            | StateUpdateComponent(self.name, self.session)
-        )
+                
+            chain = (
+                self.supervisor_prompt
+                | self.llm.bind_functions(functions=[function_def], function_call="route")
+                | JsonOutputFunctionsParser()
+                | StateUpdateComponent(self.name, self.session)
+            )
 
-        return FloSupervisor(executor = chain, 
-                             flo_team=self.flo_team, 
-                             name=self.name, 
-                             session=self.session)
+            return FloSupervisor(executor = chain, 
+                                flo_team=self.flo_team, 
+                                name=self.name, 
+                                session=self.session)

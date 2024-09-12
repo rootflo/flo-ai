@@ -29,7 +29,7 @@ class FloNode():
             return { "messages": [ response["messages"][-1] ] }
         
         @staticmethod
-        def teamflo_team_node( message: str, members: list[str]):
+        def teamflo_team_node(message: str, members: list[str]):
             results = {
                 "messages": [HumanMessage(content=message)],
                 "team_members": ", ".join(members),
@@ -41,7 +41,7 @@ class FloNode():
             return FloNode(agent_func, flo_agent.name)
         
         def build_from_team(self, flo_team: FloRoutedTeam):
+            team_chain = (functools.partial(FloNode.Builder.teamflo_team_node, members=flo_team.runnable.nodes) | flo_team.runnable)
             return FloNode((
-                FloNode.Builder.get_last_message | functools.partial(FloNode.Builder.teamflo_team_node, members=flo_team.graph.nodes)
-                | flo_team.graph | FloNode.Builder.join_graph
+                FloNode.Builder.get_last_message | team_chain | FloNode.Builder.join_graph
             ), flo_team.name)
