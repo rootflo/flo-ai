@@ -7,6 +7,7 @@ from typing import (
 )
 from flo_ai.state.flo_session import FloSession
 from flo_ai.models.flo_executable import ExecutableFlo
+from flo_ai.common.flo_logger import FloLogger, get_logger
 
 class Flo:
 
@@ -15,15 +16,21 @@ class Flo:
                  config: FloRoutedTeamConfig) -> None:
         self.config = config
         self.runnable: ExecutableFlo = build_supervised_team(session, config)
+        self.logger: FloLogger = get_logger("Flo", session.logger.logger.level)
+        self.callback_handler = session.callback_handler
 
     def stream(self, query, config = None) -> Iterator[Union[dict[str, Any], Any]]:
+        self.logger.info(f"Streaming query: {query}")
         return self.runnable.stream(query, config)
     
     def invoke(self, query, config = None) -> Iterator[Union[dict[str, Any], Any]]:
+        self.logger.info(f"Invoking query: {query}")
         return self.runnable.invoke(query, config)
     
     @staticmethod
     def build(session: FloSession, yaml: str):
+        logger = get_logger("Flo.build", session.logger.logger.level)
+        logger.info("Building Flo instance from YAML")
         return Flo(session, to_supervised_team(yaml))
 
     def draw(self, xray=True):

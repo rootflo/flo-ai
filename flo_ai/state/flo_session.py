@@ -1,8 +1,10 @@
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.tools import BaseTool
+from flo_ai.common.flo_logger import FloLogger, get_logger
+from flo_ai.common.flo_callback_handler import FloCallbackHandler
 
 class FloSession:
-    def __init__(self, llm: BaseLanguageModel, loop_size: int = 2, max_loop: int = 3) -> None:
+    def __init__(self, llm: BaseLanguageModel, loop_size: int = 2, max_loop: int = 3,log_level: str = "DEBUG") -> None:
         self.llm = llm
         self.tools = dict()
         self.counter = dict()
@@ -10,12 +12,15 @@ class FloSession:
         self.pattern_series = dict()
         self.loop_size: int = loop_size
         self.max_loop: int = max_loop
+        self.logger: FloLogger = get_logger("FloSession", log_level)
+        self.callback_handler = FloCallbackHandler("FloCallback", log_level)
 
     def register_tool(self, name: str, tool: BaseTool):
         self.tools[name] = tool
         return self
 
     def append(self, node: str) -> int:
+        self.logger.debug(f"Appending node: {node}")
         self.counter[node] = self.counter.get(node, 0) + 1
         if node in self.navigation:
             last_known_index = len(self.navigation) - 1 - self.navigation[::-1].index(node)
@@ -29,6 +34,7 @@ class FloSession:
         self.navigation.append(node)
 
     def is_looping(self, node) -> bool:
+        self.logger.debug(f"Checking if node {node} is looping")
         patterns = self.pattern_series[node] if node in self.pattern_series else []
         if len(patterns) < self.max_loop:
             return False
