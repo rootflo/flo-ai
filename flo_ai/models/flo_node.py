@@ -18,7 +18,9 @@ class FloNode():
         @staticmethod
         def teamflo_agent_node(state: TeamFloAgentState, agent: AgentExecutor, name: str):
             result = agent.invoke(state)
-            return { "messages": [HumanMessage(content=result["output"], name=name)] }
+            # TODO see how to fix this
+            output = result if isinstance(result, str) else result["output"]
+            return { "messages": [HumanMessage(content=output, name=name)] }
 
         @staticmethod
         def get_last_message(state: TeamFloAgentState) -> str:

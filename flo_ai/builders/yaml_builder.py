@@ -38,8 +38,6 @@ def parse_and_build_subteams(
         ).build()
         router = FloRouterFactory.create(session, team_config, flo_team)
         flo_routed_team = router.build_routed_team()
-        if team_config.planner is not None:
-            return FloPlannerBuilder(session, team_config.planner.name, flo_routed_team).build()
     else:
         flo_teams = []
         for subteam in team_config.subteams:

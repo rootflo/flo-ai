@@ -86,19 +86,18 @@ class FloLLMRouter(FloRouter):
             router_base_system_message = (
                 "You are a supervisor tasked with managing a conversation between the"
                 " following {member_type}: {members}. Given the following rules,"
-                " respond with the worker to act next. When the users question is answered or the assigned task is finished,"
-                " respond with FINISH. "
+                " respond with the worker to act next "
             )
 
             self.llm_router_prompt = ChatPromptTemplate.from_messages(
                 [
                     ("system", router_base_system_message),
                     MessagesPlaceholder(variable_name="messages"),
-                    ("system", "Rules: {router_prompt}")
+                    ("system", "Rules: {router_prompt}"),
                     (
                         "system",
                         "Given the conversation above, who should act next?"
-                        " Or should we FINISH if the task is already answered, (do not wait for the entire question to be answered) or there isn't enough information to answer the question, even then return FINISH? Select one of: {options}",
+                        " Or should we FINISH if the task is already answered ? Select one of: {options}",
                     ),
                 ]
             ).partial(options=str(self.options), members=", ".join(self.members), member_type=member_type, router_prompt=router_prompt)
