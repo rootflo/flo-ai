@@ -21,7 +21,7 @@ class FloLogger:
         self.logger = logging.getLogger(name)
         if not self.logger.handlers:
             self.set_level(level)
-            self._setup_handler(use_file, file_path,max_bytes)
+            self._setup_handler(use_file, file_path, max_bytes)
 
     def _setup_handler(self, use_file: bool, file_path: str, max_bytes: int):
         handler = logging.StreamHandler()

@@ -15,16 +15,18 @@ class Flo:
                  session: FloSession,
                  config: FloRoutedTeamConfig) -> None:
         self.config = config
+        self.session = session
         self.runnable: ExecutableFlo = build_supervised_team(session, config)
-        self.logger: FloLogger = get_logger("Flo", session.logger.logger.level)
+        self.logger = session.logger
         self.callback_handler = session.callback_handler
+        self.logger.info(f"Flo instance created for session {session.session_id}")
 
     def stream(self, query, config = None) -> Iterator[Union[dict[str, Any], Any]]:
-        self.logger.info(f"Streaming query: {query}")
+        self.logger.info(f"Streaming query for session {self.session.session_id}: {query}")
         return self.runnable.stream(query, config)
     
     def invoke(self, query, config = None) -> Iterator[Union[dict[str, Any], Any]]:
-        self.logger.info(f"Invoking query: {query}")
+        self.logger.info(f"Invoking query for session {self.session.session_id}: {query}")
         return self.runnable.invoke(query, config)
     
     @staticmethod
