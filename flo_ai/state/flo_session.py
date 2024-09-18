@@ -1,8 +1,8 @@
 import uuid
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.tools import BaseTool
-from flo_ai.common.flo_logger import FloLogger, get_logger
-from flo_ai.common.flo_callback_handler import FloCallbackHandler
+from flo_ai.common.flo_logger import session_logger, FloLogger, get_logger
+from flo_ai.common.flo_langchain_logger import FloLangchainLogger
 from typing import Optional
 
 class FloSession:
@@ -10,9 +10,8 @@ class FloSession:
                  llm: BaseLanguageModel, 
                  loop_size: int = 2, 
                  max_loop: int = 3, 
-                 log_level: str = "DEBUG",
-                 custom_logger: Optional[FloLogger] = None,
-                 custom_callback_handler: Optional[FloCallbackHandler] = None) -> None:
+                 log_level: str = "INFO",
+                 custom_langchainlog_handler: Optional[FloLangchainLogger] = None) -> None:
         self.session_id = str(uuid.uuid4())
         self.llm = llm
         self.tools = dict()
@@ -21,9 +20,10 @@ class FloSession:
         self.pattern_series = dict()
         self.loop_size: int = loop_size
         self.max_loop: int = max_loop
-        self.logger = custom_logger or get_logger(f"FloSession-{self.session_id}", log_level)
-        self.callback_handler = custom_callback_handler or FloCallbackHandler(f"FloCallback-{self.session_id}", log_level)
+        FloLogger.set_log_level("SESSION", log_level)
+        self.logger = session_logger
         self.logger.info(f"New FloSession created with ID: {self.session_id}")
+        self.langchain_logger = custom_langchainlog_handler or FloLangchainLogger(f"FloLangChainLogger-{self.session_id}", log_level)
 
     def register_tool(self, name: str, tool: BaseTool):
         self.tools[name] = tool
