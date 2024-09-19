@@ -16,14 +16,12 @@ class FloLinear(FloRouter):
         self.router_config = config.router
     
     def build_agent_graph(self):
-        flo_nodes = [self.build_node(flo_agent) for flo_agent in self.members]
-        flo_agent_nodes: List[FloNode] 
-        flo_reflection_nodes: List[FloNode] 
-        flo_agent_nodes, flo_reflection_nodes = self.differentiate_nodes(flo_nodes, self.config.agents)
+        flo_agent_nodes = [self.build_node(member) for member in self.members]
+        flo_reflection_nodes = [self.build_node(reflection_agent) for reflection_agent in self.reflection_agents]
         
         workflow = StateGraph(TeamFloAgentState)
         
-        for flo_node in flo_nodes:
+        for flo_node in (flo_agent_nodes + flo_reflection_nodes):
             agent_name = agent_name_from_randomized_name(flo_node.name)
             workflow.add_node(agent_name, flo_node.func)
 

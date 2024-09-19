@@ -4,6 +4,7 @@ from flo_ai.models.flo_routed_team import FloRoutedTeam
 from langchain.agents import AgentExecutor
 from flo_ai.state.flo_state import TeamFloAgentState
 from langchain_core.messages import HumanMessage
+from flo_ai.yaml.config import AgentConfig
 
 class FloNode():
 
@@ -16,7 +17,7 @@ class FloNode():
     class Builder():
 
         @staticmethod
-        def teamflo_agent_node(state: TeamFloAgentState, agent: AgentExecutor, name: str):
+        def teamflo_agent_node(state: TeamFloAgentState, agent: AgentExecutor, name: str, agent_config: AgentConfig):
             result = agent.invoke(state)
             # TODO see how to fix this
             output = result if isinstance(result, str) else result["output"]
@@ -39,7 +40,7 @@ class FloNode():
             return results
 
         def build_from_agent(self, flo_agent: FloAgent):
-            agent_func = functools.partial(FloNode.Builder.teamflo_agent_node, agent=flo_agent.executor, name=flo_agent.name)
+            agent_func = functools.partial(FloNode.Builder.teamflo_agent_node, agent=flo_agent.executor, name=flo_agent.name, agent_config=flo_agent.config)
             return FloNode(agent_func, flo_agent.name)
         
         def build_from_team(self, flo_team: FloRoutedTeam):

@@ -29,10 +29,11 @@ class ToolConfig(BaseModel):
     properties: Optional[List[KeyValueArgs]] = None
     filters: Optional[List[FilterArgs]] = None
 
-class ReflectionConfig(BaseModel):
-    node: str
+class PromptStrategy(BaseModel):
+    kind: str
+    agent_name: str
     retries: int
-    next: str
+    next: str | None = None
 
 class AgentConfig(BaseModel):
     name: str
@@ -40,7 +41,8 @@ class AgentConfig(BaseModel):
     kind: Optional[str] = None
     job: Optional[str] = None
     tools: List[ToolConfig] = []
-    reflection: Optional[ReflectionConfig] = None
+    use: Optional[str] = None
+    prompt_strategy: Optional[PromptStrategy] = None
 
 class EdgeConfig(BaseModel):
     edge: List[str]

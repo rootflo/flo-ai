@@ -33,15 +33,14 @@ class AgentFactory():
         tools = [tool_map[tool.name] for tool in agent.tools]
         flo_agent: FloAgent = FloAgent.Builder(
             session,
-            agent.name, 
-            agent.job,
+            agent,
             tools
         ).build()
         return flo_agent
 
     @staticmethod
     def __create_llm_agent(session: FloSession, agent: AgentConfig) -> FloLLMAgent:
-        builder = FloLLMAgent.Builder(session, agent.name, agent.job, agent.role)
+        builder = FloLLMAgent.Builder(session, agent)
         llm_agent: FloLLMAgent = builder.build()
         return llm_agent
     
