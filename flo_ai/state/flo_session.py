@@ -20,10 +20,12 @@ class FloSession:
         self.pattern_series = dict()
         self.loop_size: int = loop_size
         self.max_loop: int = max_loop
+
         FloLogger.set_log_level("SESSION", log_level)
         self.logger = session_logger
         self.logger.info(f"New FloSession created with ID: {self.session_id}")
         self.langchain_logger = custom_langchainlog_handler or FloLangchainLogger(f"FloLangChainLogger-{self.session_id}", log_level)
+        self.langchain_logger.set_session_id(self.session_id)
 
     def register_tool(self, name: str, tool: BaseTool):
         self.tools[name] = tool
