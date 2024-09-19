@@ -1,8 +1,10 @@
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.tools import BaseTool
-
+from flo_ai.yaml.config import to_supervised_team
+from typing import Union
+from flo_ai.yaml.config import (FloRoutedTeamConfig, FloAgentConfig)
 class FloSession:
-    def __init__(self, llm: BaseLanguageModel, loop_size: int = 2, max_loop: int = 3) -> None:
+    def __init__(self, llm: BaseLanguageModel, yaml_config: str | None, loop_size: int = 2, max_loop: int = 3) -> None:
         self.llm = llm
         self.tools = dict()
         self.counter = dict()
@@ -10,6 +12,7 @@ class FloSession:
         self.pattern_series = dict()
         self.loop_size: int = loop_size
         self.max_loop: int = max_loop
+        self.config: Union[FloRoutedTeamConfig, FloAgentConfig] = to_supervised_team(yaml_str=yaml_config) if isinstance(yaml_config, str) else None
 
     def register_tool(self, name: str, tool: BaseTool):
         self.tools[name] = tool

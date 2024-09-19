@@ -1,4 +1,4 @@
-from flo_ai.yaml.flo_team_builder import TeamConfig
+from flo_ai.yaml.config import TeamConfig
 from flo_ai.router.flo_router import FloRouter
 from langgraph.graph import StateGraph, END, START
 from flo_ai.state.flo_state import TeamFloAgentState
@@ -11,7 +11,7 @@ from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsPa
 
 class FloCustomRouter(FloRouter):
 
-    def __init__(self, session: FloSession, flo_team: FloTeam, config: TeamConfig):
+    def __init__(self, session: FloSession, config: TeamConfig, flo_team: FloTeam):
         self.llm = session.llm
         super().__init__(session=session, name=randomize_name(config.name),
                           flo_team=flo_team, executor=None, config=config)
@@ -120,3 +120,13 @@ class FloCustomRouter(FloRouter):
         workflow_graph = super_graph.compile()
 
         return FloRoutedTeam(self.flo_team.name, workflow_graph)
+    
+    class Builder():
+
+        def __init__(self, session: FloSession, config: TeamConfig, flo_team: FloTeam,) -> None:
+            self.session = session
+            self.config = config
+            self.team = flo_team
+
+        def build(self):
+            return FloCustomRouter(self.session, self.config, self.team, )

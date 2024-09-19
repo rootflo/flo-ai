@@ -1,4 +1,4 @@
-from flo_ai.yaml.flo_team_builder import to_supervised_team
+from flo_ai.yaml.config import to_supervised_team
 from flo_ai.builders.yaml_builder import build_supervised_team, FloRoutedTeamConfig
 from typing import (
     Any,
@@ -10,11 +10,9 @@ from flo_ai.models.flo_executable import ExecutableFlo
 
 class Flo:
 
-    def __init__(self,
-                 session: FloSession,
-                 config: FloRoutedTeamConfig) -> None:
-        self.config = config
-        self.runnable: ExecutableFlo = build_supervised_team(session, config)
+    def __init__(self, session: FloSession) -> None:
+        self.runnable: ExecutableFlo = build_supervised_team(session)
+        self.session = session
 
     def stream(self, query, config = None) -> Iterator[Union[dict[str, Any], Any]]:
         return self.runnable.stream(query, config)
@@ -22,9 +20,8 @@ class Flo:
     def invoke(self, query, config = None) -> Iterator[Union[dict[str, Any], Any]]:
         return self.runnable.invoke(query, config)
     
-    @staticmethod
-    def build(session: FloSession, yaml: str):
-        return Flo(session, to_supervised_team(yaml))
+    def build(self):
+        return Flo(self.session)
 
     def draw(self, xray=True):
         return self.runnable.draw(xray)

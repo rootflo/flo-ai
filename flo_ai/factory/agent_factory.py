@@ -1,5 +1,5 @@
 from flo_ai.state.flo_session import FloSession
-from flo_ai.yaml.flo_team_builder import (AgentConfig)
+from flo_ai.yaml.config import (AgentConfig)
 from flo_ai.models.flo_agent import FloAgent
 from flo_ai.models.flo_llm_agent import FloLLMAgent
 from flo_ai.models.flo_executable import ExecutableFlo
@@ -14,8 +14,9 @@ class AgentKinds(Enum):
 class AgentFactory():
 
     @staticmethod
-    def create(session: FloSession, agent: AgentConfig, tool_map):
+    def create(session: FloSession, agent: AgentConfig):
         kind = agent.kind
+        tool_map = session.tools
         if kind is not None:
             agent_kind = getattr(AgentKinds, kind, None)
             if agent_kind is None:

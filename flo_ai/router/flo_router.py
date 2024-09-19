@@ -1,9 +1,8 @@
 
-import functools
 from abc import ABC, abstractmethod
 from flo_ai.state.flo_session import FloSession
 from flo_ai.models.flo_team import FloTeam
-from flo_ai.yaml.flo_team_builder import RouterConfig, TeamConfig, AgentConfig
+from flo_ai.yaml.config import TeamConfig, AgentConfig
 from flo_ai.models.flo_routed_team import FloRoutedTeam
 from flo_ai.models.flo_agent import FloAgent
 from flo_ai.state.flo_state import TeamFloAgentState

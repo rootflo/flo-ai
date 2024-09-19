@@ -11,6 +11,7 @@ from flo_ai.models.flo_team import FloTeam
 from flo_ai.models.flo_routed_team import FloRoutedTeam
 from langgraph.graph import StateGraph
 from flo_ai.state.flo_state import TeamFloAgentState
+from flo_ai.yaml.config import TeamConfig
 
 class StateUpdateComponent:
     def __init__(self, name: str, session: FloSession) -> None:
@@ -69,12 +70,12 @@ class FloLLMRouter(FloRouter):
     class Builder:
         def __init__(self,
                     session: FloSession,
-                    name: str,
+                    team_config: TeamConfig,
                     flo_team: FloTeam,
                     router_prompt: ChatPromptTemplate = None,
                     llm: Union[BaseLanguageModel, None] = None) -> None:
     
-            self.name = randomize_name(name)
+            self.name = randomize_name(team_config.router.name)
             self.session = session
             self.llm = llm if llm is not None else session.llm
             self.flo_team = flo_team

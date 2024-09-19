@@ -1,4 +1,4 @@
-from flo_ai.yaml.flo_team_builder import RouterConfig, TeamConfig, AgentConfig
+from flo_ai.yaml.config import TeamConfig
 from flo_ai.router.flo_router import FloRouter
 from langgraph.graph import StateGraph, END, START
 from flo_ai.state.flo_state import TeamFloAgentState
@@ -10,7 +10,7 @@ from typing import List, Tuple
 from flo_ai.models.flo_node import FloNode
 class FloLinear(FloRouter):
 
-    def __init__(self, session: FloSession, flo_team: FloTeam, config: TeamConfig):
+    def __init__(self, session: FloSession, config: TeamConfig, flo_team: FloTeam, ):
         super().__init__(session=session, name=randomize_name(config.name),
                           flo_team=flo_team, executor=None, config=config)
         self.router_config = config.router
@@ -77,11 +77,11 @@ class FloLinear(FloRouter):
     
     class Builder():
 
-        def __init__(self, session: FloSession, flo_team: FloTeam, config: RouterConfig) -> None:
+        def __init__(self, session: FloSession, config: TeamConfig, flo_team: FloTeam,) -> None:
             self.config = config
             self.session = session
             self.team = flo_team
 
         def build(self):
-            return FloLinear(self.session, self.team, self.config)
+            return FloLinear(self.session, self.config, self.team)
 
