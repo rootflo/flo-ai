@@ -5,27 +5,24 @@ from flo_ai.state.flo_state import TeamFloAgentState
 from flo_ai.models.flo_routed_team import FloRoutedTeam
 from flo_ai.models.flo_team import FloTeam
 from flo_ai.state.flo_session import FloSession
+from flo_ai.models.flo_executable import ExecutableType
 from flo_ai.helpers.utils import agent_name_from_randomized_name, randomize_name
-from typing import List, Tuple
-from flo_ai.models.flo_node import FloNode
+
 class FloLinear(FloRouter):
 
-    def __init__(self, session: FloSession, config: TeamConfig, flo_team: FloTeam, ):
+    def __init__(self, session: FloSession, config: TeamConfig, flo_team: FloTeam):
         super().__init__(session=session, name=randomize_name(config.name),
                           flo_team=flo_team, executor=None, config=config)
         self.router_config = config.router
     
     def build_agent_graph(self):
         flo_agent_nodes = [self.build_node(member) for member in self.members]
-        flo_reflection_nodes = [self.build_node(reflection_agent) for reflection_agent in self.reflection_agents]
         
         workflow = StateGraph(TeamFloAgentState)
         
-        for flo_node in (flo_agent_nodes + flo_reflection_nodes):
+        for flo_node in flo_agent_nodes:
             agent_name = agent_name_from_randomized_name(flo_node.name)
             workflow.add_node(agent_name, flo_node.func)
-
-        self.build_reflection_routes(workflow, self.config.agents, flo_reflection_nodes)
             
         if self.router_config.edges is None:
             start_node_name = agent_name_from_randomized_name(flo_agent_nodes[0].name)
@@ -34,8 +31,15 @@ class FloLinear(FloRouter):
             for i in range(len(flo_agent_nodes) - 1):
                 agent1_name = agent_name_from_randomized_name(flo_agent_nodes[i].name)
                 agent2_name = agent_name_from_randomized_name(flo_agent_nodes[i+1].name)
-                workflow.add_edge(agent1_name, agent2_name)
-            workflow.add_edge(end_node_name, END)
+                print(flo_agent_nodes[i].kind)
+                if (flo_agent_nodes[i].kind == ExecutableType.reflection):
+                    self.add_reflection_edge(workflow, flo_agent_nodes[i], flo_agent_nodes[i+1])
+                else:
+                    workflow.add_edge(agent1_name, agent2_name)
+            if (flo_agent_nodes[-1].kind == ExecutableType.reflection):
+                self.add_reflection_edge(workflow, flo_agent_nodes[-1], END)
+            else: 
+                workflow.add_edge(end_node_name, END)
         else:
             workflow.add_edge(START, self.router_config.start_node)
             for edge in self.router_config.edges:
@@ -44,7 +48,7 @@ class FloLinear(FloRouter):
 
         workflow_graph = workflow.compile()
     
-        return FloRoutedTeam(self.flo_team.name, workflow_graph)
+        return FloRoutedTeam(self.flo_team.name, workflow_graph, self.flo_team.config)
 
     def build_team_graph(self):
         flo_team_entry_chains = [self.build_node_for_teams(flo_agent) for flo_agent in self.members]
@@ -71,7 +75,7 @@ class FloLinear(FloRouter):
             super_graph.add_edge(self.router_config.end_node, END)
 
         super_graph = super_graph.compile()
-        return FloRoutedTeam(self.flo_team.name, super_graph)
+        return FloRoutedTeam(self.flo_team.name, super_graph, self.flo_team.config)
     
     class Builder():
 

@@ -47,7 +47,7 @@ class FloLLMRouter(FloRouter):
         workflow.add_conditional_edges(self.router_name, self.router_fn)
         workflow.set_entry_point(self.router_name)
         workflow_graph = workflow.compile()
-        return FloRoutedTeam(self.flo_team.name, workflow_graph)
+        return FloRoutedTeam(self.flo_team.name, workflow_graph, self.flo_team.config)
 
     def build_team_graph(self):
         flo_team_entry_chains = [self.build_node_for_teams(flo_agent) for flo_agent in self.members]
@@ -65,7 +65,7 @@ class FloLLMRouter(FloRouter):
 
         super_graph.set_entry_point(self.router_name)
         super_graph = super_graph.compile()
-        return FloRoutedTeam(self.flo_team.name, super_graph)
+        return FloRoutedTeam(self.flo_team.name, super_graph, self.flo_team.config)
 
     class Builder:
         def __init__(self,

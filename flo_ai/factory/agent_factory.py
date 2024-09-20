@@ -2,7 +2,8 @@ from flo_ai.state.flo_session import FloSession
 from flo_ai.yaml.config import (AgentConfig)
 from flo_ai.models.flo_agent import FloAgent
 from flo_ai.models.flo_llm_agent import FloLLMAgent
-from flo_ai.models.flo_executable import ExecutableFlo
+from flo_ai.models.flo_reflection_agent import FloReflectionAgent
+from flo_ai.models.flo_executable import ExecutableFlo, ExecutableType
 from enum import Enum
 
 class AgentKinds(Enum):
@@ -10,6 +11,7 @@ class AgentKinds(Enum):
     llm = "llm"
     tool = "tool"
     function = "function"
+    reflection = "reflection"
 
 class AgentFactory():
 
@@ -26,6 +28,8 @@ class AgentFactory():
                     return AgentFactory.__create_llm_agent(session, agent)
                 case AgentKinds.tool:
                     return AgentFactory.__create_runnable_agent(session, agent)
+                case AgentKinds.reflection:
+                    return AgentFactory.__create_reflection_agent(session, agent)
         return AgentFactory.__create_agentic_agent(session, agent, tool_map)
 
     @staticmethod
@@ -47,4 +51,8 @@ class AgentFactory():
     @staticmethod
     def __create_runnable_agent(session: FloSession, agent: AgentConfig) -> FloLLMAgent:
         runnable = session.tools[agent.tools[0].name]
-        return ExecutableFlo(agent.name, runnable, "agent")
+        return ExecutableFlo(agent.name, runnable, ExecutableType.tool)
+    
+    @staticmethod
+    def __create_reflection_agent(session: FloSession, agent: AgentConfig) -> FloReflectionAgent:
+        return FloReflectionAgent.Builder(session, agent).build()

@@ -9,13 +9,14 @@ from flo_ai.models.flo_executable import ExecutableFlo
 from flo_ai.state.flo_session import FloSession
 from typing import Union, Optional
 from flo_ai.yaml.config import AgentConfig
+from flo_ai.models.flo_executable import ExecutableType
 
 class FloAgent(ExecutableFlo):
     def __init__(self,
                  agent: Runnable, 
                  executor: AgentExecutor, 
                  config: AgentConfig) -> None:
-        super().__init__(config.name, executor, "agent")
+        super().__init__(config.name, executor, ExecutableType.agentic)
         self.agent: Runnable =  agent,
         self.executor: AgentExecutor = executor
         self.config: AgentConfig = config

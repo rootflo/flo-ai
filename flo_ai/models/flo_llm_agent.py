@@ -1,5 +1,4 @@
 from langchain_core.runnables import Runnable
-from langchain_core.runnables import Runnable
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from flo_ai.helpers.utils import randomize_name
@@ -8,13 +7,14 @@ from flo_ai.state.flo_session import FloSession
 from typing import Union
 from langchain_core.output_parsers import StrOutputParser
 from flo_ai.yaml.config import AgentConfig
+from flo_ai.models.flo_executable import ExecutableType
 
 class FloLLMAgent(ExecutableFlo):
 
     def __init__(self, 
                  executor: Runnable, 
                  config: AgentConfig) -> None:
-        super().__init__(config.name, executor, "agent")
+        super().__init__(config.name, executor, ExecutableType.llm)
         self.executor: Runnable = executor
         self.config: AgentConfig = config
 

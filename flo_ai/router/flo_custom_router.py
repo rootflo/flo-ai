@@ -89,7 +89,7 @@ class FloCustomRouter(FloRouter):
 
         workflow_graph = workflow.compile()
 
-        return FloRoutedTeam(self.flo_team.name, workflow_graph)
+        return FloRoutedTeam(self.flo_team.name, workflow_graph, self.flo_team.config)
 
     def build_team_graph(self):
         flo_team_entry_chains = [self.build_node_for_teams(flo_agent) for flo_agent in self.members]
@@ -119,7 +119,7 @@ class FloCustomRouter(FloRouter):
 
         workflow_graph = super_graph.compile()
 
-        return FloRoutedTeam(self.flo_team.name, workflow_graph)
+        return FloRoutedTeam(self.flo_team.name, workflow_graph, self.flo_team.config)
     
     class Builder():
 

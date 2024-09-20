@@ -1,6 +1,24 @@
 from flo_ai.models.flo_member import FloMember
 from langchain_core.runnables import Runnable
 from langchain_core.messages import HumanMessage
+from enum import Enum
+
+class ExecutableType(Enum):
+    agentic = "agentic"
+    llm = "llm"
+    tool = "tool" 
+    reflection = "reflection"
+
+    @staticmethod
+    def isAgent(type: 'ExecutableType'):
+        match(type):
+            case ExecutableType.agentic:
+                return True
+            case ExecutableType.llm:
+                return True
+            case ExecutableType.tool:
+                return True
+        return False
 
 class ExecutableFlo(FloMember):
     def __init__(self, 

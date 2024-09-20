@@ -20,17 +20,8 @@ def build_supervised_team(session: FloSession) -> ExecutableFlo:
 def parse_and_build_subteams(session: FloSession, team_config: TeamConfig) -> ExecutableFlo:
     flo_team = None
     if team_config.agents:
-        agents = []
-        reflection_agents = []
-
-        for agent in team_config.agents:
-            flo_agent: FloAgent = AgentFactory.create(session, agent)
-            if agent.use == 'reflection':
-                reflection_agents.append(flo_agent)
-            else:
-                agents.append(flo_agent)
-
-        flo_team = FloTeam.Builder(team_config, members=agents, reflection_agents=reflection_agents).build()
+        members = [AgentFactory.create(session, agent) for agent in team_config.agents]
+        flo_team = FloTeam.Builder(team_config, members=members).build()
         router = FloRouterFactory.create(session, team_config, flo_team)
         flo_routed_team = router.build_routed_team()
     else:

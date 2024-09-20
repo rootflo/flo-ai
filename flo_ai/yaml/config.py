@@ -41,8 +41,8 @@ class AgentConfig(BaseModel):
     kind: Optional[str] = None
     job: Optional[str] = None
     tools: List[ToolConfig] = []
-    use: Optional[str] = None
-    prompt_strategy: Optional[PromptStrategy] = None
+    to: Optional[str] = None
+    retry: Optional[int] = 1
 
 class EdgeConfig(BaseModel):
     edge: List[str]
