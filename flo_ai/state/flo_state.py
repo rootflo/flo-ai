@@ -1,6 +1,6 @@
 from typing import Annotated, List, Sequence, TypedDict
 from langchain_core.messages import BaseMessage
-from typing import List, Tuple, Annotated, TypedDict, Dict
+from typing import List, Tuple, Annotated, TypedDict
 
 import operator
 
@@ -11,7 +11,8 @@ class TeamFloAgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], operator.add]
     # The 'next' field indicates where to route to next
     next: str
-    reflection_messages: Annotated[Sequence[BaseMessage], operator.add]
+    # used for reflection agents
+    reflection_tracker: dict
 
 class TeamFloAgentStateWithPlan(TypedDict):
     input: str

@@ -10,8 +10,8 @@ from flo_ai.models.flo_node import FloNode
 from flo_ai.constants.prompt_constants import FLO_FINISH
 from langgraph.graph import END,StateGraph
 from flo_ai.models.flo_node import FloNode
-from flo_ai.helpers.utils import agent_name_from_randomized_name
 from flo_ai.models.flo_executable import ExecutableType
+import functools
 
 class ReflectionRoute:
 
@@ -67,26 +67,46 @@ class FloRouter(ABC):
         node_builder = FloNode.Builder()
         return node_builder.build_from_team(flo_team)
     
+    def update_reflection_state(self, state: TeamFloAgentState, reflection_agent_name: str):
+        tracker = None
+        if "reflection_tracker" not in state or state["reflection_tracker"] is None:
+            tracker = dict()
+        else:
+            tracker = state["reflection_tracker"]
+      
+        if reflection_agent_name in tracker:
+            tracker[reflection_agent_name] += 1
+        else:
+            tracker[reflection_agent_name] = 1
+            
+        return {
+            "reflection_tracker": tracker
+        }
+    
     def add_reflection_edge(self, workflow: StateGraph, reflection_node: FloNode, nextNode: FloNode):
         to_agent_name = reflection_node.config.to
         retry = reflection_node.config.retry or 1
         reflection_agent_name = reflection_node.name
         next = nextNode.name
-        print(f"Setting router between: {reflection_agent_name} -> {to_agent_name} -> next -> {next}")
+        
+        workflow.add_node("reflection_counter", functools.partial(self.update_reflection_state, reflection_agent_name=reflection_agent_name))
+        workflow.add_edge(reflection_agent_name, "reflection_counter")
         workflow.add_conditional_edges(
-            reflection_agent_name, 
+            "reflection_counter", 
             self.__get_refelection_routing_fn(retry, reflection_agent_name, to_agent_name, next), 
             { to_agent_name: to_agent_name,  next: next }
         )
 
     @staticmethod
-    def __get_refelection_routing_fn(retries, reflection_agent_name, to_agent_name, next):
+    def __get_refelection_routing_fn(retries: int, reflection_agent_name, to_agent_name, next):
         def reflection_routing_fn(state: TeamFloAgentState):
-            if len(state['messages']) > (int(retries)*2)+1 and agent_name_from_randomized_name(state['messages'][-((int(retries)*2)+1)].name) == reflection_agent_name:
+            tracker = state["reflection_tracker"]
+            if tracker is not None and reflection_agent_name in tracker and tracker[reflection_agent_name] >= retries:
                 return next
             return to_agent_name
 
         return reflection_routing_fn
+    
 
     
         
