@@ -30,7 +30,6 @@ class FloSession:
         self.config: Union[FloRoutedTeamConfig, FloAgentConfig] = None
         self.logger.info(f"New FloSession created with ID: {self.session_id}")
         self.langchain_logger = custom_langchainlog_handler or FloLangchainLogger(self.session_id, log_level=log_level, logger_name=f"FloLangChainLogger-{self.session_id}")
-        self.langchain_logger.set_session_id(self.session_id)
 
     def init_logger(self, log_level: str):
         FloLogger.set_log_level("SESSION", log_level)

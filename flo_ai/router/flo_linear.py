@@ -31,11 +31,12 @@ class FloLinear(FloRouter):
             for i in range(len(flo_agent_nodes) - 1):
                 agent1_name = agent_name_from_randomized_name(flo_agent_nodes[i].name)
                 agent2_name = agent_name_from_randomized_name(flo_agent_nodes[i+1].name)
-                if (flo_agent_nodes[i].kind == ExecutableType.reflexion):
+                if (flo_agent_nodes[i].kind == ExecutableType.reflection):
                     self.add_reflection_edge(workflow, flo_agent_nodes[i], flo_agent_nodes[i+1])
                 else:
-                    workflow.add_edge(agent1_name, agent2_name)
-            if (flo_agent_nodes[-1].kind == ExecutableType.reflexion):
+                    if (flo_agent_nodes[i+1].kind != ExecutableType.reflection):
+                        workflow.add_edge(agent1_name, agent2_name)
+            if (flo_agent_nodes[-1].kind == ExecutableType.reflection):
                 self.add_reflection_edge(workflow, flo_agent_nodes[-1], END)
             else: 
                 workflow.add_edge(end_node_name, END)

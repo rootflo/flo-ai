@@ -17,8 +17,8 @@ team:
         job: >
           You are an essay assistant tasked with writing excellent 300-words essays. Generate the best essay possible for the user's request. 
           If the you are provided critique view, respond with a revised version of your previous attempts. A maximum of total 100 words
-      - name: ReflexionAgent
-        kind: reflexion
+      - name: ReflectionAgent
+        kind: reflection
         retry: 1
         to: EssayWriter
         job: >
@@ -45,5 +45,5 @@ session = FloSession(llm).register_tool(
 
 flo: Flo = Flo.build(session, yaml=yaml_data)
 flo.draw_to_file("event.png", xray=True)
-# data = flo.invoke(input_prompt)
-# print((data['messages'][-1]).content)
+data = flo.invoke(input_prompt)
+print((data['messages'][-1]).content)

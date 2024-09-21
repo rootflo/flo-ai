@@ -12,6 +12,7 @@ from langgraph.graph import END,StateGraph
 from flo_ai.models.flo_node import FloNode
 from flo_ai.models.flo_executable import ExecutableType
 import functools
+from typing import Union
 
 class FloRouter(ABC):
 
@@ -75,27 +76,28 @@ class FloRouter(ABC):
             "reflection_tracker": tracker
         }
     
-    def add_reflection_edge(self, workflow: StateGraph, reflection_node: FloNode, nextNode: FloNode):
+    def add_reflection_edge(self, workflow: StateGraph, reflection_node: FloNode, nextNode: Union[FloNode | str]):
         to_agent_name = reflection_node.config.to
         retry = reflection_node.config.retry or 1
         reflection_agent_name = reflection_node.name
-        next = nextNode.name
+        next = nextNode if isinstance(nextNode, str) else nextNode.name
         
-        workflow.add_node("reflection_counter", functools.partial(self.update_reflection_state, reflection_agent_name=reflection_agent_name))
-        workflow.add_edge(reflection_agent_name, "reflection_counter")
+        workflow.add_node("rf/ReflectionManager", functools.partial(self.update_reflection_state, reflection_agent_name=reflection_agent_name))
+        workflow.add_edge(to_agent_name, "rf/ReflectionManager")
         workflow.add_conditional_edges(
-            "reflection_counter", 
-            self.__get_refelection_routing_fn(retry, reflection_agent_name, to_agent_name, next), 
-            { to_agent_name: to_agent_name,  next: next }
+            "rf/ReflectionManager", 
+            self.__get_refelection_routing_fn(retry, reflection_agent_name, next), 
+            { reflection_agent_name: reflection_agent_name,  next: next }
         )
+        workflow.add_edge(reflection_agent_name, to_agent_name)
 
     @staticmethod
-    def __get_refelection_routing_fn(retries: int, reflection_agent_name, to_agent_name, next):
+    def __get_refelection_routing_fn(retries: int, reflection_agent_name, next):
         def reflection_routing_fn(state: TeamFloAgentState):
             tracker = state["reflection_tracker"]
-            if tracker is not None and reflection_agent_name in tracker and tracker[reflection_agent_name] >= retries:
+            if tracker is not None and reflection_agent_name in tracker and tracker[reflection_agent_name] > retries:
                 return next
-            return to_agent_name
+            return reflection_agent_name
 
         return reflection_routing_fn
     

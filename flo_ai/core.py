@@ -11,6 +11,7 @@ class Flo:
                  session: FloSession,
                  config: FloRoutedTeamConfig,
                  log_level: str = "INFO") -> None:
+        self.session = session
         self.config = config
         session.config = config
         self.runnable: ExecutableFlo = build_supervised_team(session)
