@@ -1,4 +1,4 @@
-# Understanding Log Levels in FLO
+# Understanding Log Levels in FloAI
 
 FloAI uses standard Python logging levels to indicate the severity of logged messages. Here are the common levels used (from least to most severe):
 
@@ -19,15 +19,15 @@ FloAI provides multiple ways to control log levels:
 Export environment variables to set the log level for specific components before running the application:
 
 - `FLO_LOG_LEVEL_COMMON`: Controls the level for the "CommonLogs" logger.
-  - CommonLogs: General-purpose logging used across the entire FLO system. It captures broad, system-wide events and information.
+  - CommonLogs: General-purpose logging used across the entire FloAI system. It captures broad, system-wide events and information.
 
 - `FLO_LOG_LEVEL_BUILDER`: Controls the level for the "BuilderLogs" logger.
-  - BuilderLogs: Specific to the process of building and configuring FLO instances. It logs information about YAML parsing, component creation, and FLO structure setup.
+  - BuilderLogs: Specific to the process of building and configuring FloAI instances. It logs information about YAML parsing, component creation, and FloAI structure setup.
 
 - `FLO_LOG_LEVEL_SESSION`: Controls the level for the "SessionLogs" logger. 
-  - SessionLogs: Dedicated to logging session-specific information. It captures events and data related to individual FLO sessions, including session creation, tool registration, and session-level operations.
+  - SessionLogs: Dedicated to logging session-specific information. It captures events and data related to individual FloAI sessions, including session creation, tool registration, and session-level operations.
 
-These loggers allow for granular control over logging output in different parts of the FLO system. By adjusting their levels independently, you can focus on debugging or monitoring specific aspects of FLO's operation.
+These loggers allow for granular control over logging output in different parts of the FloAI system. By adjusting their levels independently, you can focus on debugging or monitoring specific aspects of FloAI's operation.
 
 Example:
 

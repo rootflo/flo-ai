@@ -1,12 +1,19 @@
 import os
 import logging
 from logging.handlers import RotatingFileHandler
-from typing import Dict, Optional
+from dataclasses import dataclass
+
+@dataclass
+class FloLogConfig:
+    name: str
+    level: str = "INFO"
+    file_path: str = None
+    max_bytes: int = 1048576
 
 class FloLoggerUtil(logging.Logger):
-    def __init__(self, name: str, level: str = "INFO", use_file: bool = False, file_path: str = None, max_bytes: int = 1048576):
-        super().__init__(name, level)
-        self.setLevel(level)
+    def __init__(self, config: FloLogConfig):
+        super().__init__(config.name, config.level)
+        self.setLevel(config.level)
 
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -14,8 +21,8 @@ class FloLoggerUtil(logging.Logger):
         console_handler.setFormatter(formatter)
         self.addHandler(console_handler)
 
-        if use_file:
-            file_handler = RotatingFileHandler(file_path or f"{name}.log", maxBytes=max_bytes)
+        if config.file_path:
+            file_handler = RotatingFileHandler(config.file_path, maxBytes=config.max_bytes)
             file_handler.setFormatter(formatter)
             self.addHandler(file_handler)
 
@@ -23,23 +30,24 @@ class FloLogger:
     _loggers = {}
 
     @classmethod
-    def get_logger(cls, name: str, level: str = None, use_file: bool = False, file_path: str = None, max_bytes: int = 1048576) -> FloLoggerUtil:
-        if name not in cls._loggers:
-            level = level or os.environ.get(f"FLO_LOG_LEVEL_{name.upper()}", "INFO")
-            cls._loggers[name] = FloLoggerUtil(name, level, use_file, file_path, max_bytes)
-        return cls._loggers[name]
+    def get_logger(cls, config: FloLogConfig) -> FloLoggerUtil:
+        if config.name not in cls._loggers:
+            level = config.level or os.environ.get(f"FLO_LOG_LEVEL_{config.name.upper()}", "INFO")
+            config.level = level
+            cls._loggers[config.name] = FloLoggerUtil(config)
+        return cls._loggers[config.name]
 
     @classmethod
     def set_log_level(cls, name: str, level: str):
         if name in cls._loggers:
             cls._loggers[name].setLevel(level)
 
-def get_logger(name: str, level: str = None, use_file: bool = False, file_path: str = None, max_bytes: int = 1048576) -> FloLoggerUtil:
-    return FloLogger.get_logger(name, level, use_file, file_path, max_bytes)
+def get_logger(config: FloLogConfig) -> FloLoggerUtil:
+    return FloLogger.get_logger(config)
 
-common_logger = get_logger("COMMON")
-builder_logger = get_logger("BUILDER")
-session_logger = get_logger("SESSION")
+common_logger = get_logger(FloLogConfig("COMMON"))
+builder_logger = get_logger(FloLogConfig("BUILDER"))
+session_logger = get_logger(FloLogConfig("SESSION"))
 
 def set_global_log_level(level: str):
     for name in ["COMMON", "BUILDER", "SESSION"]:
