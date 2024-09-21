@@ -1,6 +1,6 @@
 # Understanding Log Levels in FLO
 
-FLO uses standard Python logging levels to indicate the severity of logged messages. Here are the common levels used (from least to most severe):
+FloAI uses standard Python logging levels to indicate the severity of logged messages. Here are the common levels used (from least to most severe):
 
 - **DEBUG**: Detailed information for debugging purposes.
 - **INFO**: Informational messages about the normal operation of the system.
@@ -12,7 +12,7 @@ By adjusting the log level, you can control how much information is logged and t
 
 ## Controlling Log Levels
 
-FLO provides multiple ways to control log levels:
+FloAI provides multiple ways to control log levels:
 
 ### 1. Environment Variables for Log Level Control
 

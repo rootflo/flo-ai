@@ -2,11 +2,17 @@ from typing import Any, Dict, List, Union
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 from flo_ai.common.flo_logger import get_logger
+from flo_ai.state.flo_session import FloSession
+from typing import Optional
 
 class FloLangchainLogger(BaseCallbackHandler):
-    def __init__(self, logger_name: str = "FloLangChainLogger", log_level: str = "INFO"):
+
+    def __init__(self, 
+                 session_id: str,
+                 logger_name: Optional[str] = "FloLangChainLogger", 
+                 log_level: Optional[str] = "INFO"):
         self.logger = get_logger(logger_name, log_level)
-        self.session_id = None
+        self.session_id = session_id
 
     def set_session_id(self, session_id: str):
         self.session_id = session_id
