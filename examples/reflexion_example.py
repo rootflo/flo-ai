@@ -17,8 +17,9 @@ team:
         job: >
           You are an essay assistant tasked with writing excellent 300-words essays. Generate the best essay possible for the user's request. 
           If the you are provided critique view, respond with a revised version of your previous attempts. A maximum of total 100 words
-      - name: ReflectionAgent
-        kind: reflection
+      - name: ReflexionAgent
+        kind: reflexion
+        retry: 1
         to: EssayWriter
         job: >
           You are a teacher grading an essay submission. Generate critique and recommendations for the user's submission.

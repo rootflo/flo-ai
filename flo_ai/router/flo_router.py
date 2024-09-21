@@ -13,14 +13,6 @@ from flo_ai.models.flo_node import FloNode
 from flo_ai.models.flo_executable import ExecutableType
 import functools
 
-class ReflectionRoute:
-
-    def __init__(self, agent_name, reflection_agent_name, retries, next = None):
-        self.agent_name = agent_name
-        self.reflection_agent_name = reflection_agent_name
-        self.retries = retries
-        self.next = next
-
 class FloRouter(ABC):
 
     def __init__(self, session: FloSession, name: str, flo_team: FloTeam, executor, config: TeamConfig = None):

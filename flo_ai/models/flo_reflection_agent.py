@@ -14,7 +14,7 @@ from langchain_core.output_parsers import StrOutputParser
 class FloReflectionAgent(ExecutableFlo):
 
     def __init__(self, executor: Runnable, config: AgentConfig) -> None:
-        super().__init__(config.name, executor, ExecutableType.reflection)
+        super().__init__(config.name, executor, ExecutableType.reflexion)
         self.config = config
 
     class Builder():

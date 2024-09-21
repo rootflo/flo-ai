@@ -7,7 +7,7 @@ class ExecutableType(Enum):
     agentic = "agentic"
     llm = "llm"
     tool = "tool" 
-    reflection = "reflection"
+    reflexion = "reflexion"
 
     @staticmethod
     def isAgent(type: 'ExecutableType'):

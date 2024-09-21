@@ -11,7 +11,7 @@ class AgentKinds(Enum):
     llm = "llm"
     tool = "tool"
     function = "function"
-    reflection = "reflection"
+    reflexion = "reflexion"
 
 class AgentFactory():
 
@@ -28,7 +28,7 @@ class AgentFactory():
                     return AgentFactory.__create_llm_agent(session, agent)
                 case AgentKinds.tool:
                     return AgentFactory.__create_runnable_agent(session, agent)
-                case AgentKinds.reflection:
+                case AgentKinds.reflexion:
                     return AgentFactory.__create_reflection_agent(session, agent)
         return AgentFactory.__create_agentic_agent(session, agent, tool_map)
 
