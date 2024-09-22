@@ -41,7 +41,7 @@ class ExecutableFlo(FloMember):
         return self.runnable.invoke({
              STATE_NAME_MESSAGES: [
                 HumanMessage(content=work)
-            ]
+            ], 
         }, config)
     
 
