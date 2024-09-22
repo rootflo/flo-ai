@@ -21,7 +21,7 @@ team:
         kind: delegator
         retry: 1
         to: 
-          - EssayWriter
+          - name: EssayWriter
         job: >
           You are a teacher grading an essay submission. Score the essay between 1 to 10, with 10 being perfect
           If the score is greater than 7 sent it to FinalEssayProducer

@@ -35,13 +35,16 @@ class PromptStrategy(BaseModel):
     retries: int
     next: str | None = None
 
+class MemberKey(BaseModel):
+    name: str
+
 class AgentConfig(BaseModel):
     name: str
     role: Optional[str] = None
     kind: Optional[str] = None
     job: Optional[str] = None
     tools: List[ToolConfig] = []
-    to: Optional[List[str]] = None
+    to: Optional[List[MemberKey]] = None
     retry: Optional[int] = 1
 
 class EdgeConfig(BaseModel):

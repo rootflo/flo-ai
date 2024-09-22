@@ -2,7 +2,7 @@ import functools
 from flo_ai.models.flo_agent import FloAgent
 from flo_ai.models.flo_routed_team import FloRoutedTeam
 from langchain.agents import AgentExecutor
-from flo_ai.state.flo_state import TeamFloAgentState
+from flo_ai.state.flo_state import TeamFloAgentState, STATE_NAME_MESSAGES
 from langchain_core.messages import HumanMessage
 from flo_ai.yaml.config import AgentConfig, TeamConfig
 from flo_ai.models.flo_executable import ExecutableType
@@ -37,20 +37,20 @@ class FloNode():
             result = agent.invoke(state)
             # TODO see how to fix this
             output = result if isinstance(result, str) else result["output"]
-            return { "messages": [HumanMessage(content=output, name=name)] }
+            return { STATE_NAME_MESSAGES: [HumanMessage(content=output, name=name)] }
 
         @staticmethod
         def __get_last_message(state: TeamFloAgentState) -> str:
-            return state["messages"][-1].content
+            return state[STATE_NAME_MESSAGES][-1].content
         
         @staticmethod
         def __join_graph(response: dict):
-            return { "messages": [ response["messages"][-1] ] }
+            return { STATE_NAME_MESSAGES: [ response[STATE_NAME_MESSAGES][-1] ] }
         
         @staticmethod
         def __teamflo_team_node(message: str, members: list[str]):
             results = {
-                "messages": [HumanMessage(content=message)],
+                STATE_NAME_MESSAGES: [HumanMessage(content=message)],
                 "team_members": ", ".join(members),
             }
             return results

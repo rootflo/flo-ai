@@ -28,7 +28,7 @@ class FloDelegatorAgent(ExecutableFlo):
                 " respond with the worker to act next "
             )
             self.llm = session.llm
-            self.options = [x for x in agentConfig.to]
+            self.options = [x.name for x in agentConfig.to]
             self.llm_router_prompt = ChatPromptTemplate.from_messages(
                 [
                     ("system", delegator_base_system_message),
