@@ -34,8 +34,11 @@ class FloLinear(FloRouter):
                 if (flo_agent_nodes[i].kind == ExecutableType.reflection):
                     self.add_reflection_edge(workflow, flo_agent_nodes[i], flo_agent_nodes[i+1])
                 else:
-                    if (flo_agent_nodes[i+1].kind != ExecutableType.reflection):
-                        workflow.add_edge(agent1_name, agent2_name)
+                    if (flo_agent_nodes[i+1].kind != ExecutableType.reflection and flo_agent_nodes[i].kind != ExecutableType.delegator):
+                        if flo_agent_nodes[i+1].kind == ExecutableType.delegator:
+                            self.add_delegation_edge(workflow, flo_agent_nodes[i], flo_agent_nodes[i+1], flo_agent_nodes[i+2] if  (i+2)<len(flo_agent_nodes) else END)
+                        else:
+                            workflow.add_edge(agent1_name, agent2_name)
             if (flo_agent_nodes[-1].kind == ExecutableType.reflection):
                 self.add_reflection_edge(workflow, flo_agent_nodes[-1], END)
             else: 

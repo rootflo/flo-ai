@@ -9,8 +9,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from flo_ai.models.flo_executable import ExecutableType
 from langchain_core.output_parsers import StrOutputParser
 
-# TODO not ready, lot of fixes to do
-# can be merged into LLM Agent or made into a child
+
 class FloReflectionAgent(ExecutableFlo):
 
     def __init__(self, executor: Runnable, config: AgentConfig) -> None:

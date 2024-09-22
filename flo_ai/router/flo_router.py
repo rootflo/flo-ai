@@ -14,6 +14,7 @@ from flo_ai.models.flo_executable import ExecutableType
 import functools
 from typing import Union
 
+
 class FloRouter(ABC):
 
     def __init__(self, session: FloSession, name: str, flo_team: FloTeam, executor, config: TeamConfig = None):
@@ -44,6 +45,8 @@ class FloRouter(ABC):
         pass
 
     def build_node(self, flo_agent: FloAgent) -> FloNode:
+        if (flo_agent.type == ExecutableType.delegator):
+            return FloNode(flo_agent.executor, flo_agent.name, flo_agent.type, flo_agent.config)
         node_builder = FloNode.Builder()
         return node_builder.build_from_agent(flo_agent)
     
@@ -76,8 +79,41 @@ class FloRouter(ABC):
             "reflection_tracker": tracker
         }
     
+    def add_delegation_edge(self, workflow: StateGraph, parent: FloNode, delegation_node: FloNode, nextNode: FloNode):
+        to_agent_names = delegation_node.config.to
+        conditional_map = {}
+        for agent_name in to_agent_names:
+            conditional_map[agent_name] = agent_name
+        conditional_map[nextNode.name] = nextNode.name
+
+        workflow.add_node("rf/DelegationManager", functools.partial(self.update_reflection_state, reflection_agent_name=delegation_node.name))
+
+        workflow.add_edge(parent.name, "rf/DelegationManager")
+
+        dele_name = delegation_node.name
+        nnn = nextNode.name
+        workflow.add_conditional_edges(
+            "rf/DelegationManager", 
+            self.__get_refelection_routing_fn(1, delegation_node.name, nextNode.name), 
+            { dele_name: dele_name, nnn: nnn}
+        )
+
+        workflow.add_conditional_edges(
+            delegation_node.name, 
+            FloRouter.__get_delegation_router_fn(nextNode.name),
+            conditional_map
+        )
+
+    @staticmethod
+    def __get_delegation_router_fn(nextNode: str):
+        def delegation_router(state: TeamFloAgentState):
+            if "next" not in state:
+                return nextNode
+            return state["next"]
+        return delegation_router
+    
     def add_reflection_edge(self, workflow: StateGraph, reflection_node: FloNode, nextNode: Union[FloNode | str]):
-        to_agent_name = reflection_node.config.to
+        to_agent_name = reflection_node.config.to[0]
         retry = reflection_node.config.retry or 1
         reflection_agent_name = reflection_node.name
         next = nextNode if isinstance(nextNode, str) else nextNode.name

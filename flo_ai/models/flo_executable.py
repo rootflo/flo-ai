@@ -8,6 +8,7 @@ class ExecutableType(Enum):
     llm = "llm"
     tool = "tool" 
     reflection = "reflection"
+    delegator = "delegator"
 
     @staticmethod
     def isAgent(type: 'ExecutableType'):
