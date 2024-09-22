@@ -84,6 +84,7 @@ class FloRouter(ABC):
         to_agent_names = [x.name for x in delegation_node.config.to]
         delegation_node_name = delegation_node.name
         next_node_name = nextNode if isinstance(nextNode, str) else nextNode.name
+        retry = delegation_node.config.retry or 1
         
         conditional_map = {}
         for agent_name in to_agent_names:
@@ -101,7 +102,7 @@ class FloRouter(ABC):
         workflow.add_edge(parent.name, INTERNAL_NODE_DELEGATION_MANAGER)
         workflow.add_conditional_edges(
             INTERNAL_NODE_DELEGATION_MANAGER, 
-            self.__get_refelection_routing_fn(1, delegation_node_name, next_node_name), 
+            self.__get_refelection_routing_fn(retry, delegation_node_name, next_node_name), 
             { delegation_node_name: delegation_node_name, next_node_name: next_node_name}
         )
 
