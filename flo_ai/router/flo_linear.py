@@ -42,7 +42,8 @@ class FloLinear(FloRouter):
             if (flo_agent_nodes[-1].kind == ExecutableType.reflection):
                 self.add_reflection_edge(workflow, flo_agent_nodes[-1], END)
             else: 
-                workflow.add_edge(end_node_name, END)
+                if (flo_agent_nodes[-1].kind != ExecutableType.delegator):
+                    workflow.add_edge(end_node_name, END)
         else:
             workflow.add_edge(START, self.router_config.start_node)
             for edge in self.router_config.edges:

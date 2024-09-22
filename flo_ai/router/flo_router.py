@@ -79,28 +79,34 @@ class FloRouter(ABC):
             "reflection_tracker": tracker
         }
     
-    def add_delegation_edge(self, workflow: StateGraph, parent: FloNode, delegation_node: FloNode, nextNode: FloNode):
+    def add_delegation_edge(self, workflow: StateGraph, parent: FloNode, delegation_node: FloNode, nextNode: Union[FloNode|str]):
         to_agent_names = delegation_node.config.to
+        delegation_node_name = delegation_node.name
+        next_node_name = nextNode if isinstance(nextNode, str) else nextNode.name
+        
         conditional_map = {}
         for agent_name in to_agent_names:
             conditional_map[agent_name] = agent_name
-        conditional_map[nextNode.name] = nextNode.name
+        conditional_map[next_node_name] = next_node_name
 
-        workflow.add_node("rf/DelegationManager", functools.partial(self.update_reflection_state, reflection_agent_name=delegation_node.name))
+        workflow.add_node(
+            "rf/DelegationManager", 
+            functools.partial(
+                self.update_reflection_state, 
+                reflection_agent_name=delegation_node_name
+            )
+        )
 
         workflow.add_edge(parent.name, "rf/DelegationManager")
-
-        dele_name = delegation_node.name
-        nnn = nextNode.name
         workflow.add_conditional_edges(
             "rf/DelegationManager", 
-            self.__get_refelection_routing_fn(1, delegation_node.name, nextNode.name), 
-            { dele_name: dele_name, nnn: nnn}
+            self.__get_refelection_routing_fn(1, delegation_node_name, next_node_name), 
+            { delegation_node_name: delegation_node_name, next_node_name: next_node_name}
         )
 
         workflow.add_conditional_edges(
-            delegation_node.name, 
-            FloRouter.__get_delegation_router_fn(nextNode.name),
+            delegation_node_name, 
+            FloRouter.__get_delegation_router_fn(next_node_name),
             conditional_map
         )
 
@@ -128,11 +134,11 @@ class FloRouter(ABC):
         workflow.add_edge(reflection_agent_name, to_agent_name)
 
     @staticmethod
-    def __get_refelection_routing_fn(retries: int, reflection_agent_name, next):
+    def __get_refelection_routing_fn(retries: int, reflection_agent_name, next_node_name):
         def reflection_routing_fn(state: TeamFloAgentState):
             tracker = state["reflection_tracker"]
             if tracker is not None and reflection_agent_name in tracker and tracker[reflection_agent_name] > retries:
-                return next
+                return next_node_name
             return reflection_agent_name
 
         return reflection_routing_fn
