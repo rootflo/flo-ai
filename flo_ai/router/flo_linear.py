@@ -6,12 +6,11 @@ from flo_ai.models.flo_routed_team import FloRoutedTeam
 from flo_ai.models.flo_team import FloTeam
 from flo_ai.state.flo_session import FloSession
 from flo_ai.models.flo_executable import ExecutableType
-from flo_ai.helpers.utils import agent_name_from_randomized_name, randomize_name
 
 class FloLinear(FloRouter):
 
     def __init__(self, session: FloSession, config: TeamConfig, flo_team: FloTeam):
-        super().__init__(session=session, name=randomize_name(config.name),
+        super().__init__(session=session, name=config.name,
                           flo_team=flo_team, executor=None, config=config)
         self.router_config = config.router
     
@@ -21,16 +20,16 @@ class FloLinear(FloRouter):
         workflow = StateGraph(TeamFloAgentState)
         
         for flo_node in flo_agent_nodes:
-            agent_name = agent_name_from_randomized_name(flo_node.name)
+            agent_name = flo_node.name
             workflow.add_node(agent_name, flo_node.func)
             
         if self.router_config.edges is None:
-            start_node_name = agent_name_from_randomized_name(flo_agent_nodes[0].name)
-            end_node_name = agent_name_from_randomized_name(flo_agent_nodes[-1].name)
+            start_node_name = flo_agent_nodes[0].name
+            end_node_name = flo_agent_nodes[-1].name
             workflow.add_edge(START, start_node_name)
             for i in range(len(flo_agent_nodes) - 1):
-                agent1_name = agent_name_from_randomized_name(flo_agent_nodes[i].name)
-                agent2_name = agent_name_from_randomized_name(flo_agent_nodes[i+1].name)
+                agent1_name = flo_agent_nodes[i].name
+                agent2_name = flo_agent_nodes[i+1].name
                 if (flo_agent_nodes[i].kind == ExecutableType.reflection):
                     self.add_reflection_edge(workflow, flo_agent_nodes[i], flo_agent_nodes[i+1])
                 else:
@@ -60,16 +59,16 @@ class FloLinear(FloRouter):
         super_graph = StateGraph(TeamFloAgentState)
         # First add the nodes, which will do the work
         for flo_team_chain in flo_team_entry_chains:
-            agent_name = agent_name_from_randomized_name(flo_team_chain.name)
+            agent_name = flo_team_chain.name
             super_graph.add_node(agent_name, flo_team_chain.func)
 
         if self.router_config.edges is None:
-            start_node_name = agent_name_from_randomized_name(flo_team_entry_chains[0].name)
-            end_node_name = agent_name_from_randomized_name(flo_team_entry_chains[-1].name)
+            start_node_name = flo_team_entry_chains[0].name
+            end_node_name = flo_team_entry_chains[-1].name
             super_graph.add_edge(START, start_node_name)
             for i in range(len(flo_team_entry_chains) - 1):
-                agent1_name = agent_name_from_randomized_name(flo_team_entry_chains[i].name)
-                agent2_name = agent_name_from_randomized_name(flo_team_entry_chains[i+1].name)
+                agent1_name = flo_team_entry_chains[i].name
+                agent2_name = flo_team_entry_chains[i+1].name
                 super_graph.add_edge(agent1_name, agent2_name)
             super_graph.add_edge(end_node_name, END)
         else:
