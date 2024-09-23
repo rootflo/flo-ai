@@ -38,7 +38,8 @@ class Flo:
         return Flo(session, to_supervised_team(yaml), log_level)
 
     def draw(self, xray=True):
-        return self.runnable.draw(xray)
+        from IPython.display import Image, display
+        return display(Image(self.runnable.draw(xray)))
     
     def draw_to_file(self, filename: str, xray=True):
         from PIL import Image as PILImage
