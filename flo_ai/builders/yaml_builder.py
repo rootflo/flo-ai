@@ -1,18 +1,17 @@
 from flo_ai.models.flo_team import FloTeam
-from flo_ai.models.flo_agent import FloAgent
 from flo_ai.yaml.config import (FloRoutedTeamConfig, TeamConfig, AgentConfig, FloAgentConfig)
 from flo_ai.models.flo_executable import ExecutableFlo
 from flo_ai.state.flo_session import FloSession
 from flo_ai.router.flo_router_factory import FloRouterFactory
 from flo_ai.factory.agent_factory import AgentFactory
-from flo_ai.yaml.validators import validate_name, DuplicateStringError
+from flo_ai.yaml.validators import raise_for_name_error, DuplicateStringError
 from flo_ai.common.flo_logger import builder_logger
 
 def build_supervised_team(session: FloSession, name_set = set()) -> ExecutableFlo:
     flo_config = session.config
     if isinstance(flo_config, FloRoutedTeamConfig):
         team_config: TeamConfig = flo_config.team
-        team = parse_and_build_subteams(session, team_config)    
+        team = parse_and_build_subteams(session, team_config)
         return team
     elif isinstance(flo_config, FloAgentConfig):
         agent_config: AgentConfig = flo_config.agent
@@ -43,7 +42,7 @@ def parse_and_build_subteams(session: FloSession, team_config: TeamConfig, name_
     return flo_routed_team
 
 def validate_names(name_set: set, name):
-    validate_name(name)
+    raise_for_name_error(name)
     if name in name_set:
         builder_logger.error(f"Duplicate name found: '{name}'")
         raise DuplicateStringError(f"The name '{name}' is already in the set.")
