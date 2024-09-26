@@ -22,12 +22,12 @@ jobs:
     - name: Setup virtual env
       run: |
         pip install --upgrade pip
-        python3.8 -m venv env
+        python3.11 -m venv env
         source env/bin/activate
 
     - name: Install Poetry
       run: |
-        curl -sSL https://install.python-poetry.org | python3
+        curl -sSL https://install.python-poetry.org | python3.11
 
     - name: Poetry lock
       run: poetry lock
