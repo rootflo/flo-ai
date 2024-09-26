@@ -20,10 +20,10 @@ jobs:
         python-version: '3.11'
 
     - name: Setup virtual env
-        run: |
-          pip install --upgrade pip
-          python3.8 -m venv env
-          source env/bin/activate
+      run: |
+        pip install --upgrade pip
+        python3.8 -m venv env
+        source env/bin/activate
 
     - name: Install Poetry
       run: |
