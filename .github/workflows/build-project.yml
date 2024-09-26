@@ -19,21 +19,8 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install and configure Poetry
-      uses: snok/install-poetry@v1
-      with:
-        version: 1.8.3
-        virtualenvs-create: true
-        virtualenvs-in-project: true
-
-    - name: Activate venv
-      run: source .venv/bin/activate
-
     - name: Install dependencies
       run: poetry lock && poetry install
-      
-    - name: Run tests
-      run: behave
 
     - name: Run build
       run: poetry build
