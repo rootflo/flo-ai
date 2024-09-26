@@ -24,25 +24,28 @@ class FloLinear(FloRouter):
             workflow.add_node(agent_name, flo_node.func)
             
         if self.router_config.edges is None:
-            start_node_name = flo_agent_nodes[0].name
-            end_node_name = flo_agent_nodes[-1].name
-            workflow.add_edge(START, start_node_name)
+            start_node = flo_agent_nodes[0]
+            end_node = flo_agent_nodes[-1]
+            workflow.add_edge(START, start_node.name)
             for i in range(len(flo_agent_nodes) - 1):
-                agent1_name = flo_agent_nodes[i].name
-                agent2_name = flo_agent_nodes[i+1].name
-                if (flo_agent_nodes[i].kind == ExecutableType.reflection):
-                    self.add_reflection_edge(workflow, flo_agent_nodes[i], flo_agent_nodes[i+1])
-                else:
-                    if (flo_agent_nodes[i+1].kind != ExecutableType.reflection and flo_agent_nodes[i].kind != ExecutableType.delegator):
-                        if flo_agent_nodes[i+1].kind == ExecutableType.delegator:
-                            self.add_delegation_edge(workflow, flo_agent_nodes[i], flo_agent_nodes[i+1], flo_agent_nodes[i+2] if  (i+2)<len(flo_agent_nodes) else END)
-                        else:
-                            workflow.add_edge(agent1_name, agent2_name)
-            if (flo_agent_nodes[-1].kind == ExecutableType.reflection):
-                self.add_reflection_edge(workflow, flo_agent_nodes[-1], END)
-            else: 
-                if (flo_agent_nodes[-1].kind != ExecutableType.delegator):
-                    workflow.add_edge(end_node_name, END)
+                parent_node = flo_agent_nodes[i]
+                child_node = flo_agent_nodes[i+1]
+                next_node = flo_agent_nodes[i+2] if (i+2) < len(flo_agent_nodes) else END
+
+                if (parent_node.kind == ExecutableType.reflection):
+                    self.add_reflection_edge(workflow, parent_node, child_node)
+                    continue
+                if (child_node.kind == ExecutableType.delegator):
+                    self.add_delegation_edge(workflow, parent_node, child_node, next_node)
+                    continue
+
+                if (child_node.kind != ExecutableType.reflection and parent_node.kind != ExecutableType.delegator):
+                    workflow.add_edge(parent_node.name, child_node.name)
+                    
+            if (end_node.kind == ExecutableType.reflection):
+                self.add_reflection_edge(workflow, end_node, END)
+            elif (end_node.kind != ExecutableType.delegator):
+                    workflow.add_edge(end_node.name, END)
         else:
             workflow.add_edge(START, self.router_config.start_node)
             for edge in self.router_config.edges:

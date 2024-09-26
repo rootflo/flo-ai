@@ -7,11 +7,12 @@ from flo_ai.factory.agent_factory import AgentFactory
 from flo_ai.yaml.validators import raise_for_name_error, DuplicateStringError
 from flo_ai.common.flo_logger import builder_logger
 
-def build_supervised_team(session: FloSession, name_set = set()) -> ExecutableFlo:
+def build_supervised_team(session: FloSession) -> ExecutableFlo:
+    name_set = set()
     flo_config = session.config
     if isinstance(flo_config, FloRoutedTeamConfig):
         team_config: TeamConfig = flo_config.team
-        team = parse_and_build_subteams(session, team_config)
+        team = parse_and_build_subteams(session, team_config, name_set)
         return team
     elif isinstance(flo_config, FloAgentConfig):
         agent_config: AgentConfig = flo_config.agent
