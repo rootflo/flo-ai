@@ -12,32 +12,23 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
 
-    - name: Setup virtual env
-      run: |
-        pip install --upgrade pip
-        python3.11 -m venv env
-        source env/bin/activate
-
-    - name: Install Poetry
-      run: |
-        curl -sSL https://install.python-poetry.org | python3.11
-
-    - name: Poetry lock
-      run: poetry lock
+    - name: Install and configure Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: 1.1.13
+        virtualenvs-create: true
+        virtualenvs-in-project: true
 
     - name: Install dependencies
-      run: poetry install
-
-    - name: Install behave
-      run: pip install behave==1.2.6
-
+      run: poetry lock && poetry install
+      
     - name: Run tests
       run: behave
 
