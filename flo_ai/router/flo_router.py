@@ -2,6 +2,7 @@
 from abc import ABC, abstractmethod
 from flo_ai.state.flo_session import FloSession
 from flo_ai.models.flo_team import FloTeam
+from flo_ai.models.flo_member import FloMember
 from flo_ai.yaml.config import TeamConfig
 from flo_ai.models.flo_routed_team import FloRoutedTeam
 from flo_ai.models.flo_agent import FloAgent
@@ -32,24 +33,19 @@ class FloRouter(ABC):
         return ExecutableType.isAgent(self.type)
     
     def build_routed_team(self) -> FloRoutedTeam:
-        if self.is_agent_supervisor():
-            return self.build_agent_graph()
-        else:
-            return self.build_team_graph()
+        return self.build_graph()
 
     @abstractmethod
-    def build_agent_graph():
+    def build_graph():
         pass
 
-    @abstractmethod
-    def build_team_graph():
-        pass
-
-    def build_node(self, flo_agent: FloAgent) -> FloNode:
-        if (flo_agent.type == ExecutableType.delegator):
-            return FloNode(flo_agent.executor, flo_agent.name, flo_agent.type, flo_agent.config)
+    def build_node(self, flo_member: FloMember) -> FloNode:
+        if (flo_member.type == ExecutableType.team):
+            return self.__build_node_for_teams(flo_member)
+        if (flo_member.type == ExecutableType.delegator):
+            return FloNode(flo_member.executor, flo_member.name, flo_member.type, flo_member.config)
         node_builder = FloNode.Builder()
-        return node_builder.build_from_agent(flo_agent)
+        return node_builder.build_from_agent(flo_member)
     
     def router_fn(self, state: TeamFloAgentState):
         next = state["next"]
@@ -60,7 +56,7 @@ class FloRouter(ABC):
             return conditional_map[FLO_FINISH]
         return conditional_map[next]
         
-    def build_node_for_teams(self, flo_team: FloRoutedTeam):
+    def __build_node_for_teams(self, flo_team: FloRoutedTeam):
         node_builder = FloNode.Builder()
         return node_builder.build_from_team(flo_team)
     

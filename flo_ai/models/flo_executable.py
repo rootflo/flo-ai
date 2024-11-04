@@ -10,6 +10,7 @@ class ExecutableType(Enum):
     tool = "tool" 
     reflection = "reflection"
     delegator = "delegator"
+    team = "team"
 
     @staticmethod
     def isAgent(type: 'ExecutableType'):
@@ -26,7 +27,7 @@ class ExecutableFlo(FloMember):
     def __init__(self, 
                  name: str, 
                  runnable: Runnable, 
-                 type: str = "team") -> None:
+                 type: str = ExecutableType.team) -> None:
         super().__init__(name, type)
         self.runnable = runnable
 
