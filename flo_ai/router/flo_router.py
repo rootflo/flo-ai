@@ -10,7 +10,6 @@ from flo_ai.state.flo_state import TeamFloAgentState, STATE_NAME_LOOP_CONTROLLER
 from flo_ai.models.flo_node import FloNode
 from flo_ai.constants.prompt_constants import FLO_FINISH
 from langgraph.graph import END,StateGraph
-from flo_ai.models.flo_node import FloNode
 from flo_ai.models.flo_executable import ExecutableType
 import functools
 from typing import Union
@@ -25,12 +24,9 @@ class FloRouter(ABC):
         self.flo_team: FloTeam = flo_team
         self.members = flo_team.members
         self.member_names = [x.name for x in flo_team.members]
-        self.type: ExecutableType = flo_team.members[0].type
+        self.type: ExecutableType = ExecutableType.router
         self.executor = executor
         self.config = config
-
-    def is_agent_supervisor(self):
-        return ExecutableType.isAgent(self.type)
     
     def build_routed_team(self) -> FloRoutedTeam:
         return self.build_graph()
@@ -40,8 +36,11 @@ class FloRouter(ABC):
         pass
 
     def build_node(self, flo_member: FloMember) -> FloNode:
+        node_builder = FloNode.Builder()
+        if flo_member.type == ExecutableType.router:
+            return node_builder.build_from_router(flo_member)
         if (flo_member.type == ExecutableType.team):
-            return self.__build_node_for_teams(flo_member)
+            return node_builder.build_from_team(flo_member)
         if (flo_member.type == ExecutableType.delegator):
             return FloNode(flo_member.executor, flo_member.name, flo_member.type, flo_member.config)
         node_builder = FloNode.Builder()
@@ -55,26 +54,12 @@ class FloRouter(ABC):
         if self.session.is_looping(node=next):
             return conditional_map[FLO_FINISH]
         return conditional_map[next]
-        
-    def __build_node_for_teams(self, flo_team: FloRoutedTeam):
-        node_builder = FloNode.Builder()
-        return node_builder.build_from_team(flo_team)
     
     def update_reflection_state(self, state: TeamFloAgentState, reflection_agent_name: str):
-        tracker = None
-        if STATE_NAME_LOOP_CONTROLLER not in state or state[STATE_NAME_LOOP_CONTROLLER] is None:
-            tracker = dict()
-        else:
-            tracker = state[STATE_NAME_LOOP_CONTROLLER]
-      
-        if reflection_agent_name in tracker:
-            tracker[reflection_agent_name] += 1
-        else:
-            tracker[reflection_agent_name] = 1
-            
-        return {
-            STATE_NAME_LOOP_CONTROLLER: tracker
-        }
+        tracker = state.get(STATE_NAME_LOOP_CONTROLLER) or {}
+        tracker[reflection_agent_name] = tracker.get(reflection_agent_name, 0) + 1
+        return {STATE_NAME_LOOP_CONTROLLER: tracker}
+
     
     def add_delegation_edge(self, workflow: StateGraph, parent: FloNode, delegation_node: FloNode, nextNode: Union[FloNode|str]):
         to_agent_names = [x.name for x in delegation_node.config.to]

@@ -11,6 +11,7 @@ class ExecutableType(Enum):
     reflection = "reflection"
     delegator = "delegator"
     team = "team"
+    router = "router"
 
     @staticmethod
     def isAgent(type: 'ExecutableType'):
