@@ -25,12 +25,23 @@ class Flo:
         self.logger.info(f"Streaming query for session {self.session.session_id}: {query}")
         return self.runnable.stream(query, config)
     
+    def astream(self, query, config = None) -> Iterator[Union[dict[str, Any], Any]]:
+        self.logger.info(f"Streaming query for session {self.session.session_id}: {query}")
+        return self.runnable.astream(query, config)
+    
     def invoke(self, query, config = None) -> Iterator[Union[dict[str, Any], Any]]:
         config = {
          'callbacks' : [self.session.langchain_logger]
         }
         self.logger.info(f"Invoking query for session {self.session.session_id}: {query}")
         return self.runnable.invoke(query, config)
+    
+    def ainvoke(self, query, config = None) -> Iterator[Union[dict[str, Any], Any]]:
+        config = {
+         'callbacks' : [self.session.langchain_logger]
+        }
+        self.logger.info(f"Invoking query for session {self.session.session_id}: {query}")
+        return self.runnable.ainvoke(query, config)
     
     @staticmethod
     def build(session: FloSession, yaml: str, log_level: str = "INFO"):
