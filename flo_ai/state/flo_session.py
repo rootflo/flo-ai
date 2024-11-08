@@ -8,6 +8,13 @@ from flo_ai.helpers.utils import random_str
 
 from typing import Optional
 
+def _handle_agent_error(self, error) -> str:
+        error_message = str(error)[:50]
+        return f"""
+            Following error happened while agent execution, please retry with the fix for the same:
+            {error_message}
+        """
+
 class FloSession:
 
     def __init__(self, 
@@ -15,7 +22,8 @@ class FloSession:
                  loop_size: int = 2, 
                  max_loop: int = 3, 
                  log_level: Optional[str] = "INFO",
-                 custom_langchainlog_handler: Optional[FloLangchainLogger] = None) -> None:
+                 custom_langchainlog_handler: Optional[FloLangchainLogger] = None,
+                 on_agent_error=_handle_agent_error) -> None:
         
         self.session_id = str(random_str(16))
         self.llm = llm
@@ -25,7 +33,7 @@ class FloSession:
         self.pattern_series = dict()
         self.loop_size: int = loop_size
         self.max_loop: int = max_loop
-        self.on_agent_error = self._handle_agent_error
+        self.on_agent_error = on_agent_error
         
         self.init_logger(log_level)
         self.logger = session_logger
@@ -40,13 +48,6 @@ class FloSession:
         self.tools[name] = tool
         self.logger.info(f"Tool '{name}' registered for session {self.session_id}")
         return self
-    
-    def _handle_agent_error(self, error) -> str:
-        error_message = str(error)[:50]
-        return f"""
-            Following error happened while execution, try to retry with the fix for the same:
-            {error_message}
-        """
 
     def append(self, node: str) -> int:
         self.logger.debug(f"Appending node: {node}")
