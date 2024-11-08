@@ -31,7 +31,6 @@ class FloAgent(ExecutableFlo):
                     return_intermediate_steps: bool = False,
                     handle_parsing_errors: bool = True) -> None:
             prompt: Union[ChatPromptTemplate, str] = config.job
-            
             self.name: str = config.name
             self.llm = llm if llm is not None else session.llm
             self.config = config
