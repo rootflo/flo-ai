@@ -1,5 +1,4 @@
-import uuid
-from typing import Union
+from typing import Union, Dict
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.tools import BaseTool
 from flo_ai.common.flo_logger import session_logger, FloLogger
@@ -20,7 +19,7 @@ class FloSession:
         
         self.session_id = str(random_str(16))
         self.llm = llm
-        self.tools = dict()
+        self.tools: Dict[str, BaseTool] = dict()
         self.counter = dict()
         self.navigation: list[str] = list()
         self.pattern_series = dict()

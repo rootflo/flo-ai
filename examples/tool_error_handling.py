@@ -5,8 +5,9 @@ from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
 from typing import List
 from dotenv import load_dotenv
-load_dotenv()
 from flo_ai.tools.flo_tool import flotool
+
+load_dotenv()
 
 llm = ChatOpenAI(temperature=0, model_name='gpt-4o-mini')
 
@@ -60,25 +61,22 @@ flo = Flo.build(session, simple_weather_checking_agent, log_level="ERROR")
 import asyncio
 
 # Assuming flo.ainvoke is your async method for invoking the tool or chain
-# async def invoke_main():
-#     # Call the tool and await the result
-#     result = await flo.ainvoke("Whats the sum of 1, 3, 4, 5 and 6, and their product")
-    
-#     # Print the result or stream it progressively if it's a large output
-#     print(result)
+async def invoke_main():
+    result = await flo.async_invoke("Whats the sum of 1, 3, 4, 5 and 6, and their product")
+    print(result)
 
-# asyncio.run(invoke_main())
+asyncio.run(invoke_main())
 
-import asyncio
+# import asyncio
 
-async def stream_main():
-    # Use 'async for' to iterate over the asynchronous generator
-    async for s in flo.astream("Whats the sum of 1, 3, 4, 5 and 6, and their product"):
-        if "__end__" not in s:
-            print(s)
-            print("----")
+# async def stream_main():
+#     # Use 'async for' to iterate over the asynchronous generator
+#     async for s in flo.async_stream("Whats the sum of 1, 3, 4, 5 and 6, and their product"):
+#         if "__end__" not in s:
+#             print(s)
+#             print("----")
 
-asyncio.run(stream_main())
+# asyncio.run(stream_main())
 
 
 
