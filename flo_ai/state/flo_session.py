@@ -8,7 +8,7 @@ from flo_ai.helpers.utils import random_str
 
 from typing import Optional
 
-def _handle_agent_error(self, error) -> str:
+def _handle_agent_error(error) -> str:
         error_message = str(error)[:50]
         return f"""
             Following error happened while agent execution, please retry with the fix for the same:
