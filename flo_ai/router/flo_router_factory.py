@@ -6,6 +6,7 @@ from flo_ai.router.flo_linear import FloLinear
 from flo_ai.yaml.config import TeamConfig
 from flo_ai.models.flo_team import FloTeam
 from flo_ai.router.flo_router import FloRouter
+from flo_ai.error.flo_exception import FloException
 
 class FloRouterFactory:
 
@@ -27,6 +28,8 @@ class FloRouterFactory:
         if model_name is None:
             return session.llm
         if model_name not in session.models:
-            # TODO raise proper exception
-            raise f"Model not found: {model_name}"
+            raise FloException(
+                f"""Model not found: {model_name}.
+                The model you would like to use should be registered to the session using session.register_model api, 
+                and the same model name should be used here instead of `{model_name}`""")
         return session.models[model_name]

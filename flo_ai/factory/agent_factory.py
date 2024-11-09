@@ -6,6 +6,7 @@ from flo_ai.models.flo_llm_agent import FloLLMAgent
 from flo_ai.models.flo_reflection_agent import FloReflectionAgent
 from flo_ai.models.flo_delegation_agent import FloDelegatorAgent
 from flo_ai.models.flo_tool_agent import FloToolAgent
+from flo_ai.error.flo_exception import FloException
 from enum import Enum
 
 class AgentKinds(Enum):
@@ -42,8 +43,10 @@ class AgentFactory():
         if model_name is None:
             return session.llm
         if model_name not in session.models:
-            # TODO raise proper exception
-            raise f"Model not found: {model_name}"
+            raise FloException(
+                f"""Model not found: {model_name}.
+                The model you would like to use should be registered to the session using session.register_model api, 
+                and the same model name should be used here instead of `{model_name}`""")
         return session.models[model_name]
 
     @staticmethod
