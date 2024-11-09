@@ -7,6 +7,7 @@ from flo_ai.yaml.config import TeamConfig
 from flo_ai.models.flo_team import FloTeam
 from flo_ai.router.flo_router import FloRouter
 from flo_ai.error.flo_exception import FloException
+from flo_ai.constants.common_constants import DOCUMENTATION_ROUTER_ANCHOR
 
 class FloRouterFactory:
 
@@ -21,7 +22,9 @@ class FloRouterFactory:
         elif router_kind == 'llm':
             return FloLLMRouter.Builder(session, team_config, flo_team, llm=router_model).build()
         else:
-            raise Exception("Unknown router type")
+            raise Exception(f"""Unknown router type: {router_kind}. 
+                            The supported types are supervisor, linear and llm. 
+                            Check the documentation @ {DOCUMENTATION_ROUTER_ANCHOR}""")
         
     @staticmethod
     def __resolve_model(session: FloSession, model_name: Optional[str] = None):

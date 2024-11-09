@@ -7,6 +7,7 @@ from flo_ai.models.flo_reflection_agent import FloReflectionAgent
 from flo_ai.models.flo_delegation_agent import FloDelegatorAgent
 from flo_ai.models.flo_tool_agent import FloToolAgent
 from flo_ai.error.flo_exception import FloException
+from flo_ai.constants.common_constants import DOCUMENTATION_AGENT_ANCHOR
 from enum import Enum
 
 class AgentKinds(Enum):
@@ -26,7 +27,8 @@ class AgentFactory():
         if kind is not None:
             agent_kind = getattr(AgentKinds, kind, None)
             if agent_kind is None:
-                raise ValueError(f"Agent kind cannot be {kind} !")
+                raise ValueError(f"""Unknown agent kind: `{kind}`. The supported types are llm, tool, reflection, delegator or agentic. 
+                            Check the documentation @ {DOCUMENTATION_AGENT_ANCHOR}""")
             match(agent_kind):
                 case AgentKinds.llm:
                     return AgentFactory.__create_llm_agent(session, agent)

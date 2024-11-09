@@ -5,7 +5,7 @@ from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
 from typing import List
 from dotenv import load_dotenv
-from flo_ai.tools.flo_tool import flotool
+from flo_ai.tools.flo_tool import flotool, asyncflotool
 
 load_dotenv()
 
@@ -60,12 +60,14 @@ flo = Flo.build(session, simple_weather_checking_agent, log_level="ERROR")
 
 import asyncio
 
+
 # Assuming flo.ainvoke is your async method for invoking the tool or chain
 async def invoke_main():
     result = await flo.async_invoke("Whats the sum of 1, 3, 4, 5 and 6, and their product")
     print(result)
 
 asyncio.run(invoke_main())
+
 
 # import asyncio
 
