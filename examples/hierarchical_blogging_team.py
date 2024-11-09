@@ -50,4 +50,3 @@ session = FloSession(llm).register_tool(
     name="TavilySearchResults", tool=TavilySearchResults()
 )
 flo: Flo = Flo.build(session, yaml=yaml_data)
-flo.draw_to_file("h.png")
