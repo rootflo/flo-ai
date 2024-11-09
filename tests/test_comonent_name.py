@@ -8,7 +8,7 @@ from flo_ai.yaml.validators import raise_for_name_error
     ('correct-name', True),
     ('wrong/name', False),
 ])
-def test_func(flo_name, validity):
+def test_flo_component_names(flo_name, validity):
     isException = False
     try:
         raise_for_name_error(flo_name)
