@@ -54,7 +54,8 @@ class AgentFactory():
             session,
             agent,
             tools,
-            llm=agent_model
+            llm=agent_model,
+            on_error=session.on_agent_error
         ).build()
         return flo_agent
 
