@@ -5,7 +5,7 @@ from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
 from typing import List
 from dotenv import load_dotenv
-from flo_ai.tools.flo_tool import flotool, asyncflotool
+from flo_ai.tools.flo_tool import flotool
 
 load_dotenv()
 
@@ -59,7 +59,6 @@ from IPython.display import Image, display
 flo = Flo.build(session, simple_weather_checking_agent, log_level="ERROR")
 
 import asyncio
-
 
 # Assuming flo.ainvoke is your async method for invoking the tool or chain
 async def invoke_main():
