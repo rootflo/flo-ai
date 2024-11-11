@@ -37,7 +37,7 @@ def test_flotool_invoke_with_sync_tool():
     assert f"The product is 35" == result
 
 def test_session_registration_and_invoke():
-    llm = ChatOpenAI(temperature=0, model_name='gpt-4o-mini')
+    llm = ChatOpenAI(temperature=0, model_name='gpt-4o-mini', api_key="TEST_KEY")
     session = FloSession(llm)
     session.register_tool("adder", addition_tool)
     session.register_tool("muller", mul_tool)
@@ -59,4 +59,4 @@ def test_session_registration_and_invoke():
     try:
         flo.invoke("What the whether in berlin")
     except FloException as e:
-        assert str(e) == f"You seem to have atleast one async tool registered in this session. Please use flo.async_invoke or flo.async_stream. Checkout {DOCUMENTATION_WEBSITE}"
+        assert str(e) == f"[Error -1] You seem to have atleast one async tool registered in this session. Please use flo.async_invoke or flo.async_stream. Checkout {DOCUMENTATION_WEBSITE}"

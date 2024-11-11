@@ -49,7 +49,7 @@ class FloSession:
         
         self.config: Union[FloRoutedTeamConfig, FloAgentConfig] = None
         get_logger().info(f"New session created ...", self)
-        self.langchain_logger = custom_langchainlog_handler or FloLangchainLogger(self.session_id)
+        self.langchain_logger =  FloLangchainLogger(self.session_id)
 
     def resolve_llm(self, default_llm: BaseLanguageModel = None, llm: BaseLanguageModel = None):
         if default_llm is not None:
