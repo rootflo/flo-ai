@@ -8,12 +8,11 @@ from flo_ai.error.flo_exception import FloException
 from flo_ai.constants.common_constants import DOCUMENTATION_WEBSITE
 from flo_ai.common.flo_logger import common_logger, builder_logger, set_global_log_level
 
-class Flo:
 
-    def __init__(self,
-                 session: FloSession,
-                 config: FloRoutedTeamConfig,
-                 log_level: str = "INFO") -> None:
+class Flo:
+    def __init__(
+        self, session: FloSession, config: FloRoutedTeamConfig, log_level: str = 'INFO'
+    ) -> None:
         self.session = session
         self.config = config
         session.config = config
@@ -22,52 +21,64 @@ class Flo:
         set_global_log_level(log_level)
         self.logger = common_logger
         self.langchain_logger = session.langchain_logger
-        self.logger.info(f"Flo instance created for session {session.session_id}")
+        self.logger.info(f'Flo instance created for session {session.session_id}')
 
-    def stream(self, query, config = None) -> Iterator[Union[dict[str, Any], Any]]:
+    def stream(self, query, config=None) -> Iterator[Union[dict[str, Any], Any]]:
         self.validate_invoke(self.session)
-        self.logger.info(f"Streaming query for session {self.session.session_id}: {query}")
+        self.logger.info(
+            f'Streaming query for session {self.session.session_id}: {query}'
+        )
         return self.runnable.stream(query, config)
-    
-    def async_stream(self, query, config = None) -> Iterator[Union[dict[str, Any], Any]]:
-        self.logger.info(f"Streaming query for session {self.session.session_id}: {query}")
+
+    def async_stream(self, query, config=None) -> Iterator[Union[dict[str, Any], Any]]:
+        self.logger.info(
+            f'Streaming query for session {self.session.session_id}: {query}'
+        )
         return self.runnable.astream(query, config)
-    
-    def invoke(self, query, config = None) -> Iterator[Union[dict[str, Any], Any]]:
-        config = {
-         'callbacks' : [self.session.langchain_logger]
-        }
+
+    def invoke(self, query, config=None) -> Iterator[Union[dict[str, Any], Any]]:
+        config = {'callbacks': [self.session.langchain_logger]}
         self.validate_invoke(self.session)
-        self.logger.info(f"Invoking query for session {self.session.session_id}: {query}")
+        self.logger.info(
+            f'Invoking query for session {self.session.session_id}: {query}'
+        )
         return self.runnable.invoke(query, config)
-    
-    def async_invoke(self, query, config = None) -> Iterator[Union[dict[str, Any], Any]]:
-        config = {
-         'callbacks' : [self.session.langchain_logger]
-        }
-        self.logger.info(f"Invoking query for session {self.session.session_id}: {query}")
+
+    def async_invoke(self, query, config=None) -> Iterator[Union[dict[str, Any], Any]]:
+        config = {'callbacks': [self.session.langchain_logger]}
+        self.logger.info(
+            f'Invoking query for session {self.session.session_id}: {query}'
+        )
         return self.runnable.ainvoke(query, config)
 
     @staticmethod
-    def build(session: FloSession, yaml: str, log_level: str = "INFO"):
+    def build(session: FloSession, yaml: str, log_level: str = 'INFO'):
         set_global_log_level(log_level)
-        builder_logger.info("Building Flo instance from YAML")
+        builder_logger.info('Building Flo instance from YAML')
         return Flo(session, to_supervised_team(yaml), log_level)
 
     def draw(self, xray=True):
         from IPython.display import Image, display
+
         return display(Image(self.runnable.draw(xray)))
-    
+
     def draw_to_file(self, filename: str, xray=True):
         from PIL import Image as PILImage
         import io
+
         byte_image = self.runnable.draw(xray)
         with io.BytesIO(byte_image) as image_io:
             image = PILImage.open(image_io)
             image.save(filename)
 
     def validate_invoke(self, session: FloSession):
-        async_coroutines = filter(lambda x: (hasattr(x, "coroutine") and asyncio.iscoroutinefunction(x.coroutine)) ,session.tools.values())
+        async_coroutines = filter(
+            lambda x: (
+                hasattr(x, 'coroutine') and asyncio.iscoroutinefunction(x.coroutine)
+            ),
+            session.tools.values(),
+        )
         if len(list(async_coroutines)) > 0:
-            raise FloException(f"""You seem to have atleast one async tool registered in this session. Please use flo.async_invoke or flo.async_stream. Checkout {DOCUMENTATION_WEBSITE}""")
-        
+            raise FloException(
+                f"""You seem to have atleast one async tool registered in this session. Please use flo.async_invoke or flo.async_stream. Checkout {DOCUMENTATION_WEBSITE}"""
+            )
