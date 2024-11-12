@@ -17,6 +17,8 @@ def _handle_agent_error(error) -> str:
             {error_message}
         """
 
+
+class FloSession:
     def __init__(
         self,
         default_llm: BaseLanguageModel = None,
