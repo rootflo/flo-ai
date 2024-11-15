@@ -32,7 +32,7 @@ class FloRouterFactory:
         elif router_kind == 'llm':
             return FloLLMRouter.Builder(
                 session,
-                team_config,
+                team_config.router.name,
                 flo_team,
                 llm=router_model,
                 model_nick_name=team_config.router.model,

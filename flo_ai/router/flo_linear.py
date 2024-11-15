@@ -66,7 +66,7 @@ class FloLinear(FloRouter):
 
         workflow_graph = workflow.compile()
 
-        return FloRoutedTeam(self.flo_team.name, workflow_graph, self.flo_team.config)
+        return FloRoutedTeam(self.flo_team.name, workflow_graph)
 
     class Builder:
         def __init__(
