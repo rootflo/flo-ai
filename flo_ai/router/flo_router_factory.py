@@ -22,7 +22,7 @@ class FloRouterFactory:
         if router_kind == 'supervisor':
             return FloSupervisor.Builder(
                 session,
-                team_config,
+                team_config.name,
                 flo_team,
                 llm=router_model,
                 model_nick_name=team_config.router.model,

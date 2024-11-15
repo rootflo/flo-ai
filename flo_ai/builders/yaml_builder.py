@@ -39,7 +39,7 @@ def parse_and_build_subteams(
     validate_team(name_set, team_config, session)
     if team_config.agents:
         members = [AgentFactory.create(session, agent) for agent in team_config.agents]
-        flo_team = FloTeam.Builder(team_config.name, members=members).build()
+        flo_team = FloTeam.Builder(session, team_config.name, members=members).build()
         router = FloRouterFactory.create(session, team_config, flo_team)
         flo_routed_team = router.build_routed_team()
     else:
@@ -47,7 +47,7 @@ def parse_and_build_subteams(
         for subteam in team_config.subteams:
             flo_subteam = parse_and_build_subteams(session, subteam, name_set)
             flo_teams.append(flo_subteam)
-        flo_team = FloTeam.Builder(team_config.name, members=flo_teams).build()
+        flo_team = FloTeam.Builder(session, team_config.name, members=flo_teams).build()
         router = FloRouterFactory.create(session, team_config, flo_team)
         flo_routed_team = router.build_routed_team()
     return flo_routed_team
