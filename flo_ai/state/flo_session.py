@@ -6,7 +6,11 @@ from flo_ai.common.flo_logger import get_logger
 from flo_ai.common.flo_langchain_logger import FloLangchainLogger
 from flo_ai.yaml.config import FloRoutedTeamConfig, FloAgentConfig
 from flo_ai.helpers.utils import random_str
-from flo_ai.state.flo_callbacks import FloToolCallback, FloAgentCallback, FloRouterCallback
+from flo_ai.state.flo_callbacks import (
+    FloToolCallback,
+    FloAgentCallback,
+    FloRouterCallback,
+)
 
 from typing import Optional
 
@@ -20,7 +24,6 @@ def _handle_agent_error(error) -> str:
 
 
 class FloSession:
-
     def __init__(
         self,
         default_llm: BaseLanguageModel = None,
@@ -77,10 +80,14 @@ class FloSession:
         self.models[name] = model
         get_logger().info(f"Model '{name}' registered for session {self.session_id}")
         return self
-    
-    def register_callback(self, callback: Union[FloRouterCallback, FloAgentCallback, FloToolCallback]):
+
+    def register_callback(
+        self, callback: Union[FloRouterCallback, FloAgentCallback, FloToolCallback]
+    ):
         self.callbacks.append(callback)
-        tool_callbacks = list(filter(lambda x: isinstance(x, FloToolCallback), self.callbacks))
+        tool_callbacks = list(
+            filter(lambda x: isinstance(x, FloToolCallback), self.callbacks)
+        )
         self.langchain_logger = FloLangchainLogger(self.session_id, tool_callbacks)
         return self
 

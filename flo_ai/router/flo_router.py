@@ -29,7 +29,7 @@ class FloRouter(ABC):
         flo_team: FloTeam,
         executor,
         config: TeamConfig = None,
-        model_name: Union[str, None] = "default"
+        model_name: Union[str, None] = 'default',
     ):
         self.router_name = name
         self.session: FloSession = session

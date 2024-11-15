@@ -16,7 +16,7 @@ class FloLinear(FloRouter):
             flo_team=flo_team,
             executor=None,
             config=config,
-            model_name=None
+            model_name=None,
         )
         self.router_config = config.router
 

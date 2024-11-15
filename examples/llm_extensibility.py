@@ -38,11 +38,13 @@ class SendEmailInput(BaseModel):
 def email_tool(to: str, message: str):
     return f'Email sent successfully to: {to}'
 
+
 @flo_agent_callback
 def agent_callback(response: FloCallbackResponse):
-    print("------------- START AGENT CALLBACK -----------")
+    print('------------- START AGENT CALLBACK -----------')
     print(response)
-    print("------------- END AGENT CALLBACK -----------")
+    print('------------- END AGENT CALLBACK -----------')
+
 
 session.register_tool('SendEmailTool', email_tool)
 session.register_callback(agent_callback)
