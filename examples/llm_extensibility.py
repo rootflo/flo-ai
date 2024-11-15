@@ -92,5 +92,3 @@ for s in flo.stream(input_prompt):
     if '__end__' not in s:
         print(s)
         print('----')
-
-flo.draw_to_file
