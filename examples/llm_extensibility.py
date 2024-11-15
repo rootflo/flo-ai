@@ -3,6 +3,7 @@ from flo_ai import FloSession
 from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 from flo_ai.tools.flo_tool import flotool
+from flo_ai.state.flo_callbacks import flo_agent_callback, FloCallbackResponse
 
 from dotenv import load_dotenv
 import warnings
@@ -37,8 +38,14 @@ class SendEmailInput(BaseModel):
 def email_tool(to: str, message: str):
     return f'Email sent successfully to: {to}'
 
+@flo_agent_callback
+def agent_callback(response: FloCallbackResponse):
+    print("------------- START AGENT CALLBACK -----------")
+    print(response)
+    print("------------- END AGENT CALLBACK -----------")
 
 session.register_tool('SendEmailTool', email_tool)
+session.register_callback(agent_callback)
 
 agent_yaml = """
 apiVersion: flo/alpha-v1

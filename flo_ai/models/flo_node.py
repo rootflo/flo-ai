@@ -7,7 +7,6 @@ from langchain_core.messages import HumanMessage
 from flo_ai.yaml.config import AgentConfig, TeamConfig
 from flo_ai.models.flo_executable import ExecutableType
 from flo_ai.state.flo_session import FloSession
-from flo_ai.router.flo_router import FloRouter
 from typing import Union, Type, List
 from flo_ai.state.flo_callbacks import FloAgentCallback, FloRouterCallback, FloCallback
 
@@ -59,7 +58,7 @@ class FloNode:
                 flo_team.config,
             )
 
-        def build_from_router(self, flo_router: FloRouter) -> 'FloNode':
+        def build_from_router(self, flo_router) -> 'FloNode':
             router_func = functools.partial(
                 FloNode.Builder.__teamflo_router_node,
                 agent=flo_router.executor,
@@ -83,23 +82,23 @@ class FloNode:
         ):
             agent_cbs: List[FloAgentCallback] = FloNode.Builder.__filter_callbacks(session, FloAgentCallback)
             flo_cbs: List[FloCallback] = FloNode.Builder.__filter_callbacks(session, FloCallback)
-            [x.on_agent_start(name, model_name, state["messages"], {}) for x in agent_cbs]
-            [x.on_agent_start(name, model_name, state["messages"], {}) for x in flo_cbs]
+            [callback.on_agent_start(name, model_name, state["messages"], **{}) for callback in agent_cbs]
+            [callback.on_agent_start(name, model_name, state["messages"], **{}) for callback in flo_cbs]
             try:
                 result = agent.invoke(state)
                 output = result if isinstance(result, str) else result['output']
             except Exception as e:
-                [x.on_agent_error(name, model_name, e, {}) for x in agent_cbs]
-                [x.on_agent_error(name, model_name, e, {}) for x in flo_cbs]
+                [callback.on_agent_error(name, model_name, e, **{}) for callback in agent_cbs]
+                [callback.on_agent_error(name, model_name, e, **{}) for callback in flo_cbs]
                 raise e
-            [x.on_agent_end(name, model_name, output, {}) for x in agent_cbs]
-            [x.on_agent_start(name, model_name, output, {}) for x in flo_cbs]
+            [callback.on_agent_end(name, model_name, output, **{}) for callback in agent_cbs]
+            [callback.on_agent_start(name, model_name, output, **{}) for callback in flo_cbs]
             return {STATE_NAME_MESSAGES: [HumanMessage(content=output, name=name)]}
         
         @staticmethod
         def __filter_callbacks(session: FloSession, type: Type):
             cbs = session.callbacks
-            return list(filter(lambda x: isinstance(x, type), cbs))
+            return list(filter(lambda callback: isinstance(callback, type), cbs))
 
         @staticmethod
         def __teamflo_router_node(
@@ -112,17 +111,17 @@ class FloNode:
         ):
             agent_cbs: List[FloRouterCallback] = FloNode.Builder.__filter_callbacks(session, FloRouterCallback)
             flo_cbs: List[FloCallback] = FloNode.Builder.__filter_callbacks(session, FloCallback)
-            [x.on_router_start(name, model_name, state["messages"], {}) for x in agent_cbs]
-            [x.on_router_start(name, model_name, state["messages"], {}) for x in flo_cbs]
+            [callback.on_router_start(name, model_name, state["messages"], **{}) for callback in agent_cbs]
+            [callback.on_router_start(name, model_name, state["messages"], **{}) for callback in flo_cbs]
             try:
                 result = agent.invoke(state)
                 nextNode = result if isinstance(result, str) else result['next']
             except Exception as e:
-                [x.on_router_error(name, model_name, e, {}) for x in agent_cbs]
-                [x.on_router_error(name, model_name, e, {}) for x in flo_cbs]
+                [callback.on_router_error(name, model_name, e, **{}) for callback in agent_cbs]
+                [callback.on_router_error(name, model_name, e, **{}) for callback in flo_cbs]
                 raise e
-            [x.on_router_end(name, model_name, nextNode, {}) for x in agent_cbs]
-            [x.on_router_start(name, model_name, nextNode, {}) for x in flo_cbs]
+            [callback.on_router_end(name, model_name, nextNode, **{}) for callback in agent_cbs]
+            [callback.on_router_start(name, model_name, nextNode, **{}) for callback in flo_cbs]
             return {'next': nextNode }
 
         @staticmethod

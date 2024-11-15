@@ -17,35 +17,35 @@ class FloToolCallback():
     def __init__(self) -> None:
         pass
 
-    async def on_tool_start(
+    def on_tool_start(
         self, name: str, input: Any, **kwargs: Any
     ) -> Optional[FloCallbackResponse]:
         pass
 
-    async def on_tool_end(self, name: str, output: Any, **kwargs: Any) -> Optional[FloCallbackResponse]:
+    def on_tool_end(self, name: str, output: Any, **kwargs: Any) -> Optional[FloCallbackResponse]:
         pass
 
-    async def on_tool_error(
+    def on_tool_error(
         self, name: str, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> Optional[FloCallbackResponse]:
         pass
 
 class FloAgentCallback():
 
-    async def __init__(self) -> None:
+    def __init__(self) -> None:
         pass
 
-    async def on_agent_start(
+    def on_agent_start(
         self, name: str, model_name: str, input: Any, **kwargs: Any
     ) -> Optional[FloCallbackResponse]:
         pass
 
-    async def on_agent_end(
+    def on_agent_end(
         self, name: str, model_name: str, output: Any, **kwargs: Any
     ) -> Optional[FloCallbackResponse]:
         pass
 
-    async def on_agent_error(
+    def on_agent_error(
         self, name: str, model_name: str, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> Optional[FloCallbackResponse]:
         pass
@@ -54,22 +54,22 @@ class FloRouterCallback():
     def __init__(self) -> None:
         pass
 
-    async def on_router_start(
+    def on_router_start(
         self, name: str, model_name: str, input: Any, **kwargs: Any
     ) -> Optional[FloCallbackResponse]:
         pass
 
-    async def on_router_end(
+    def on_router_end(
         self, name: str, model_name: str, output: Any, **kwargs: Any
     ) -> Optional[FloCallbackResponse]:
         pass
 
-    async def on_router_error(
+    def on_router_error(
         self, name: str,  model_name: str, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> None:
         Optional[FloCallbackResponse]
 
-def __safe_call_cb(func, cb_response: FloCallbackResponse, ignore_error = True):
+def safe_call_cb(func, cb_response: FloCallbackResponse, ignore_error = True):
     try:   
         func(cb_response)
     except Exception as e:
@@ -85,19 +85,19 @@ class FunctionalFloToolCallbackImpl(FloToolCallback):
         self.func = func
         self.ignore_error = ignore_error
 
-    async def on_tool_start(self, name: str, input: Any, **kwargs: Any) -> Optional[FloCallbackResponse]:
+    def on_tool_start(self, name: str, input: Any, **kwargs: Any) -> Optional[FloCallbackResponse]:
         cb_response = FloRouterCallback("on_tool_start", name, input=input, args=kwargs)
-        __safe_call_cb(self.func, cb_response, self.ignore_error)
+        safe_call_cb(self.func, cb_response, self.ignore_error)
         return cb_response
     
-    async def on_tool_end(self, name: str, output: Any, **kwargs: Any) -> Optional[FloCallbackResponse]:
+    def on_tool_end(self, name: str, output: Any, **kwargs: Any) -> Optional[FloCallbackResponse]:
         cb_response = FloRouterCallback("on_tool_end", name, output=output, args=kwargs)
-        __safe_call_cb(self.func, cb_response, self.ignore_error)
+        safe_call_cb(self.func, cb_response, self.ignore_error)
         return cb_response
 
-    async def on_tool_error(self, name: str, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> Optional[FloCallbackResponse]:
+    def on_tool_error(self, name: str, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> Optional[FloCallbackResponse]:
         cb_response = FloRouterCallback("on_tool_error", name, error=error, args=kwargs)
-        __safe_call_cb(self.func, cb_response, self.ignore_error)
+        safe_call_cb(self.func, cb_response, self.ignore_error)
         return cb_response
     
 class FunctionalFloAgentCallbackImpl(FloAgentCallback):
@@ -107,19 +107,19 @@ class FunctionalFloAgentCallbackImpl(FloAgentCallback):
         self.func = func
         self.ignore_error = ignore_error
 
-    async def on_tool_start(self, name: str, model_name: str, input: Any, **kwargs: Any) -> Any:
+    def on_agent_start(self, name: str, model_name: str, input: Any, **kwargs: Any) -> Any:
         cb_response = FloCallbackResponse("on_agent_start", name, input=input, args=kwargs, model_name=model_name)
-        __safe_call_cb(self.func, cb_response, self.ignore_error)
+        safe_call_cb(self.func, cb_response, self.ignore_error)
         return cb_response
     
-    async def on_tool_end(self, name: str, model_name: str, output: Any, **kwargs: Any) -> None:
+    def on_agent_end(self, name: str, model_name: str, output: Any, **kwargs: Any) -> None:
         cb_response = FloCallbackResponse("on_agent_end", name, output=output, args=kwargs, model_name=model_name)
-        __safe_call_cb(self.func, cb_response, self.ignore_error)
+        safe_call_cb(self.func, cb_response, self.ignore_error)
         return cb_response
 
-    async def on_tool_error(self, name: str, model_name: str, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
+    def on_agent_error(self, name: str, model_name: str, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
         cb_response = FloCallbackResponse("on_agent_error", name, error=error, args=kwargs, model_name=model_name)
-        __safe_call_cb(self.func, cb_response, self.ignore_error)
+        safe_call_cb(self.func, cb_response, self.ignore_error)
         return cb_response
 
 class FunctionalFloRouterCallbackImpl(FloRouterCallback):
@@ -129,19 +129,19 @@ class FunctionalFloRouterCallbackImpl(FloRouterCallback):
         self.func = func
         self.ignore_error = ignore_error
 
-    async def on_tool_start(self, name: str, model_name: str, input: Any, **kwargs: Any) -> Any:
+    def on_router_start(self, name: str, model_name: str, input: Any, **kwargs: Any) -> Any:
         cb_response = FloCallbackResponse("on_router_start", name, input=input, args=kwargs, model_name=model_name)
-        __safe_call_cb(self.func, cb_response, self.ignore_error)
+        safe_call_cb(self.func, cb_response, self.ignore_error)
         return cb_response
     
-    async def on_tool_end(self, name: str, model_name: str, output: Any, **kwargs: Any) -> None:
+    def on_router_end(self, name: str, model_name: str, output: Any, **kwargs: Any) -> None:
         cb_response = FloCallbackResponse("on_router_end", name, output=output, args=kwargs, model_name=model_name)
-        __safe_call_cb(self.func, cb_response, self.ignore_error)
+        safe_call_cb(self.func, cb_response, self.ignore_error)
         return cb_response
 
-    async def on_tool_error(self, name: str, model_name: str, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
+    def on_router_error(self, name: str, model_name: str, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
         cb_response = FloCallbackResponse("on_router_error", name, error=error, args=kwargs, model_name=model_name)
-        __safe_call_cb(self.func, cb_response, self.ignore_error)
+        safe_call_cb(self.func, cb_response, self.ignore_error)
         return cb_response
     
 class FloCallback(FunctionalFloToolCallbackImpl, FunctionalFloAgentCallbackImpl, FunctionalFloRouterCallbackImpl):
