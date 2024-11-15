@@ -29,6 +29,7 @@ class FloRouter(ABC):
         flo_team: FloTeam,
         executor,
         config: TeamConfig = None,
+        model_name: Union[str, None] = "default"
     ):
         self.router_name = name
         self.session: FloSession = session
@@ -38,6 +39,7 @@ class FloRouter(ABC):
         self.type: ExecutableType = ExecutableType.router
         self.executor = executor
         self.config = config
+        self.model_name = model_name
 
     def build_routed_team(self) -> FloRoutedTeam:
         return self.build_graph()

@@ -14,7 +14,7 @@ from typing import Optional
 def _handle_agent_error(error) -> str:
     error_message = str(error)[:50]
     return f"""
-            Following error happened while agent execution, please retry with the fix for the same:
+            Following error happened while aogent execution, please retry with the fix for the same:
             {error_message}
         """
 
