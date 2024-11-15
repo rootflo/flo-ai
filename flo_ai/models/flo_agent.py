@@ -16,7 +16,7 @@ class FloAgent(ExecutableFlo):
         self, agent: Runnable, executor: AgentExecutor, config: AgentConfig, model_nick_name: str
     ) -> None:
         super().__init__(config.name, executor, ExecutableType.agentic)
-        self.model_nick_name = model_nick_name
+        self.model_name = model_nick_name
         self.agent: Runnable = (agent,)
         self.executor: AgentExecutor = executor
         self.config: AgentConfig = config

@@ -37,7 +37,7 @@ class FloNode:
                 name=flo_agent.name,
                 agent_config=flo_agent.config,
                 session=self.session,
-                model_name=flo_agent.model_nick_name
+                model_name=flo_agent.model_name
             )
             return FloNode(agent_func, flo_agent.name, flo_agent.type, flo_agent.config)
 
