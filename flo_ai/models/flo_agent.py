@@ -35,11 +35,11 @@ class FloAgent(ExecutableFlo):
             role: Optional[str] = None,
             llm: Union[BaseLanguageModel, None] = None,
             on_error: Union[str, Callable] = True,
-            model_nick_name: Union[str, None] = 'default',
+            model_name: Union[str, None] = 'default',
         ) -> None:
             prompt: Union[ChatPromptTemplate, str] = config.job
             self.name: str = config.name
-            self.model_nick_name = model_nick_name
+            self.model_name = model_name
             self.llm = llm if llm is not None else session.llm
             self.config = config
             system_prompts = (
@@ -68,5 +68,5 @@ class FloAgent(ExecutableFlo):
                 handle_parsing_errors=self.on_error,
             )
             return FloAgent(
-                agent, executor, self.config, model_nick_name=self.model_nick_name
+                agent, executor, self.config, model_nick_name=self.model_name
             )
