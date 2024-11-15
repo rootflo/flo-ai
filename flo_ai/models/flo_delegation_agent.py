@@ -34,13 +34,13 @@ class FloDelegatorAgent(ExecutableFlo):
             session: FloSession,
             name: str,
             job: str,
-            to: Delegate,
+            delegate: Delegate,
             llm: Optional[BaseLanguageModel] = None,
             model_name: str = None,
         ) -> None:
             self.session = session
             self.name = name
-            self.to = to
+            self.to = delegate
             delegator_base_system_message = (
                 'You are a delegator tasked with routing a conversation between the'
                 ' following {member_type}: {members}. Given the following rules,'
@@ -48,7 +48,7 @@ class FloDelegatorAgent(ExecutableFlo):
             )
             self.model_name = model_name
             self.llm = session.llm if llm is None else llm
-            self.options = [x.name for x in to.members]
+            self.options = delegate.to
             self.parser = JsonOutputParser(pydantic_object=NextAgent)
             self.llm_router_prompt = ChatPromptTemplate.from_messages(
                 [

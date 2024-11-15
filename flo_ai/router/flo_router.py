@@ -83,7 +83,7 @@ class FloRouter(ABC):
         to_agent_names = delegation_node.delegate.to
         delegation_node_name = delegation_node.name
         next_node_name = nextNode if isinstance(nextNode, str) else nextNode.name
-        retry = delegation_node.config.retry or 1
+        retry = delegation_node.delegate.retry or 1
 
         conditional_map = {}
         for agent_name in to_agent_names:
@@ -130,8 +130,8 @@ class FloRouter(ABC):
         reflection_node: FloNode,
         nextNode: Union[FloNode | str],
     ):
-        to_agent_name = reflection_node.flo_team.members[0]
-        retry = reflection_node.config.retry or 1
+        to_agent_name = reflection_node.delegate.to[0]
+        retry = reflection_node.delegate.retry or 1
         reflection_agent_name = reflection_node.name
         next = nextNode if isinstance(nextNode, str) else nextNode.name
 

@@ -28,7 +28,7 @@ class FloRouterFactory:
                 model_nick_name=team_config.router.model,
             ).build()
         elif router_kind == 'linear':
-            return FloLinear.Builder(session, team_config, flo_team).build()
+            return FloLinear.Builder(session, team_config.name, flo_team).build()
         elif router_kind == 'llm':
             return FloLLMRouter.Builder(
                 session,

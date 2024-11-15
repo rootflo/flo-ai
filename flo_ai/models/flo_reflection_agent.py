@@ -52,5 +52,5 @@ class FloReflectionAgent(ExecutableFlo):
         def build(self):
             executor = self.prompt | self.llm | StrOutputParser()
             return FloReflectionAgent(
-                self.name, executor, self.model_name, delegate=self.to
+                self.name, executor, self.model_name, delegate=self.delegate
             )

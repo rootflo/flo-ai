@@ -7,9 +7,7 @@ from flo_ai.models.flo_reflection_agent import FloReflectionAgent
 from flo_ai.models.flo_delegation_agent import FloDelegatorAgent
 from flo_ai.models.flo_tool_agent import FloToolAgent
 from flo_ai.error.flo_exception import FloException
-from flo_ai.models.flo_team import FloTeam
-from flo_ai.models.flo_member import FloMember
-from flo_ai.models.flo_executable import ExecutableType
+from flo_ai.models.delegate import Delegate
 from flo_ai.constants.common_constants import DOCUMENTATION_AGENT_ANCHOR
 from enum import Enum
 
@@ -106,6 +104,7 @@ class AgentFactory:
             job=agent.job,
             role=agent.role,
             llm=agent_model,
+            to=Delegate([x.name for x in agent.to], agent.retry),
             model_name=agent.model,
         ).build()
 
@@ -114,9 +113,11 @@ class AgentFactory:
         session: FloSession, agent: AgentConfig
     ) -> FloReflectionAgent:
         agent_model = AgentFactory.__resolve_model(session, agent.model)
-        # see if we can remodel this
-        members = [FloMember(x.name, ExecutableType.agentic) for x in agent.to]
-        to = FloTeam.Builder('delegator_team', members=members)
         return FloDelegatorAgent.Builder(
-            session, agent.name, agent.job, to, llm=agent_model, model_name=agent.model
+            session,
+            agent.name,
+            agent.job,
+            delegate=Delegate([x.name for x in agent.to], agent.retry),
+            llm=agent_model,
+            model_name=agent.model,
         ).build()

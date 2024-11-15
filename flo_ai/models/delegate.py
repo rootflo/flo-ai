@@ -4,4 +4,4 @@ from dataclasses import dataclass
 @dataclass
 class Delegate:
     to: list[str]
-    retry: int
+    retry: int = 1
