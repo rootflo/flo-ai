@@ -54,9 +54,7 @@ class FloNode:
         def build_from_team(self, flo_team: FloRoutedTeam) -> 'FloNode':
             team_chain = (
                 functools.partial(
-                    FloNode.Builder.__teamflo_team_node,
-                    members=flo_team.runnable.nodes,
-                    session=self.session,
+                    FloNode.Builder.__teamflo_team_node, members=flo_team.runnable.nodes
                 )
                 | flo_team.runnable
             )
