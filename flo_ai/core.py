@@ -72,7 +72,7 @@ class Flo:
             return Flo(session, executable)
         if routed_team is not None:
             return Flo(session, routed_team.build_routed_team())
-        raise FloException("""Either yaml or router should be not None""")
+        raise FloException("""Either yaml or routed_team should be not None""")
 
     @staticmethod
     def set_log_level(log_level: str):
