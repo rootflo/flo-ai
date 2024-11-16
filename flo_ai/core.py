@@ -67,7 +67,7 @@ class Flo:
 
     @staticmethod
     def build(session: FloSession, router: FloRouter):  # noqa: F811
-        return Flo(session, router.to_flo())
+        return Flo(session, router.build_routed_team())
 
     @staticmethod
     def set_log_level(log_level: str):
