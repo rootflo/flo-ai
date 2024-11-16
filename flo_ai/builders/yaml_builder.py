@@ -1,3 +1,4 @@
+from typing import Union
 from flo_ai.models.flo_team import FloTeam
 from flo_ai.yaml.config import (
     FloRoutedTeamConfig,
@@ -14,9 +15,10 @@ from flo_ai.yaml.validators import raise_for_name_error
 from flo_ai.common.flo_logger import get_logger
 
 
-def build_supervised_team(session: FloSession) -> ExecutableFlo:
+def build_supervised_team(
+    session: FloSession, flo_config: Union[FloRoutedTeamConfig, FloAgentConfig]
+) -> ExecutableFlo:
     name_set = set()
-    flo_config = session.config
     if isinstance(flo_config, FloRoutedTeamConfig):
         team_config: TeamConfig = flo_config.team
         team = parse_and_build_subteams(session, team_config, name_set)
