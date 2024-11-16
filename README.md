@@ -65,6 +65,8 @@ poetry add flo-ai
 ```python
 from flo_ai import Flo, FloSession
 from langchain_openai import ChatOpenAI
+from langchain_community.tools.tavily_search.tool import TavilySearchResults
+
 
 # Define your team in YAML
 yaml_config = """
@@ -95,6 +97,39 @@ flo = Flo.build(session, yaml=yaml_config)
 # Start streaming results
 for response in flo.stream("Write about recent AI developments"):
     print(response)
+```
+
+## Create a AI team using code in minutes
+
+```python
+from flo_ai import FloSupervisor, FloAgent, FloSession, FloTeam, FloLinear
+from langchain_openai import ChatOpenAI
+from langchain_community.tools.tavily_search.tool import TavilySearchResults
+
+llm = ChatOpenAI(temperature=0, model_name='gpt-4o')
+session = FloSession(llm).register_tool(
+    name="TavilySearchResults",
+    tool=TavilySearchResults()
+)
+
+researcher = FloAgent.Builder(
+    session,
+    "Researcher", 
+    "Do a research on the internet and find articles of relevent to the topic asked by the user", 
+    [TavilySearchResults()]
+).build()
+
+blogger = FloAgent.Builder(
+    session, 
+    "BlogWriter", 
+    "Able to write a blog using information provided", 
+    [TavilySearchResults()]
+).build()
+
+my_marketing_team = FloTeam.Builder(session, "Marketing", [researcher, blogger]).build()
+marketing_manager = FloSupervisor.Builder(session, "Head-of-Marketing", marketing_team).build()
+
+marketing_flo = marketing_manager.to_flo()
 ```
 
 ## 📖 Documentation
@@ -145,10 +180,23 @@ Built with ❤️ using:
 - [LangChain](https://github.com/hwchase17/langchain)
 - [LangGraph](https://github.com/langchain-ai/langgraph)
 
+<h2>📚 Latest Blog Posts</h2>
+
+<div style="display: flex; gap: 10px;">
+    <a href="https://medium.com/rootflo/flo-simple-way-to-create-composable-ai-agents-6946c2922a94" target="_blank" style="text-decoration: none;">
+        <img src="./images/blog-image.png" width="150" style="border-radius: 10px;" />
+        <p><b>Flo: 🔥🔥🔥 Simple way to create composable AI agents</b><br />Unlock the Power of Customizable AI Workflows with FloAI’s Intuitive and Flexible Agentic Framework</p>
+    </a>
+    <a href="https://medium.com/rootflo/build-an-agentic-ai-customer-support-bot-using-floai-533660fb9c9b" target="_blank" style="text-decoration: none;">
+        <img src="./images/customer-support.png" width="150" style="border-radius: 10px;" />
+        <p><b>Build an Agentic AI customer support bot using FloAI</b><br />We built an open-source agentic AI workflow builder named FloAI and used it to create an agentic customer support agent..</p>
+    </a>
+</div>
+
 ---
 
 <div align="center">
-  <strong>Built with ❤️ by the Rootflo team</strong>
+  <strong>Built with ❤️ by the <a href="http://rootflo.ai">rootflo</a> team</strong>
   <br><a href="https://github.com/rootflo/flo-ai/discussions">Community</a> •
   <a href="https://flo-ai.rootflo.ai">Documentation</a>
 </div>
