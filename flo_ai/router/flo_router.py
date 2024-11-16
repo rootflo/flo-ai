@@ -83,6 +83,7 @@ class FloRouter(ABC):
         to_agent_names = delegation_node.delegate.to
         delegation_node_name = delegation_node.name
         next_node_name = nextNode if isinstance(nextNode, str) else nextNode.name
+
         retry = delegation_node.delegate.retry or 1
 
         conditional_map = {}
