@@ -50,7 +50,12 @@ class Flo:
         return self.runnable.ainvoke(query, config)
 
     @staticmethod
-    def build(session: FloSession, yaml: str, log_level: Optional[str] = None):
+    def build(
+        session: FloSession,
+        yaml: Optional[str] = None,
+        routed_team: Optional[FloRouter] = None,
+        log_level: Optional[str] = None,
+    ):
         if log_level:
             warnings.warn(
                 '`log_level` is deprecated and will be removed in a future version. '
@@ -59,15 +64,15 @@ class Flo:
                 stacklevel=2,
             )
             Flo.set_log_level(log_level)
-        get_logger().info('Building Flo instance from YAML ...', session)
-        executable: ExecutableFlo = build_supervised_team(
-            session, to_supervised_team(yaml)
-        )
-        return Flo(session, executable)
-
-    @staticmethod
-    def build(session: FloSession, router: FloRouter):  # noqa: F811
-        return Flo(session, router.build_routed_team())
+        if yaml is not None:
+            get_logger().info('Building Flo instance from YAML ...', session)
+            executable: ExecutableFlo = build_supervised_team(
+                session, to_supervised_team(yaml)
+            )
+            return Flo(session, executable)
+        if routed_team is not None:
+            return Flo(session, routed_team.build_routed_team())
+        raise FloException("""Either yaml or router should be not None""")
 
     @staticmethod
     def set_log_level(log_level: str):
