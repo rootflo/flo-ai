@@ -182,6 +182,45 @@ marketing_manager = FloSupervisor.Builder(session, "Head-of-Marketing", marketin
 marketing_flo = marketing_manager.to_flo()
 ```
 
+## Tools
+
+FloAI supports all the tools built and available in `langchain_community` package. To know more these tools, go [here](https://python.langchain.com/docs/integrations/tools/).
+
+Along with that FloAI has a decorator `@flotool` which makes any function into a tool. 
+
+Creating a simple tool using `@flotool`:
+
+```python
+from flo_ai import flotool
+from pydantic import BaseModel, Field
+
+# define argument schema
+class AdditionToolInput(BaseModel):
+    numbers: List[int] = Field(..., description='List of numbers to add')
+
+@flotool(name='AdditionTool', description='Tool to add numbers')
+async def addition_tool(numbers: List[int]) -> str:
+    result = sum(numbers)
+    await asyncio.sleep(1)
+    return f'The sum is {result}'
+
+# async tools can also be defined
+# when using async tool, while running the flo use async invoke
+@flotool(
+    name='MultiplicationTool',
+    description='Tool to multiply numbers to get product of numbers',
+)
+async def mul_tool(numbers: List[int]) -> str:
+    result = sum(numbers)
+    await asyncio.sleep(1)
+    return f'The product is {result}'
+
+# register your tool or use directly in code impl
+session.register_tool(name='Adder', tool=addition_tool)
+```
+
+**Note:** `@flotool` comes with inherent error handling capabilities to retry if an exception is thrown. Use `unsafe=True` to disable error handling
+
 ## 📖 Documentation
 
 Visit our [comprehensive documentation](https://flo-ai.rootflo.ai) for:
