@@ -16,16 +16,17 @@ team:
       - name: EssayWriter
         kind: llm
         job: >
-          You are an essay assistant tasked with writing excellent 300-words essays. Generate the best essay possible for the user's request. 
+          You are an essay assistant tasked with writing excellent 300 words essay. Generate the best essay possible for the user's request. 
           If the you are provided critique view, respond with a revised version of your previous attempts. A maximum of total 100 words
-      - name: ReflectionAgent
-        kind: reflection
+      - name: DelegatorAgent
+        kind: delegator
         retry: 1
         to: 
           - name: EssayWriter
         job: >
-          You are a teacher grading an essay submission. Generate critique and recommendations for the user's submission.
-          Provide detailed recommendations, including requests for length, depth, style, etc.
+          You are a teacher grading an essay submission. Score the essay between 1 to 10, with 10 being perfect
+          If the score is greater than 7 sent it to FinalEssayProducer
+          else if its less than or equal to 7 sent it to EssayWriter with suggestions to change
       - name: FinalEssayProducer
         kind: llm
         job: >
@@ -45,6 +46,6 @@ session = FloSession(llm).register_tool(
 )
 
 flo: Flo = Flo.build(session, yaml=yaml_data)
-flo.draw_to_file('event.png', xray=True)
+Flo.set_log_level('INFO')
 data = flo.invoke(input_prompt)
 print((data['messages'][-1]).content)

@@ -7,41 +7,61 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from flo_ai.models.flo_executable import ExecutableFlo
 from flo_ai.state.flo_session import FloSession
 from typing import Union, Optional, Callable
-from flo_ai.yaml.config import AgentConfig
 from flo_ai.models.flo_executable import ExecutableType
 
 
 class FloAgent(ExecutableFlo):
     def __init__(
         self,
+        name: str,
         agent: Runnable,
         executor: AgentExecutor,
-        config: AgentConfig,
-        model_nick_name: str,
+        model_name: str,
     ) -> None:
-        super().__init__(config.name, executor, ExecutableType.agentic)
-        self.model_name = model_nick_name
+        super().__init__(name, executor, ExecutableType.agentic)
+        self.model_name = model_name
         self.agent: Runnable = (agent,)
         self.executor: AgentExecutor = executor
-        self.config: AgentConfig = config
+
+    @staticmethod
+    def create(
+        session: FloSession,
+        name: str,
+        job: str,
+        tools: list[BaseTool],
+        role: Optional[str] = None,
+        on_error: Union[str, Callable] = True,
+        llm: Union[BaseLanguageModel, None] = None,
+    ):
+        model_name = 'default' if llm is None else llm.name
+        return FloAgent.Builder(
+            session=session,
+            name=name,
+            job=job,
+            tools=tools,
+            role=role,
+            on_error=on_error,
+            llm=llm,
+            model_name=model_name,
+        ).build()
 
     class Builder:
         def __init__(
             self,
             session: FloSession,
-            config: AgentConfig,
+            name: str,
+            job: str,
             tools: list[BaseTool],
-            verbose: bool = True,
             role: Optional[str] = None,
+            verbose: bool = False,
             llm: Union[BaseLanguageModel, None] = None,
             on_error: Union[str, Callable] = True,
             model_name: Union[str, None] = 'default',
         ) -> None:
-            prompt: Union[ChatPromptTemplate, str] = config.job
-            self.name: str = config.name
+            prompt: Union[ChatPromptTemplate, str] = job
+            self.name: str = name
             self.model_name = model_name
             self.llm = llm if llm is not None else session.llm
-            self.config = config
             system_prompts = (
                 [('system', 'You are a {}'.format(role)), ('system', prompt)]
                 if role is not None
@@ -67,6 +87,4 @@ class FloAgent(ExecutableFlo):
                 return_intermediate_steps=True,
                 handle_parsing_errors=self.on_error,
             )
-            return FloAgent(
-                agent, executor, self.config, model_nick_name=self.model_name
-            )
+            return FloAgent(self.name, agent, executor, model_name=self.model_name)
