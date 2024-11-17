@@ -33,7 +33,7 @@ class FloDelegatorAgent(ExecutableFlo):
         session: FloSession,
         name: str,
         job: str,
-        delegate: Delegate,
+        to: Delegate,
         llm: Optional[BaseLanguageModel] = None,
     ):
         model_name = 'default' if llm is None else llm.name
@@ -41,7 +41,7 @@ class FloDelegatorAgent(ExecutableFlo):
             session=session,
             name=name,
             job=job,
-            delegate=delegate,
+            delegate=to,
             llm=llm,
             model_name=model_name,
         ).build()
