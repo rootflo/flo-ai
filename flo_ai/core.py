@@ -75,6 +75,10 @@ class Flo:
         raise FloException("""Either yaml or routed_team should be not None""")
 
     @staticmethod
+    def create(session: FloSession, routed_team: FloRouter):
+        return Flo(session, routed_team.build_routed_team())
+
+    @staticmethod
     def set_log_level(log_level: str):
         set_log_level_internal(log_level)
 

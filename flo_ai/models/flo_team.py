@@ -10,6 +10,10 @@ class FloTeam:
         self.members = members
         self.session = session
 
+    @staticmethod
+    def create(session: FloSession, name: str, members: list[FloMember]):
+        return FloTeam.Builder(session=session, name=name, members=members).build()
+
     class Builder:
         def __init__(
             self, session: FloSession, name: str, members: list[FloMember]
