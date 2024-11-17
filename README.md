@@ -55,7 +55,7 @@ Flo AI is a Python framework that makes building production-ready AI agents and 
 FloAI follows an agent team architecture, where agents are the basic building blocks, and teams can have multiple agents and teams themselves can be part of bigger teams.
 
 Building a working agent or team involves 3 steps:
-1. Create a session using `FloSession`
+1. Create a session using `FloSession`, and register your tools and models
 2. Define you agent/team/team of teams using yaml or code
 3. Build and run using `Flo`
 
@@ -113,8 +113,8 @@ weather_agent = FloAgent.create(
     tools=[TavilySearchResults()]
 )
 
-result = weather_agent.invoke("Whats the whether in New Delhi, India ?")
-print(result)
+agent_flo: Flo = Flo.create(session, weather_agent)
+result = agent_flo.invoke("Whats the whether in New Delhi, India ?")
 ```
 
 ### Create Your First AI Team in 30 Seconds
@@ -156,6 +156,9 @@ for response in flo.stream("Write about recent AI developments"):
     print(response)
 ```
 
+**Note:** You can make each of the above agents including the router to different models, giving flexibility to combine the power of different LLMs.
+To know more, check multi-model integration in detailed [documentation](https://flo-ai.rootflo.ai)
+
 ### Lets Create a AI team using code
 
 ```python
@@ -169,24 +172,26 @@ session = FloSession(llm).register_tool(
     tool=TavilySearchResults()
 )
 
-researcher = FloAgent.Builder(
+researcher = FloAgent.create(
     session,
-    "Researcher", 
-    "Do a research on the internet and find articles of relevent to the topic asked by the user", 
-    [TavilySearchResults()]
-).build()
+    name="Researcher", 
+    role="Internet Researcher", # optional
+    job="Do a research on the internet and find articles of relevent to the topic asked by the user", 
+    tools=[TavilySearchResults()]
+)
 
-blogger = FloAgent.Builder(
+blogger = FloAgent.create(
     session, 
-    "BlogWriter", 
-    "Able to write a blog using information provided", 
-    [TavilySearchResults()]
-).build()
+    name="BlogWriter", 
+    role="Thought Leader", # optional
+    job="Able to write a blog using information provided", 
+    tools=[TavilySearchResults()]
+)
 
-my_marketing_team = FloTeam.Builder(session, "Marketing", [researcher, blogger]).build()
-marketing_manager = FloSupervisor.Builder(session, "Head-of-Marketing", marketing_team).build()
+marketing_team = FloTeam.create(session, "Marketing", [researcher, blogger])
+head_of_marketing = FloSupervisor.create(session, "Head-of-Marketing", marketing_team)
+marketing_flo = Flo.create(session, routed_team=head_of_marketing)
 
-marketing_flo = marketing_manager.to_flo()
 ```
 
 ## Tools
@@ -234,6 +239,10 @@ Visit our [comprehensive documentation](https://flo-ai.rootflo.ai) for:
 - Detailed tutorials
 - Architecture deep-dives
 - API reference
+  - Logging
+  - Error handling
+  - Observers
+  - Dynamic model switching
 - Best practices
 - Advanced examples
 
@@ -285,7 +294,11 @@ Built with ❤️ using:
     </a>
     <a href="https://medium.com/rootflo/build-an-agentic-ai-customer-support-bot-using-floai-533660fb9c9b" target="_blank" style="text-decoration: none;">
         <img src="./images/customer-support.png" width="150" style="border-radius: 10px;" />
-        <p><b>Build an Agentic AI customer support bot using FloAI</b><br />We built an open-source agentic AI workflow builder named FloAI and used it to create an agentic customer support agent..</p>
+        <p><b>Build an Agentic AI customer support bot using FloAI</b><br />We built an open-source agentic AI workflow builder named FloAI and used it to create an agentic customer support agent.</p>
+    </a>
+    <a href="https://medium.com/rootflo/build-an-agentic-rag-using-floai-in-minutes-0be260304c98" target="_blank" style="text-decoration: none;">
+        <img src="./examples/images/agentic-rag.png" width="150" style="border-radius: 10px;" />
+        <p><b>Build an Agentic RAG using FloAI in minutes</b><br />FloAI has just made implementing agentic RAG simple and easy to manage</p>
     </a>
 </div>
 
