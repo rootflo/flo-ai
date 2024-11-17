@@ -52,6 +52,13 @@ Flo AI is a Python framework that makes building production-ready AI agents and 
 
 ## 🚀 Quick Start
 
+FloAI follows an agent team architecture, where agents are the basic building blocks, and teams can have multiple agents and teams themselves can be part of bigger teams.
+
+Building a working agent or team involves 3 steps:
+1. Create a session using `FloSession`
+2. Define you agent/team/team of teams using yaml or code
+3. Build and run using `Flo`
+
 ### Installation
 
 ```bash
