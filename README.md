@@ -60,6 +60,56 @@ pip install flo-ai
 poetry add flo-ai
 ```
 
+### Create Your First AI Agent in 30 secs
+
+```python
+from flo_ai import Flo, FloSession
+from langchain_openai import ChatOpenAI
+from langchain_community.tools.tavily_search.tool import TavilySearchResults
+
+# init your LLM
+llm = ChatOpenAI(temperature=0)
+
+# create a session and register your tools
+session = FloSession(llm).register_tool(name="TavilySearchResults", tool=TavilySearchResults())
+
+# define your agent yaml
+simple_weather_checking_agent = """
+apiVersion: flo/alpha-v1
+kind: FloAgent
+name: weather-assistant
+agent:
+    name: WeatherAssistant
+    job: >
+      Given the city name you are capable of answering the latest whether this time of the year by searching the internet
+    tools:
+      - name: InternetSearchTool
+"""
+flo = Flo.build(session, yaml=simple_weather_checking_agent)
+
+# Start streaming results
+for response in flo.stream("Write about recent AI developments"):
+    print(response)
+```
+
+## Lets create the same agent using code
+
+```python
+from flo_ai import FloAgent
+
+session = FloSession(llm)
+
+weather_agent = FloAgent.create(
+    session=session,
+    name="WeatherAssistant",
+    job="Given the city name you are capable of answering the latest whether this time of the year by searching the internet",
+    tools=[TavilySearchResults()]
+)
+
+result = weather_agent.invoke("Whats the whether in New Delhi, India ?")
+print(result)
+```
+
 ### Create Your First AI Team in 30 Seconds
 
 ```python
@@ -99,7 +149,7 @@ for response in flo.stream("Write about recent AI developments"):
     print(response)
 ```
 
-## Create a AI team using code in minutes
+### Lets Create a AI team using code
 
 ```python
 from flo_ai import FloSupervisor, FloAgent, FloSession, FloTeam, FloLinear
