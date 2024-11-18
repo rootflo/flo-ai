@@ -8,7 +8,12 @@ from flo_ai.models.flo_executable import ExecutableType
 
 
 class FloLinear(FloRouter):
-    def __init__(self, session: FloSession, name: str, flo_team: FloTeam):
+    def __init__(
+        self,
+        session: FloSession,
+        name: str,
+        flo_team: FloTeam,
+    ):
         super().__init__(
             session=session,
             name=name,
@@ -61,11 +66,15 @@ class FloLinear(FloRouter):
         return FloLinear.Builder(session=session, name=name, flo_team=team).build()
 
     class Builder:
-        def __init__(self, session: FloSession, name: str, flo_team: FloTeam, model_nick_name: str = 'default') -> None:
+        def __init__(
+            self,
+            session: FloSession,
+            name: str,
+            flo_team: FloTeam,
+        ) -> None:
             self.name = name
             self.session = session
             self.team = flo_team
-            self.model_name = model_nick_name
 
         def build(self):
-            return FloLinear(self.session, self.name, self.team,model_name=self.model_name)
+            return FloLinear(self.session, self.name, self.team)

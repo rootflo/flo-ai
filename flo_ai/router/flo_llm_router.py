@@ -120,5 +120,5 @@ class FloLLMRouter(FloRouter):
                 flo_team=self.flo_team,
                 name=self.name,
                 session=self.session,
-                model_name=self.model_name, 
+                model_name=self.model_name,
             )
