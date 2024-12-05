@@ -99,23 +99,23 @@ class FunctionalFloToolCallbackImpl(FloToolCallback):
         self.ignore_error = ignore_error
 
     def on_tool_start(
-        self, name: str, input: Any, **kwargs: Any
+        self, name: str, input: Any, color: Optional[str] = None, **kwargs: Any
     ) -> Optional[FloCallbackResponse]:
-        cb_response = FloRouterCallback('on_tool_start', name, input=input, args=kwargs)
+        cb_response = FloCallbackResponse('on_tool_start', name=name, input=input, args=kwargs)
         safe_call_cb(self.func, cb_response, self.ignore_error)
         return cb_response
 
     def on_tool_end(
-        self, name: str, output: Any, **kwargs: Any
+        self, name: str, output: Any,color: Optional[str] = None, **kwargs: Any
     ) -> Optional[FloCallbackResponse]:
-        cb_response = FloRouterCallback('on_tool_end', name, output=output, args=kwargs)
+        cb_response = FloCallbackResponse('on_tool_end', name=name, output=output, args=kwargs)
         safe_call_cb(self.func, cb_response, self.ignore_error)
         return cb_response
 
     def on_tool_error(
         self, name: str, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
     ) -> Optional[FloCallbackResponse]:
-        cb_response = FloRouterCallback('on_tool_error', name, error=error, args=kwargs)
+        cb_response = FloCallbackResponse('on_tool_error', name=name, error=error, args=kwargs)
         safe_call_cb(self.func, cb_response, self.ignore_error)
         return cb_response
 

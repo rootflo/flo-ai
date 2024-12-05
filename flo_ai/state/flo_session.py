@@ -5,6 +5,7 @@ from langchain_core.tools import BaseTool
 from flo_ai.common.flo_logger import get_logger
 from flo_ai.common.flo_langchain_logger import FloLangchainLogger
 from flo_ai.helpers.utils import random_str
+from flo_ai.storage.data_collector import DataCollector
 from flo_ai.callbacks.flo_callbacks import (
     FloToolCallback,
     FloAgentCallback,
@@ -31,6 +32,7 @@ class FloSession:
         llm: BaseLanguageModel = None,
         log_level: Optional[str] = None,
         on_agent_error=_handle_agent_error,
+        data_collector: Optional[DataCollector] = None,
     ) -> None:
         if log_level:
             warnings.warn(
@@ -51,8 +53,14 @@ class FloSession:
         self.loop_size: int = loop_size
         self.max_loop: int = max_loop
         self.on_agent_error = on_agent_error
-        self.langchain_logger = FloLangchainLogger(self.session_id)
+
         self.callbacks: list = []
+        self.data_collector = data_collector
+        self.langchain_logger = FloLangchainLogger(self.session_id, tool_callbacks=[])
+    
+        if self.llm is not None:
+            self.llm = self.llm.bind(callbacks=[self.langchain_logger])
+
         get_logger().info('New session created ...', self)
 
     def resolve_llm(
@@ -79,15 +87,36 @@ class FloSession:
         get_logger().info(f"Model '{name}' registered for session {self.session_id}")
         return self
 
+
     def register_callback(
         self, callback: Union[FloRouterCallback, FloAgentCallback, FloToolCallback]
     ):
         self.callbacks.append(callback)
-        tool_callbacks = list(
-            filter(lambda x: isinstance(x, FloToolCallback), self.callbacks)
+        
+        tool_callbacks = []
+        agent_callbacks = []
+        router_callbacks = []
+        
+        for cb in self.callbacks:
+            if isinstance(cb, FloToolCallback):
+                tool_callbacks.append(cb)
+            if isinstance(cb, FloAgentCallback):
+                agent_callbacks.append(cb)
+            if isinstance(cb, FloRouterCallback):
+                router_callbacks.append(cb)
+        
+        self.langchain_logger = FloLangchainLogger(
+            self.session_id,
+            tool_callbacks=tool_callbacks,
+            agent_callbacks=agent_callbacks,
+            router_callbacks=router_callbacks
         )
-        self.langchain_logger = FloLangchainLogger(self.session_id, tool_callbacks)
+        
+        if self.llm is not None:
+            self.llm = self.llm.bind(callbacks=[self.langchain_logger])
+        
         return self
+
 
     def append(self, node: str) -> int:
         get_logger().debug(f'Appending node: {node}')
