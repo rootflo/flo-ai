@@ -85,6 +85,8 @@ class Flo:
             executable: ExecutableFlo = build_supervised_team(
                 session, to_supervised_team(yaml)
             )
+            if isinstance(executable, FloAgent):
+                executable = FloNode.Builder(session).build_from_agent(executable)
             return Flo(session, executable)
         if routed_team is not None:
             return Flo(session, routed_team.build_routed_team())
