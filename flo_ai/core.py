@@ -18,6 +18,7 @@ from flo_ai.common.flo_logger import (
     set_logger_internal,
     FloLogConfig,
 )
+from flo_ai.models.flo_node import FloNode
 from flo_ai.models.flo_agent import FloAgent
 from langchain.tools import StructuredTool
 
@@ -91,11 +92,10 @@ class Flo:
 
     @staticmethod
     def create(session: FloSession, routed_team: Union[FloRouter, FloAgent]):
-        runnable = (
-            routed_team.build_routed_team()
-            if isinstance(routed_team, FloRouter)
-            else routed_team
-        )
+        if isinstance(routed_team, FloRouter):
+            runnable = routed_team.build_routed_team()
+        else:
+            runnable = FloNode.Builder(session).build_from_agent(routed_team)
         return Flo(session, runnable)
 
     @staticmethod
