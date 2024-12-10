@@ -87,6 +87,10 @@ class FloSession:
             filter(lambda x: isinstance(x, FloToolCallback), self.callbacks)
         )
         self.langchain_logger = FloLangchainLogger(self.session_id, tool_callbacks)
+
+        if self.llm is not None:
+            self.llm = self.llm.bind(callbacks=[callback])
+        print(f"selfcallback: {self.callbacks}")
         return self
 
     def append(self, node: str) -> int:
