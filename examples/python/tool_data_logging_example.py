@@ -1,4 +1,4 @@
-from flo_ai.callbacks.tool_logger import ToolCallLogger
+from flo_ai.callbacks.flo_execution_logger import FloChainExecutionLogger
 from flo_ai.storage.data_collector import JSONLFileCollector
 from langchain_openai import AzureChatOpenAI
 import os
@@ -66,7 +66,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 log_file_path = os.path.join(current_dir, "my_llm_logs.jsonl")
 
 file_collector = JSONLFileCollector(log_file_path)
-local_tracker = ToolCallLogger(file_collector)
+local_tracker = FloChainExecutionLogger(file_collector)
 
 session.register_callback(local_tracker)
 
