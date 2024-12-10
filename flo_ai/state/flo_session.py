@@ -90,7 +90,6 @@ class FloSession:
 
         if self.llm is not None:
             self.llm = self.llm.bind(callbacks=[callback])
-        print(f"selfcallback: {self.callbacks}")
         return self
 
     def append(self, node: str) -> int:
