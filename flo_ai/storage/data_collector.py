@@ -2,16 +2,17 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict
 from pathlib import Path
 import json
-from flo_ai.common.flo_logger import get_logger
+
 
 class DataCollector(ABC):
     @abstractmethod
     def store_entry(self, entry: Dict[str, Any]) -> None:
         pass
-    
+
     @abstractmethod
     def close(self) -> None:
         pass
+
 
 class JSONLFileCollector(DataCollector):
     def __init__(self, file_path: str):
