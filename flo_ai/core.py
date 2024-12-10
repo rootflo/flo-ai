@@ -47,7 +47,8 @@ class Flo:
         return self.runnable.invoke(query, config)
 
     def async_invoke(self, query, config=None) -> Iterator[Union[dict[str, Any], Any]]:
-        config = {'callbacks': [self.session.langchain_logger]}
+        config = config or {}
+        config['callbacks'] = config.get('callbacks', []) + [self.session.langchain_logger]+ self.session.callbacks
         get_logger().info(f"Invoking async query: '{query}'", self.session)
         return self.runnable.ainvoke(query, config)
 

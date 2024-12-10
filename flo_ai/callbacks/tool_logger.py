@@ -9,6 +9,7 @@ from langchain.schema.agent import AgentAction, AgentFinish
 from langchain.schema import HumanMessage, AIMessage, BaseMessage
 from langchain_core.prompts.chat import ChatPromptValue
 from flo_ai.storage.data_collector import DataCollector
+from flo_ai.common.flo_logger import get_logger
 
 class EnhancedJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -55,8 +56,11 @@ class ToolCallLogger(BaseCallbackHandler):
         return json.loads(self.encoder.encode(entry))
 
     def _store_entry(self, entry: Dict[str, Any]) -> None:
-        encoded_entry = self._encode_entry(entry)
-        self.data_collector.store_entry(encoded_entry)
+        try:
+            encoded_entry = self._encode_entry(entry)
+            self.data_collector.store_entry(encoded_entry)
+        except Exception as e:
+            get_logger().error(f"Error storing entry in ToolCallLogger: {e}")
 
     def on_chain_start(
         self,

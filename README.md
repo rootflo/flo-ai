@@ -233,6 +233,44 @@ session.register_tool(name='Adder', tool=addition_tool)
 
 **Note:** `@flotool` comes with inherent error handling capabilities to retry if an exception is thrown. Use `unsafe=True` to disable error handling
 
+## 📊 Tool Logging and Data Collection
+
+FloAI provides built-in capabilities for logging tool calls and collecting data through the `ToolCallLogger` and `DataCollector` classes.
+You can customize `DataCollector` implementation according to your database. A sample implementation where logs are stored locally as JSON files is implemented in `JSONLFileCollector`.
+
+### Quick Setup
+
+```python
+from flo_ai.callbacks.tool_logger import ToolCallLogger
+from flo_ai.storage.data_collector import JSONLFileCollector
+
+# Initialize the file collector with a path for the JSONL log file
+file_collector = JSONLFileCollector("./path/to/my_llm_logs.jsonl")
+
+# Create a tool logger with the collector
+local_tracker = ToolCallLogger(file_collector)
+
+# Register the logger with your session
+session.register_callback(local_tracker)
+```
+
+### Features
+
+- 📝 Logs all tool calls, chain executions, and agent actions
+- 🕒 Includes timestamps for start and end of operations
+- 🔍 Tracks inputs, outputs, and errors
+- 💾 Stores data in JSONL format for easy analysis
+
+### Log Data Structure
+
+The logger captures detailed information including:
+- Tool name and inputs
+- Execution timestamps
+- Operation status (completed/error)
+- Chain and agent activities
+- Parent-child relationship between operations
+
+
 ## 📖 Documentation
 
 Visit our [comprehensive documentation](https://flo-ai.rootflo.ai) for:
