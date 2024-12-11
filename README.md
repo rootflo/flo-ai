@@ -235,7 +235,7 @@ session.register_tool(name='Adder', tool=addition_tool)
 
 ## 📊 Tool Logging and Data Collection
 
-FloAI provides built-in capabilities for logging tool calls and collecting data through the `FloExecutionLogger` and `DataCollector` classes.
+FloAI provides built-in capabilities for logging tool calls and collecting data through the `FloExecutionLogger` and `DataCollector` classes, facilitating the creation of valuable training data.
 You can customize `DataCollector` implementation according to your database. A sample implementation where logs are stored locally as JSON files is implemented in `JSONLFileCollector`.
 
 ### Quick Setup
