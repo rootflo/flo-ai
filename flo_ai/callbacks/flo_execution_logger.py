@@ -45,7 +45,7 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-class FloChainExecutionLogger(BaseCallbackHandler):
+class FloExecutionLogger(BaseCallbackHandler):
     def __init__(self, data_collector: DataCollector):
         self.data_collector = data_collector
         self.runs = {}
@@ -59,7 +59,7 @@ class FloChainExecutionLogger(BaseCallbackHandler):
             encoded_entry = self._encode_entry(entry)
             self.data_collector.store_entry(encoded_entry)
         except Exception as e:
-            get_logger().error(f'Error storing entry in FloChainExecutionLogger: {e}')
+            get_logger().error(f'Error storing entry in FloExecutionLogger: {e}')
 
     def on_chain_start(
         self,
