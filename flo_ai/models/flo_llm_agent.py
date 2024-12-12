@@ -75,9 +75,10 @@ class FloLLMAgent(ExecutableFlo):
                 if isinstance(prompt, str)
                 else prompt
             )
-            self.prompt = self.prompt.partial(
-                format_instructions=parser.get_format_instructions()
-            )
+            if parser is not None:
+                self.prompt = self.prompt.partial(
+                    format_instructions=parser.get_format_instructions()
+                )
             self.data_collector = data_collector
 
         def build(self) -> Runnable:

@@ -85,9 +85,10 @@ class FloAgent(ExecutableFlo):
                 if isinstance(prompt, str)
                 else prompt
             )
-            self.prompt = self.prompt.partial(
-                format_instructions=parser.get_format_instructions()
-            )
+            if parser is not None:
+                self.prompt = self.prompt.partial(
+                    format_instructions=parser.get_format_instructions()
+                )
             self.tools: list[BaseTool] = tools
             self.verbose = verbose
             self.on_error = on_error

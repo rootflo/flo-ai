@@ -72,7 +72,7 @@ class AgentFactory:
                 json_dict=json.loads(agent.parser.model_dump_json())
             )
         else:
-            parser = session.parsers[agent.parser]
+            parser = session.parsers[agent.parser] if agent.parser is not None else None
         flo_agent: FloAgent = FloAgent.Builder(
             session,
             name=agent.name,
@@ -100,7 +100,7 @@ class AgentFactory:
                 json_dict=json.loads(agent.parser.model_dump_json())
             )
         else:
-            parser = session.parsers[agent.parser]
+            parser = session.parsers[agent.parser] if agent.parser is not None else None
         builder = FloLLMAgent.Builder(
             session,
             name=agent.name,
