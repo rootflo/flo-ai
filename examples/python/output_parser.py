@@ -37,7 +37,11 @@ format = {
             'type': 'literal',
             'description': 'The last name of the person, the value can be either of Vishnu or Satis',
             'name': 'last_name',
-            'values': ['Vishnu', 'Satis'],
+            'values': [
+                {'value': 'Vishnu', 'description': 'If the first_name starts with K'},
+                {'value': 'Satis', 'description': 'If the first_name starts with M'},
+            ],
+            'default_value_prompt': 'If none of the above value is suited, please use value other than the above in snake-case',
         },
     ],
 }
