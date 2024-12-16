@@ -64,6 +64,7 @@ class FloJsonParser(FloParser):
                 Following are the list of possibles values and its correponding description:
                 {self.__dict_list_to_csv_string(literal_values)}
 
+                This should be one of the values in the `value` column in the above csv.
                 {default_prompt}
                 """
             else:
