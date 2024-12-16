@@ -34,9 +34,10 @@ format = {
             'name': 'middle_name',
         },
         {
-            'type': 'str',
-            'description': 'The last name of the person',
+            'type': 'literal',
+            'description': 'The last name of the person, the value can be either of Vishnu or Satis',
             'name': 'last_name',
+            'values': ['Vishnu', 'Satis'],
         },
     ],
 }
