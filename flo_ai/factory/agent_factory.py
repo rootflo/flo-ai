@@ -41,8 +41,7 @@ class AgentFactory:
                 return AgentFactory.__create_reflection_agent(session, agent)
             elif agent_kind == AgentKinds.delegator:
                 return AgentFactory.__create_delegator_agent(session, agent)
-            else:
-                raise ValueError(f'Unsupported agent kind: {agent_kind}')
+
         return AgentFactory.__create_agentic_agent(session, agent, tool_map)
 
     @staticmethod
