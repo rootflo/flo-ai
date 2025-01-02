@@ -294,6 +294,53 @@ agent:
 
 As you can see here, the `parser` key makes sure that output of this agent will be the given key value format.
 
+### Using parser with code
+
+You can define parser as json in code and use it easily, here is an example:
+
+```python
+format = {
+    'name': 'NameFormat',
+    'fields': [
+        {
+            'type': 'str',
+            'description': 'The first name of the person',
+            'name': 'first_name',
+        },
+        {
+            'type': 'str',
+            'description': 'The middle name of the person',
+            'name': 'middle_name',
+        },
+        {
+            'type': 'literal',
+            'description': 'The last name of the person, the value can be either of Vishnu or Satis',
+            'name': 'last_name',
+            'values': [
+                {'value': 'Vishnu', 'description': 'If the first_name starts with K'},
+                {'value': 'Satis', 'description': 'If the first_name starts with M'},
+            ],
+            'default_value_prompt': 'If none of the above value is suited, please use value other than the above in snake-case',
+        },
+    ],
+}
+
+researcher = FloAgent.create(
+    session,
+    name='Researcher',
+    role='Internet Researcher',
+    job='What is the first name, last name  and middle name of the the person user asks about',
+    tools=[TavilySearchResults()],
+    parser=FloJsonParser.create(json_dict=format)
+)
+
+
+Flo.set_log_level('DEBUG')
+flo: Flo = Flo.create(session, researcher)
+result = flo.invoke('Mahatma Gandhi')
+
+```
+
 ## 📊 Tool Logging and Data Collection
 
 FloAI provides built-in capabilities for logging tool calls and collecting data through the `FloExecutionLogger` and `DataCollector` classes, facilitating the creation of valuable training data.

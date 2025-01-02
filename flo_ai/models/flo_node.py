@@ -15,7 +15,7 @@ from flo_ai.callbacks.flo_callbacks import (
     FloCallback,
 )
 from flo_ai.common.flo_logger import get_logger
-from flo_ai.state.flo_data_collector import FloDataCollector
+from flo_ai.state.flo_output_collector import FloOutputCollector
 
 
 class FloNode:
@@ -151,7 +151,7 @@ class FloNode:
             name: str,
             session: FloSession,
             model_name: str,
-            data_collector: Optional[FloDataCollector] = None,
+            data_collector: Optional[FloOutputCollector] = None,
         ):
             agent_cbs: List[FloAgentCallback] = FloNode.Builder.__filter_callbacks(
                 session, FloAgentCallback
@@ -202,7 +202,7 @@ class FloNode:
             name: str,
             session: FloSession,
             model_name: str,
-            data_collector: Optional[FloDataCollector] = None,
+            data_collector: Optional[FloOutputCollector] = None,
         ):
             agent_cbs: List[FloAgentCallback] = FloNode.Builder.__filter_callbacks(
                 session, FloAgentCallback

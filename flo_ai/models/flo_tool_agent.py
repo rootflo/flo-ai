@@ -3,7 +3,7 @@ from langchain_core.runnables import Runnable
 from flo_ai.models.flo_executable import ExecutableFlo
 from flo_ai.state.flo_session import FloSession
 from flo_ai.models.flo_executable import ExecutableType
-from flo_ai.state.flo_data_collector import FloDataCollector
+from flo_ai.state.flo_output_collector import FloOutputCollector
 
 
 class FloToolAgent(ExecutableFlo):
@@ -12,7 +12,7 @@ class FloToolAgent(ExecutableFlo):
         name: str,
         executor: Runnable,
         model_name: str,
-        data_collector: Optional[FloDataCollector] = None,
+        data_collector: Optional[FloOutputCollector] = None,
     ) -> None:
         super().__init__(name, executor, ExecutableType.tool)
         self.executor: Runnable = executor
@@ -40,7 +40,7 @@ class FloToolAgent(ExecutableFlo):
             name: str,
             tool_runnable: Runnable,
             model_name: str,
-            data_collector: Optional[FloDataCollector] = None,
+            data_collector: Optional[FloOutputCollector] = None,
         ) -> None:
             self.name: str = name
             self.runnable = tool_runnable
