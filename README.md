@@ -233,6 +233,67 @@ session.register_tool(name='Adder', tool=addition_tool)
 
 **Note:** `@flotool` comes with inherent error handling capabilities to retry if an exception is thrown. Use `unsafe=True` to disable error handling
 
+## Output Parsing and formatting
+
+FloAI now supports output parsing using JSON or YAML formatter. You can now defined your output formatter using `pydantic` and use the same in code or directly make it part of the Agent Definition Yaml (ADY)
+
+### Using Agent Defintion YAML
+
+We have added parser key to your agent schema, which gives you the output. The following is the schema of the parser
+
+```yaml
+name: SchemaName
+fields:
+  - name: field_name
+    type: data_type
+    description: field_description
+    values: <optional(for literals, all possible values that can be taken)>
+      - value: <the value>
+        description: value_description
+```
+
+### Supported Field Types
+
+#### Primitive Types
+
+- str: String values
+- int: Integer values
+- bool: Boolean values
+- float: Floating-point values
+
+##### Complex Types
+
+- array: Lists of items
+- object: Nested objects
+- literal: Enumerated values
+
+
+Here an example of a simple summarization agent yaml that produces output a structured manner.
+
+```yaml
+apiVersion: flo/alpha-v1
+kind: FloAgent
+name: SummarizationFlo
+agent:
+  name: SummaryAgent
+  kind: llm
+  role: Book summarizer agent
+  job: >
+    You are an given a paragraph from a book
+    and your job is to understand the information in it and extract summary
+  parser:
+    name: BookSummary
+    fields:
+      - name: long_summary
+        type: str
+        description: A comprehensive summary of the book, with all the major topics discussed
+      - name: short_summary
+        type: str
+        description: A short summary of the book in less than 20 words
+```
+
+As you can see here, the `parser` key makes sure that output of this agent will be the given key value format.
+
 ## 📊 Tool Logging and Data Collection
 
 FloAI provides built-in capabilities for logging tool calls and collecting data through the `FloExecutionLogger` and `DataCollector` classes, facilitating the creation of valuable training data.
