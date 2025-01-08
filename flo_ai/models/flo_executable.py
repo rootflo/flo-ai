@@ -37,6 +37,7 @@ class ExecutableFlo(FloMember):
         )
 
     def invoke(self, work, config=None):
+      
         return self.runnable.invoke(
             {
                 STATE_NAME_MESSAGES: [HumanMessage(content=work)],

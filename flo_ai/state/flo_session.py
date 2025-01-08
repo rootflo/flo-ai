@@ -103,6 +103,7 @@ class FloSession:
     def register_callback(
         self, callback: Union[FloRouterCallback, FloAgentCallback, FloToolCallback]
     ):
+        
         self.callbacks.append(callback)
         tool_callbacks = list(
             filter(lambda x: isinstance(x, FloToolCallback), self.callbacks)

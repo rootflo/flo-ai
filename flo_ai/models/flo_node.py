@@ -168,7 +168,13 @@ class FloNode:
                 for callback in flo_cbs
             ]
             try:
-                result = agent.invoke(state)
+                config = {}
+                config['callbacks'] = (
+                    config.get('callbacks', [])
+                    + [session.langchain_logger]
+                    + session.callbacks
+                )
+                result = agent.invoke(state, config)
                 output = result if isinstance(result, str) else result['output']
                 if data_collector is not None:
                     get_logger().info(

@@ -8,7 +8,12 @@ from langchain.schema import HumanMessage, AIMessage, BaseMessage
 from langchain_core.prompts.chat import ChatPromptValue
 from flo_ai.storage.data_collector import DataCollector
 from flo_ai.common.flo_logger import get_logger
+from abc import ABC,abstractmethod
 
+class ToolLogger(ABC):
+    @abstractmethod
+    def log_all_tools():
+        pass
 
 class EnhancedJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -45,7 +50,7 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-class FloExecutionLogger(BaseCallbackHandler):
+class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
     def __init__(self, data_collector: DataCollector):
         self.data_collector = data_collector
         self.runs = {}
@@ -70,6 +75,7 @@ class FloExecutionLogger(BaseCallbackHandler):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
+      
         chain_name = (
             serialized.get('name', 'unnamed_chain') if serialized else 'unnamed_chain'
         )
@@ -120,8 +126,12 @@ class FloExecutionLogger(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
+        inputs: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
+        
         self.runs[str(run_id)] = {
             'type': 'tool',
             'start_time': datetime.utcnow(),
@@ -136,8 +146,10 @@ class FloExecutionLogger(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
+        
         if str(run_id) in self.runs:
             run_info = self.runs[str(run_id)]
             run_info['end_time'] = datetime.utcnow()
@@ -170,6 +182,7 @@ class FloExecutionLogger(BaseCallbackHandler):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
+ 
         agent_info = {
             'type': 'agent_action',
             'start_time': datetime.utcnow(),
@@ -189,6 +202,7 @@ class FloExecutionLogger(BaseCallbackHandler):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
+       
         log_entry = {
             'type': 'agent_finish',
             'time': datetime.utcnow(),
@@ -197,3 +211,18 @@ class FloExecutionLogger(BaseCallbackHandler):
             'parent_run_id': str(parent_run_id) if parent_run_id else None,
         }
         self._store_entry(log_entry)
+
+    def log_all_tools(self,session_tools):
+        
+        tools = []
+        for val in session_tools:
+            tools.append({
+                "description":session_tools.get(val).description,
+                "args":session_tools.get(val).args,
+
+            })
+        with open('/Users/kandoewinpvtltd/Desktop/rootflo/flo-ai/data.jsonl', 'w') as jsonl_file:
+            for entry in tools:
+                jsonl_file.write(json.dumps(entry) + '\n')
+        
+        
