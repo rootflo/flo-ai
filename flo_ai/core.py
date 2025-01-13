@@ -50,10 +50,10 @@ class Flo:
             + [self.session.langchain_logger]
             + self.session.callbacks
         )
-        
+
         for callback in config['callbacks']:
             if(isinstance(callback,ToolLogger)):
-                callback.log_all_tools(self.session.tools)
+                callback.log_all_tools(self.session.tools,query)
         
         self.validate_invoke(self.session)
         get_logger().info(f"Invoking query: '{query}'", self.session)

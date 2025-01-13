@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 from datetime import datetime
 from uuid import UUID
 from langchain_core.callbacks import BaseCallbackHandler
@@ -9,6 +9,8 @@ from langchain_core.prompts.chat import ChatPromptValue
 from flo_ai.storage.data_collector import DataCollector
 from flo_ai.common.flo_logger import get_logger
 from abc import ABC,abstractmethod
+from langchain.schema import HumanMessage
+
 
 class ToolLogger(ABC):
     @abstractmethod
@@ -55,7 +57,9 @@ class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
         self.data_collector = data_collector
         self.runs = {}
         self.encoder = EnhancedJSONEncoder()
-
+        self.query = None
+        self.added_tools = set()
+        
     def _encode_entry(self, entry: Dict[str, Any]) -> Dict[str, Any]:
         return json.loads(self.encoder.encode(entry))
 
@@ -75,17 +79,26 @@ class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
-      
-        chain_name = (
-            serialized.get('name', 'unnamed_chain') if serialized else 'unnamed_chain'
-        )
-        self.runs[str(run_id)] = {
-            'type': 'chain',
-            'start_time': datetime.utcnow(),
-            'inputs': inputs,
-            'name': chain_name,
-            'parent_run_id': str(parent_run_id) if parent_run_id else None,
-        }
+        if isinstance(inputs, dict):
+            user_input = inputs.get('messages', {})
+        else:
+            user_input = {}
+        if user_input and isinstance(user_input[0],HumanMessage) and len(user_input)>0:
+            if isinstance(user_input[0],HumanMessage):
+                self.query = user_input[0].content
+        
+            
+        # chain_name = (
+        #     serialized.get('name', 'unnamed_chain') if serialized else 'unnamed_chain'
+        # )
+        # self.runs[str(run_id)] = {
+        #     'type': 'chain',
+        #     'start_time': datetime.utcnow(),
+        #     'inputs': inputs,
+        #     'name': chain_name,
+        #     'parent_run_id': str(parent_run_id) if parent_run_id else None,
+        # }
+        
 
     def on_chain_end(
         self,
@@ -95,13 +108,15 @@ class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
-        if str(run_id) in self.runs:
-            run_info = self.runs[str(run_id)]
-            run_info['end_time'] = datetime.utcnow()
-            run_info['outputs'] = outputs
-            run_info['status'] = 'completed'
-            self._store_entry(run_info)
-            del self.runs[str(run_id)]
+
+        # if str(run_id) in self.runs:
+        #     run_info = self.runs[str(run_id)]
+        #     run_info['end_time'] = datetime.utcnow()
+        #     run_info['outputs'] = outputs
+        #     run_info['status'] = 'completed'
+        #     self._store_entry(run_info)
+        #     del self.runs[str(run_id)]
+        pass
 
     def on_chain_error(
         self,
@@ -111,13 +126,14 @@ class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
-        if str(run_id) in self.runs:
-            run_info = self.runs[str(run_id)]
-            run_info['end_time'] = datetime.utcnow()
-            run_info['error'] = str(error)
-            run_info['status'] = 'error'
-            self._store_entry(run_info)
-            del self.runs[str(run_id)]
+        # if str(run_id) in self.runs:
+        #     run_info = self.runs[str(run_id)]
+        #     run_info['end_time'] = datetime.utcnow()
+        #     run_info['error'] = str(error)
+        #     run_info['status'] = 'error'
+        #     self._store_entry(run_info)
+        #     del self.runs[str(run_id)]
+        pass
 
     def on_tool_start(
         self,
@@ -131,14 +147,16 @@ class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
         inputs: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
-        
+       
         self.runs[str(run_id)] = {
             'type': 'tool',
+            'query':self.query,
             'start_time': datetime.utcnow(),
             'tool_name': serialized.get('name', 'unnamed_tool'),
             'input': input_str,
             'parent_run_id': str(parent_run_id) if parent_run_id else None,
         }
+        # pass
 
     def on_tool_end(
         self,
@@ -150,7 +168,9 @@ class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
         **kwargs: Any,
     ) -> None:
         
+        
         if str(run_id) in self.runs:
+            
             run_info = self.runs[str(run_id)]
             run_info['end_time'] = datetime.utcnow()
             run_info['output'] = output
@@ -193,6 +213,7 @@ class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
         }
         self.runs[str(run_id)] = agent_info
         self._store_entry(agent_info)
+        
 
     def on_agent_finish(
         self,
@@ -211,17 +232,25 @@ class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
             'parent_run_id': str(parent_run_id) if parent_run_id else None,
         }
         self._store_entry(log_entry)
-
-    def log_all_tools(self,session_tools):
+    
         
+    def log_all_tools(self,session_tools,query):
+        print("log all tools",session_tools)
         tools = []
+        
         for val in session_tools:
-            tools.append({
-                "description":session_tools.get(val).description,
-                "args":session_tools.get(val).args,
-
-            })
-        with open('/Users/kandoewinpvtltd/Desktop/rootflo/flo-ai/data.jsonl', 'w') as jsonl_file:
+            tool_name = session_tools[val].name
+            if tool_name not in self.added_tools:
+                tools.append(
+                    {
+                        'tool_name':tool_name,
+                        "description":session_tools.get(val).description,
+                        "args":session_tools.get(val).args
+                    }
+                )
+                self.added_tools.add(tool_name)
+            
+        with open('/Users/kandoewinpvtltd/Desktop/rootflo/flo-ai/data.jsonl', 'a') as jsonl_file:
             for entry in tools:
                 jsonl_file.write(json.dumps(entry) + '\n')
         
