@@ -53,8 +53,9 @@ class EnhancedJSONEncoder(json.JSONEncoder):
 
 
 class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
-    def __init__(self, data_collector: DataCollector):
+    def __init__(self, data_collector: DataCollector, tool_collector: DataCollector):
         self.data_collector = data_collector
+        self.tool_collector = tool_collector
         self.runs = {}
         self.encoder = EnhancedJSONEncoder()
         self.query = None
@@ -70,6 +71,7 @@ class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
         except Exception as e:
             get_logger().error(f'Error storing entry in FloExecutionLogger: {e}')
 
+
     def on_llm_start(
         self,
         serialized: dict[str, Any],
@@ -82,7 +84,6 @@ class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
         **kwargs: Any,
     ) -> None:
         self.prompt = prompts
-        print("llm ",self.prompt)
         
     def on_chain_start(
         self,
@@ -247,23 +248,26 @@ class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
     
         
     def log_all_tools(self,session_tools,query):
-        print("log all tools",session_tools)
-        tools = []
-        
-        for val in session_tools:
-            tool_name = session_tools[val].name
-            if tool_name not in self.added_tools:
-                tools.append(
-                    {
-                        'tool_name':tool_name,
-                        "description":session_tools.get(val).description,
-                        "args":session_tools.get(val).args
-                    }
-                )
-                self.added_tools.add(tool_name)
+        try:
+            tools = []
             
-        with open('/Users/kandoewinpvtltd/Desktop/rootflo/flo-ai/data.jsonl', 'a') as jsonl_file:
-            for entry in tools:
-                jsonl_file.write(json.dumps(entry) + '\n')
+            for val in session_tools:
+                tool_name = session_tools[val].name
+                if tool_name not in self.added_tools:
+                    tools.append(
+                        {
+                            'tool_name':tool_name,
+                            "description":session_tools.get(val).description,
+                            "args":session_tools.get(val).args
+                        }
+                    )
+                    self.added_tools.add(tool_name)
+        
+            encoded_entry = self._encode_entry(tools) 
+            if encoded_entry:
+                self.tool_collector.store_entry(encoded_entry)
+        except Exception as e:
+                get_logger().error(f'Error storing tool in FloExecutionLogger: {e}')
+       
         
         

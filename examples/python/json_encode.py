@@ -2,7 +2,7 @@ from langchain_openai import AzureChatOpenAI
 from langchain.chains import LLMChain
 from langchain_core.prompts import PromptTemplate
 from flo_ai.callbacks import FloExecutionLogger
-from flo_ai.storage.data_collector import JSONLFileCollector
+from flo_ai.storage.data_collector import JSONLFileCollector, TOOLFileCollector
 import os
 from flo_ai import Flo, FloSession
 from flo_ai.models.flo_agent import FloAgent
@@ -22,8 +22,10 @@ llm = AzureChatOpenAI(
 )
 file_collector = JSONLFileCollector("./temp.jsonl")
 
+tool_collector = TOOLFileCollector('./tools.jsonl')
+
 # Create a tool logger with the collector
-local_tracker = FloExecutionLogger(file_collector)
+local_tracker = FloExecutionLogger(file_collector, tool_collector)
 
 prompt = PromptTemplate.from_template("1 + {number} = ")
 
