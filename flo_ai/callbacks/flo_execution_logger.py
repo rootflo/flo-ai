@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 from datetime import datetime
 from uuid import UUID
 from langchain_core.callbacks import BaseCallbackHandler
@@ -8,6 +8,14 @@ from langchain.schema import HumanMessage, AIMessage, BaseMessage
 from langchain_core.prompts.chat import ChatPromptValue
 from flo_ai.storage.data_collector import DataCollector
 from flo_ai.common.flo_logger import get_logger
+from abc import ABC, abstractmethod
+from langchain.schema import HumanMessage
+
+
+class ToolLogger(ABC):
+    @abstractmethod
+    def log_all_tools():
+        pass
 
 
 class EnhancedJSONEncoder(json.JSONEncoder):
@@ -45,11 +53,14 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-class FloExecutionLogger(BaseCallbackHandler):
-    def __init__(self, data_collector: DataCollector):
+class FloExecutionLogger(BaseCallbackHandler, ToolLogger):
+    def __init__(self, data_collector: DataCollector, tool_collector: DataCollector):
         self.data_collector = data_collector
+        self.tool_collector = tool_collector
         self.runs = {}
         self.encoder = EnhancedJSONEncoder()
+        self.query = None
+        self.added_tools = set()
 
     def _encode_entry(self, entry: Dict[str, Any]) -> Dict[str, Any]:
         return json.loads(self.encoder.encode(entry))
@@ -60,6 +71,19 @@ class FloExecutionLogger(BaseCallbackHandler):
             self.data_collector.store_entry(encoded_entry)
         except Exception as e:
             get_logger().error(f'Error storing entry in FloExecutionLogger: {e}')
+
+    def on_llm_start(
+        self,
+        serialized: dict[str, Any],
+        prompts: list[str],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        self.prompt = prompts
 
     def on_chain_start(
         self,
@@ -73,6 +97,21 @@ class FloExecutionLogger(BaseCallbackHandler):
         chain_name = (
             serialized.get('name', 'unnamed_chain') if serialized else 'unnamed_chain'
         )
+
+        if parent_run_id and chain_name != 'agent_chain':
+            return
+        if isinstance(inputs, dict):
+            user_input = inputs.get('messages', {})
+        else:
+            user_input = {}
+        if (
+            user_input
+            and isinstance(user_input[0], HumanMessage)
+            and len(user_input) > 0
+        ):
+            if isinstance(user_input[0], HumanMessage):
+                self.query = user_input[0].content
+
         self.runs[str(run_id)] = {
             'type': 'chain',
             'start_time': datetime.utcnow(),
@@ -91,9 +130,13 @@ class FloExecutionLogger(BaseCallbackHandler):
     ) -> None:
         if str(run_id) in self.runs:
             run_info = self.runs[str(run_id)]
+            if run_info['type'] != 'chain':
+                return
+            run_info['type'] = 'chain'
             run_info['end_time'] = datetime.utcnow()
             run_info['outputs'] = outputs
             run_info['status'] = 'completed'
+            run_info['prompt'] = self.prompt
             self._store_entry(run_info)
             del self.runs[str(run_id)]
 
@@ -105,13 +148,7 @@ class FloExecutionLogger(BaseCallbackHandler):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
-        if str(run_id) in self.runs:
-            run_info = self.runs[str(run_id)]
-            run_info['end_time'] = datetime.utcnow()
-            run_info['error'] = str(error)
-            run_info['status'] = 'error'
-            self._store_entry(run_info)
-            del self.runs[str(run_id)]
+        pass
 
     def on_tool_start(
         self,
@@ -120,15 +157,20 @@ class FloExecutionLogger(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
+        inputs: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         self.runs[str(run_id)] = {
             'type': 'tool',
+            'query': self.query,
             'start_time': datetime.utcnow(),
             'tool_name': serialized.get('name', 'unnamed_tool'),
             'input': input_str,
             'parent_run_id': str(parent_run_id) if parent_run_id else None,
         }
+        # pass
 
     def on_tool_end(
         self,
@@ -136,6 +178,7 @@ class FloExecutionLogger(BaseCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
+        tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
         if str(run_id) in self.runs:
@@ -197,3 +240,25 @@ class FloExecutionLogger(BaseCallbackHandler):
             'parent_run_id': str(parent_run_id) if parent_run_id else None,
         }
         self._store_entry(log_entry)
+
+    def log_all_tools(self, session_tools, query):
+        try:
+            tools = []
+
+            for val in session_tools:
+                tool_name = session_tools[val].name
+                if tool_name not in self.added_tools:
+                    tools.append(
+                        {
+                            'tool_name': tool_name,
+                            'description': session_tools.get(val).description,
+                            'args': session_tools.get(val).args,
+                        }
+                    )
+                    self.added_tools.add(tool_name)
+
+            encoded_entry = self._encode_entry(tools)
+            if encoded_entry:
+                self.tool_collector.store_entry(encoded_entry)
+        except Exception as e:
+            get_logger().error(f'Error storing tool in FloExecutionLogger: {e}')
