@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional
 from datetime import datetime
 from uuid import UUID
 from langchain_core.callbacks import BaseCallbackHandler
@@ -9,7 +9,6 @@ from langchain_core.prompts.chat import ChatPromptValue
 from flo_ai.storage.data_collector import DataCollector
 from flo_ai.common.flo_logger import get_logger
 from abc import ABC, abstractmethod
-from langchain.schema import HumanMessage
 
 
 class ToolLogger(ABC):

@@ -11,11 +11,11 @@ from dotenv import load_dotenv
 
 
 load_dotenv()
-api_key = os.getenv("API_KEY")
-end_point = os.getenv("END_POINT")
-model_name = os.getenv("MODEL")
-temperature = os.getenv("TEMP")
-api_version = os.getenv("API_VERSION")
+api_key = os.getenv('API_KEY')
+end_point = os.getenv('END_POINT')
+model_name = os.getenv('MODEL')
+temperature = os.getenv('TEMP')
+api_version = os.getenv('API_VERSION')
 
 file_collector = JSONLFileCollector('./logger.jsonl')
 
@@ -25,7 +25,7 @@ tool_collector = TOOLFileCollector('./tools.jsonl')
 local_tracker = FloExecutionLogger(file_collector, tool_collector)
 # Create the LLM object
 llm = AzureChatOpenAI(
-     azure_endpoint=end_point,
+    azure_endpoint=end_point,
     model_name=model_name,
     temperature=temperature,
     api_version=api_version,
@@ -43,7 +43,7 @@ print(chain.invoke({'number': 2}))
 session = FloSession(llm)
 session.register_callback(local_tracker)
 
-os.environ['TAVILY_API_KEY'] = os.getenv("TAVILY_API_KEY")
+os.environ['TAVILY_API_KEY'] = os.getenv('TAVILY_API_KEY')
 tavily_tool = TavilySearchResults()
 
 session.register_tool('thappal', tavily_tool)

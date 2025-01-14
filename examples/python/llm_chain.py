@@ -8,14 +8,14 @@ from flo_ai import Flo, FloSession
 from flo_ai.models.flo_agent import FloAgent
 from langchain_community.tools.tavily_search.tool import TavilySearchResults
 from dotenv import load_dotenv
-import os
+
 
 load_dotenv()
-api_key = os.getenv("API_KEY")
-end_point = os.getenv("END_POINT")
-model_name = os.getenv("MODEL")
-temperature = os.getenv("TEMP")
-api_version = os.getenv("API_VERSION")
+api_key = os.getenv('API_KEY')
+end_point = os.getenv('END_POINT')
+model_name = os.getenv('MODEL')
+temperature = os.getenv('TEMP')
+api_version = os.getenv('API_VERSION')
 
 prompt_template = 'Tell me a {adjective} joke'
 prompt = PromptTemplate(input_variables=['adjective'], template=prompt_template)
@@ -43,7 +43,7 @@ print(chain.invoke({'adjective': 'funny'}))
 session = FloSession(llm)
 session.register_callback(local_tracker)
 
-os.environ['TAVILY_API_KEY'] = os.getenv("TAVILY_API_KEY")
+os.environ['TAVILY_API_KEY'] = os.getenv('TAVILY_API_KEY')
 tavily_tool = TavilySearchResults()
 
 session.register_tool('thappal', tavily_tool)
