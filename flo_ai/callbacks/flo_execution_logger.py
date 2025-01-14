@@ -17,7 +17,6 @@ class ToolLogger(ABC):
     def log_all_tools():
         pass
 
-
 class EnhancedJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, (HumanMessage, AIMessage, BaseMessage)):
@@ -51,7 +50,7 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         elif hasattr(obj, 'to_dict'):
             return obj.to_dict()
         return super().default(obj)
-    
+
 
 class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
     def __init__(self, data_collector: DataCollector):
@@ -70,8 +69,8 @@ class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
             self.data_collector.store_entry(encoded_entry)
         except Exception as e:
             get_logger().error(f'Error storing entry in FloExecutionLogger: {e}')
-    
-    async def on_llm_start(
+
+    def on_llm_start(
         self,
         serialized: dict[str, Any],
         prompts: list[str],
@@ -83,19 +82,17 @@ class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
         **kwargs: Any,
     ) -> None:
         self.prompt = prompts
-
+        print("llm ",self.prompt)
+        
     def on_chain_start(
         self,
-        serialized: dict[str, Any],
-        inputs: dict[str, Any],
+        serialized: Dict[str, Any],
+        inputs: Dict[str, Any],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        tags: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
-        
         chain_name = serialized.get('name', 'unnamed_chain') if serialized else 'unnamed_chain'
        
         if parent_run_id and chain_name != 'agent_chain':
@@ -109,23 +106,14 @@ class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
                 self.query = user_input[0].content
     
         self.runs[str(run_id)] = {
-            'type': 'chain',
+            'type':'chain',
             'start_time': datetime.utcnow(),
             'inputs': inputs,
             'name': chain_name,
             'parent_run_id': str(parent_run_id) if parent_run_id else None,
         }
-            
-        # chain_name = (
-        #     serialized.get('name', 'unnamed_chain') if serialized else 'unnamed_chain'
-        # )
-        # self.runs[str(run_id)] = {
-        #     'type': 'chain',
-        #     'start_time': datetime.utcnow(),
-        #     'inputs': inputs,
-        #     'name': chain_name,
-        #     'parent_run_id': str(parent_run_id) if parent_run_id else None,
-        # }
+        
+
     def on_chain_end(
         self,
         outputs: Dict[str, Any],
@@ -137,12 +125,16 @@ class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
         
         if str(run_id) in self.runs:
             run_info = self.runs[str(run_id)]
+            if run_info['type']!='chain':
+                return
+            run_info['type'] = 'chain'
             run_info['end_time'] = datetime.utcnow()
             run_info['outputs'] = outputs
             run_info['status'] = 'completed'
-            run_info['prompts'] = self.prompt
+            run_info['prompt'] = self.prompt
             self._store_entry(run_info)
             del self.runs[str(run_id)]
+
 
     def on_chain_error(
         self,
@@ -152,13 +144,7 @@ class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
-        # if str(run_id) in self.runs:
-        #     run_info = self.runs[str(run_id)]
-        #     run_info['end_time'] = datetime.utcnow()
-        #     run_info['error'] = str(error)
-        #     run_info['status'] = 'error'
-        #     self._store_entry(run_info)
-        #     del self.runs[str(run_id)]
+
         pass
 
     def on_tool_start(
@@ -193,6 +179,7 @@ class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
         tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
+        
         
         if str(run_id) in self.runs:
             
@@ -260,7 +247,7 @@ class FloExecutionLogger(BaseCallbackHandler,ToolLogger):
     
         
     def log_all_tools(self,session_tools,query):
-
+        print("log all tools",session_tools)
         tools = []
         
         for val in session_tools:
