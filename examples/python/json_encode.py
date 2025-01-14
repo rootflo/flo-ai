@@ -58,6 +58,6 @@ weather_agent = FloAgent.create(
 
 
 agent_flo: Flo = Flo.create(session, weather_agent)
-# print("\n\n agent_flo",agent_flo.runnable)
+
 print(agent_flo.invoke('Whats the whether in New Delhi, India ?'))
 print(agent_flo.invoke('Whats the whether in Aroor kochi, India ?'))

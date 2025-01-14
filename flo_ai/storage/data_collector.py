@@ -30,7 +30,6 @@ class JSONLFileCollector(DataCollector):
 
 class TOOLFileCollector(DataCollector):
     def __init__(self, file_path: str):
-        print('inint')
         self.file_path = Path(file_path)
         self.file_path.parent.mkdir(parents=True, exist_ok=True)
 
