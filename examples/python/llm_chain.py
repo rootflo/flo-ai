@@ -1,6 +1,6 @@
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import AzureChatOpenAI
-from flo_ai.storage.data_collector import JSONLFileCollector, TOOLFileCollector
+from flo_ai.storage.data_collector import JSONLFileCollector, ToolLFileCollector
 from flo_ai.callbacks import FloExecutionLogger
 from langchain.chains import LLMChain
 import os
@@ -21,7 +21,7 @@ prompt_template = 'Tell me a {adjective} joke'
 prompt = PromptTemplate(input_variables=['adjective'], template=prompt_template)
 
 file_collector = JSONLFileCollector('./logger.jsonl')
-tool_collector = TOOLFileCollector('./tools.jsonl')
+tool_collector = ToolLFileCollector('./tools.jsonl')
 
 # Create a tool logger with the collector
 local_tracker = FloExecutionLogger(file_collector, tool_collector)

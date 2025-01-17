@@ -2,7 +2,7 @@ from langchain_openai import AzureChatOpenAI
 from langchain.chains import LLMChain
 from langchain_core.prompts import PromptTemplate
 from flo_ai.callbacks import FloExecutionLogger
-from flo_ai.storage.data_collector import JSONLFileCollector, TOOLFileCollector
+from flo_ai.storage.data_collector import JSONLFileCollector, ToolLFileCollector
 import os
 from flo_ai import Flo, FloSession
 from flo_ai.models.flo_agent import FloAgent
@@ -19,7 +19,7 @@ api_version = os.getenv('API_VERSION')
 
 file_collector = JSONLFileCollector('./logger.jsonl')
 
-tool_collector = TOOLFileCollector('./tools.jsonl')
+tool_collector = ToolLFileCollector('./tools.jsonl')
 
 # Create a tool logger with the collector
 local_tracker = FloExecutionLogger(file_collector, tool_collector)
@@ -60,4 +60,4 @@ weather_agent = FloAgent.create(
 agent_flo: Flo = Flo.create(session, weather_agent)
 
 print(agent_flo.invoke('Whats the whether in New Delhi, India ?'))
-print(agent_flo.invoke('Whats the whether in Aroor kochi, India ?'))
+# print(agent_flo.invoke('Whats the whether in Aroor kochi, India ?'))

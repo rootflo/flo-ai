@@ -104,10 +104,9 @@ class FloExecutionLogger(BaseCallbackHandler, ToolLogger):
         else:
             user_input = {}
         if (
-            user_input
+            user_input and len(user_input) > 0
             and isinstance(user_input[0], HumanMessage)
-            and len(user_input) > 0
-        ):
+            ):
             if isinstance(user_input[0], HumanMessage):
                 self.query = user_input[0].content
 
@@ -169,7 +168,6 @@ class FloExecutionLogger(BaseCallbackHandler, ToolLogger):
             'input': input_str,
             'parent_run_id': str(parent_run_id) if parent_run_id else None,
         }
-        # pass
 
     def on_tool_end(
         self,

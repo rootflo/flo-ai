@@ -28,7 +28,7 @@ class JSONLFileCollector(DataCollector):
         pass
 
 
-class TOOLFileCollector(DataCollector):
+class ToolLFileCollector(DataCollector):
     def __init__(self, file_path: str):
         self.file_path = Path(file_path)
         self.file_path.parent.mkdir(parents=True, exist_ok=True)
