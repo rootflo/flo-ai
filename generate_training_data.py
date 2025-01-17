@@ -10,7 +10,7 @@ Usage:
 Arguments:
     --logger-path: Path to the logger file containing tool and chain entries
     --tool-path: Path to the tool descriptions file
-    --output: Optional path to save the output (defaults to stdout)
+    --output: path to save the output 
 """
 
 
