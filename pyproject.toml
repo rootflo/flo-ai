@@ -31,6 +31,7 @@ wikipedia = "^1.4.0"
 pytest = "^8.3.3"
 pytest-asyncio = "^0.24.0"
 pre-commit = "^4.0.1"
+langchain-ollama = "^0.2.3"
 
 [build-system]
 requires = ["poetry-core"]
