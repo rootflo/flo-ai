@@ -18,6 +18,7 @@ from flo_ai.common.flo_logger import get_logger
 from flo_ai.state.flo_output_collector import FloOutputCollector
 from flo_ai.helpers.utils import rotate_array
 
+
 class FloNode:
     def __init__(
         self,
@@ -37,12 +38,12 @@ class FloNode:
 
     def invoke(self, query, config):
         return self.func(
-            { STATE_NAME_MESSAGES: [HumanMessage(content=query)] }, config=config
+            {STATE_NAME_MESSAGES: [HumanMessage(content=query)]}, config=config
         )
 
     async def ainvoke(self, query, config):
         return await self.async_func(
-            { STATE_NAME_MESSAGES: [HumanMessage(content=query)] }, config=config
+            {STATE_NAME_MESSAGES: [HumanMessage(content=query)]}, config=config
         )
 
     def draw(
@@ -149,7 +150,6 @@ class FloNode:
                 agent_executable=flo_router.executor,
             )
 
-
         @staticmethod
         def __teamflo_agent_node(
             state: TeamFloAgentState,
@@ -206,7 +206,7 @@ class FloNode:
                 callback.on_agent_start(name, model_name, output, **{})
                 for callback in flo_cbs
             ]
-            return { STATE_NAME_MESSAGES: [AIMessage(content=output, name=name)] }
+            return {STATE_NAME_MESSAGES: [AIMessage(content=output, name=name)]}
 
         @staticmethod
         async def __async_teamflo_agent_node(
@@ -258,7 +258,7 @@ class FloNode:
                 callback.on_agent_start(name, model_name, output, **{})
                 for callback in flo_cbs
             ]
-            return { STATE_NAME_MESSAGES: [AIMessage(content=output, name=name)] }
+            return {STATE_NAME_MESSAGES: [AIMessage(content=output, name=name)]}
 
         @staticmethod
         def __filter_callbacks(session: FloSession, type: Type):
@@ -309,7 +309,7 @@ class FloNode:
                 callback.on_router_start(name, model_name, nextNode, **{})
                 for callback in flo_cbs
             ]
-            return { 'next': nextNode }
+            return {'next': nextNode}
 
         @staticmethod
         def __get_last_message(state: TeamFloAgentState) -> str:
@@ -317,7 +317,7 @@ class FloNode:
 
         @staticmethod
         def __join_graph(response: dict):
-            return { STATE_NAME_MESSAGES: [response[STATE_NAME_MESSAGES][-1]] }
+            return {STATE_NAME_MESSAGES: [response[STATE_NAME_MESSAGES][-1]]}
 
         @staticmethod
         def __teamflo_team_node(message: str, members: list[str]):
