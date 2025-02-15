@@ -14,3 +14,4 @@ bin
 *.log
 *.yaml
 examples/local/*
+.logs

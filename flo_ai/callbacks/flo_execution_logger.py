@@ -13,7 +13,7 @@ from abc import ABC, abstractmethod
 
 class ToolLogger(ABC):
     @abstractmethod
-    def log_all_tools():
+    def log_all_tools(session_tools):
         pass
 
 
@@ -53,13 +53,13 @@ class EnhancedJSONEncoder(json.JSONEncoder):
 
 
 class FloExecutionLogger(BaseCallbackHandler, ToolLogger):
-    def __init__(self, data_collector: DataCollector, tool_collector: DataCollector):
+    def __init__(self, data_collector: DataCollector):
         self.data_collector = data_collector
-        self.tool_collector = tool_collector
         self.runs = {}
         self.encoder = EnhancedJSONEncoder()
         self.query = None
         self.added_tools = set()
+        self.prompt = {}
 
     def _encode_entry(self, entry: Dict[str, Any]) -> Dict[str, Any]:
         return json.loads(self.encoder.encode(entry))
@@ -67,7 +67,7 @@ class FloExecutionLogger(BaseCallbackHandler, ToolLogger):
     def _store_entry(self, entry: Dict[str, Any]) -> None:
         try:
             encoded_entry = self._encode_entry(entry)
-            self.data_collector.store_entry(encoded_entry)
+            self.data_collector.store_log(encoded_entry)
         except Exception as e:
             get_logger().error(f'Error storing entry in FloExecutionLogger: {e}')
 
@@ -82,7 +82,7 @@ class FloExecutionLogger(BaseCallbackHandler, ToolLogger):
         metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
-        self.prompt = prompts
+        self.prompt[str(run_id)] = prompts
 
     def on_chain_start(
         self,
@@ -104,9 +104,10 @@ class FloExecutionLogger(BaseCallbackHandler, ToolLogger):
         else:
             user_input = {}
         if (
-            user_input and len(user_input) > 0
+            user_input
+            and len(user_input) > 0
             and isinstance(user_input[0], HumanMessage)
-            ):
+        ):
             if isinstance(user_input[0], HumanMessage):
                 self.query = user_input[0].content
 
@@ -115,6 +116,7 @@ class FloExecutionLogger(BaseCallbackHandler, ToolLogger):
             'start_time': datetime.utcnow(),
             'inputs': inputs,
             'name': chain_name,
+            'run_id': str(run_id),
             'parent_run_id': str(parent_run_id) if parent_run_id else None,
         }
 
@@ -128,15 +130,29 @@ class FloExecutionLogger(BaseCallbackHandler, ToolLogger):
     ) -> None:
         if str(run_id) in self.runs:
             run_info = self.runs[str(run_id)]
-            if run_info['type'] != 'chain':
+            if run_info['type'] != 'chain' and run_info['type'] != 'llm':
                 return
-            run_info['type'] = 'chain'
             run_info['end_time'] = datetime.utcnow()
             run_info['outputs'] = outputs
             run_info['status'] = 'completed'
-            run_info['prompt'] = self.prompt
+            run_info['parent_run_id'] = str(parent_run_id) if parent_run_id else None
+            run_info['prompt'] = (
+                self.prompt[str(run_id)] if str(run_id) in self.prompt else []
+            )
             self._store_entry(run_info)
             del self.runs[str(run_id)]
+        else:
+            if isinstance(outputs, ChatPromptValue) or isinstance(outputs, AgentFinish):
+                run_info = {}
+                run_info['type'] = 'llm'
+                run_info['end_time'] = datetime.utcnow()
+                run_info['inputs'] = outputs
+                run_info['status'] = 'completed'
+                run_info['run_id'] = str(run_id)
+                run_info['parent_run_id'] = (
+                    str(parent_run_id) if parent_run_id else None
+                )
+                self.runs[str(parent_run_id)] = run_info
 
     def on_chain_error(
         self,
@@ -238,7 +254,7 @@ class FloExecutionLogger(BaseCallbackHandler, ToolLogger):
         }
         self._store_entry(log_entry)
 
-    def log_all_tools(self, session_tools, query):
+    def log_all_tools(self, session_tools):
         try:
             tools = []
 
@@ -256,6 +272,6 @@ class FloExecutionLogger(BaseCallbackHandler, ToolLogger):
 
             encoded_entry = self._encode_entry(tools)
             if encoded_entry:
-                self.tool_collector.store_entry(encoded_entry)
+                self.data_collector.store_tool_log(encoded_entry)
         except Exception as e:
             get_logger().error(f'Error storing tool in FloExecutionLogger: {e}')
