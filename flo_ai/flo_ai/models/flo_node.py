@@ -16,6 +16,7 @@ from flo_ai.callbacks.flo_callbacks import (
 )
 from flo_ai.common.flo_logger import get_logger
 from flo_ai.state.flo_output_collector import FloOutputCollector
+from flo_ai.helpers.utils import rotate_array
 
 
 class FloNode:
@@ -174,6 +175,11 @@ class FloNode:
                 for callback in flo_cbs
             ]
             try:
+                if isinstance(state['messages'][-1], AIMessage):
+                    # This was done as part of a fix for using llama 3.1 8b
+                    # When the last message was from AI, it was forgetting the actual task if was meant to do
+                    state['messages'] = rotate_array(state['messages'], 1)
+
                 result = agent.invoke(state, config=config)
                 output = result if isinstance(result, str) else result['output']
                 if data_collector is not None:
@@ -284,6 +290,7 @@ class FloNode:
             try:
                 result = agent.invoke(state, config=config)
                 nextNode = result if isinstance(result, str) else result['next']
+                messages = [] if isinstance(result, str) else [result['message']]
             except Exception as e:
                 [
                     callback.on_router_error(name, model_name, e, **{})
@@ -302,7 +309,7 @@ class FloNode:
                 callback.on_router_start(name, model_name, nextNode, **{})
                 for callback in flo_cbs
             ]
-            return {'next': nextNode}
+            return {'next': nextNode, STATE_NAME_MESSAGES: messages}
 
         @staticmethod
         def __get_last_message(state: TeamFloAgentState) -> str:
