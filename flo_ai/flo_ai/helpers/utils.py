@@ -8,6 +8,6 @@ def random_str(length: int = 5):
     return result_str
 
 
-def rotate_array(nums, k):
+def rotate_array(nums, k: int = 1):
     k = k % len(nums)
-    return nums[-k:] + nums[:-k]
+    return nums[k:] + nums[:k]

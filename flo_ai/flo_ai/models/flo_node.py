@@ -178,7 +178,7 @@ class FloNode:
                 if isinstance(state['messages'][-1], AIMessage):
                     # This was done as part of a fix for using llama 3.1 8b
                     # When the last message was from AI, it was forgetting the actual task if was meant to do
-                    state['messages'] = rotate_array(state['messages'], 1)
+                    state['messages'] = rotate_array(state['messages'])
 
                 result = agent.invoke(state, config=config)
                 output = result if isinstance(result, str) else result['output']
@@ -205,7 +205,9 @@ class FloNode:
                 callback.on_agent_start(name, model_name, output, **{})
                 for callback in flo_cbs
             ]
-            return {STATE_NAME_MESSAGES: [AIMessage(content=output, name=name)]}
+            # Only human message working for Cloude models
+            # TODO maybe handle Cloude seperately
+            return {STATE_NAME_MESSAGES: [HumanMessage(content=output, name=name)]}
 
         @staticmethod
         async def __async_teamflo_agent_node(
