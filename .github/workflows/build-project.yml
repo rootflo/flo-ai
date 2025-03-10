@@ -27,14 +27,14 @@ jobs:
         virtualenvs-in-project: true
 
     - name: Install dependencies
-      run: cd flo-ai && poetry lock && poetry install
+      run: cd flo_ai && poetry lock && poetry install
 
     - name: Run Ruff
-      run: cd flo-ai && poetry run pre-commit run --all-files
+      run: cd flo_ai && poetry run pre-commit run --all-files
       
     - name: Run build
-      run: cd flo-ai && poetry build
+      run: cd flo_ai && poetry build
 
     - name: Run tests
-      run:  cd flo-ai && poetry run pytest
+      run:  cd flo_ai && poetry run pytest
     
