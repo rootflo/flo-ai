@@ -8,7 +8,6 @@ from flo_ai.builders.yaml_builder import build_supervised_team
 from typing import Any, Iterator, Union
 from flo_ai.router.flo_router import FloRouter
 from flo_ai.state.flo_session import FloSession
-from flo_ai.models.flo_llm_agent import FloLLMAgent
 from flo_ai.models.flo_executable import ExecutableFlo
 from flo_ai.error.flo_exception import FloException
 from flo_ai.constants.common_constants import DOCUMENTATION_WEBSITE
@@ -19,9 +18,10 @@ from flo_ai.common.flo_logger import (
     set_logger_internal,
     FloLogConfig,
 )
-from flo_ai.models.flo_node import FloNode
 from flo_ai.models.flo_agent import FloAgent
+from flo_ai.models.flo_base_agent import FloBaseAgent
 from langchain.tools import StructuredTool
+from flo_ai.router.flo_agent_router import FloAgentRouter
 from flo_ai.callbacks.flo_execution_logger import ToolLogger
 
 
@@ -91,9 +91,6 @@ class Flo:
             executable: ExecutableFlo = build_supervised_team(
                 session, to_supervised_team(yaml)
             )
-            # TODO fix this for all agents later
-            if isinstance(executable, FloAgent) or isinstance(executable, FloLLMAgent):
-                executable = FloNode.Builder(session).build_from_agent(executable)
             return Flo(session, executable)
         if routed_team is not None:
             return Flo(session, routed_team.build_routed_team())
@@ -103,8 +100,13 @@ class Flo:
     def create(session: FloSession, routed_team: Union[FloRouter, FloAgent]):
         if isinstance(routed_team, FloRouter):
             runnable = routed_team.build_routed_team()
-        else:
-            runnable = FloNode.Builder(session).build_from_agent(routed_team)
+        if isinstance(routed_team, FloBaseAgent):
+            agent_router = FloAgentRouter.Builder(
+                session,
+                f'router-{routed_team.name}',
+                flo_agent=routed_team,
+            ).build()
+            runnable = agent_router.build_routed_team()
         return Flo(session, runnable)
 
     @staticmethod
