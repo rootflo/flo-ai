@@ -17,6 +17,7 @@ httpx = "0.27.0"
 pillow = "^10.3.0"
 pydantic = "^2.9.2"
 langchain-community = "0.3.2"
+openai = "^1.77.0"
 
 
 [tool.poetry.group.dev.dependencies]
