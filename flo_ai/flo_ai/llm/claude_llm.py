@@ -36,18 +36,21 @@ class ClaudeLLM(BaseLLM):
                     }
                 )
 
-        # Add function calling context if needed
+        # Convert functions to Claude tools format if provided
+        tools = None
         if functions:
-            function_desc = (
-                'Available functions:\n'
-                + json.dumps(functions, indent=2)
-                + '\nTo use a function, respond with JSON in the format:'
-                + '\n{"function": "function_name", "arguments": {"arg1": "value1", ...}}'
-            )
-            if system_message:
-                system_message = system_message + '\n\n' + function_desc
-            else:
-                system_message = function_desc
+            tools = [
+                {
+                    'name': func['name'],
+                    'description': func.get('description', ''),
+                    'input_schema': {
+                        'type': 'object',
+                        'properties': func['parameters'].get('properties', {}),
+                        'required': func['parameters'].get('required', []),
+                    },
+                }
+                for func in functions
+            ]
 
         try:
             response = await self.client.messages.create(
@@ -56,29 +59,36 @@ class ClaudeLLM(BaseLLM):
                 messages=conversation,
                 system=system_message,
                 temperature=self.temperature,
+                tools=tools,
             )
 
+            # Check if there's a tool call in the response
+            if (
+                hasattr(response.content[0], 'tool_calls')
+                and response.content[0].tool_calls
+            ):
+                tool_call = response.content[0].tool_calls[0]
+                return {
+                    'content': '',  # Empty content since we're using a tool
+                    'function_call': {
+                        'name': tool_call.name,
+                        'arguments': json.dumps(tool_call.arguments),
+                    },
+                }
+
             return {'content': response.content[0].text}
+
         except Exception as e:
             raise Exception(f'Error in Claude API call: {str(e)}')
 
     async def get_function_call(
         self, response: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
-        content = response['content']
-        try:
-            # Try to parse function call from response
-            if '{"function":' in content:
-                start_idx = content.find('{"function":')
-                end_idx = content.find('}', start_idx) + 1
-                function_json = content[start_idx:end_idx]
-                function_data = json.loads(function_json)
-                return {
-                    'name': function_data['function'],
-                    'arguments': json.dumps(function_data['arguments']),
-                }
-        except (json.JSONDecodeError, KeyError):
-            pass
+        if 'function_call' in response:
+            return {
+                'name': response['function_call']['name'],
+                'arguments': json.dumps(response['function_call']['arguments']),
+            }
         return None
 
     def get_message_content(self, response: Dict[str, Any]) -> str:
