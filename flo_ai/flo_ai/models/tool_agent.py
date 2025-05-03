@@ -1,5 +1,6 @@
-from typing import Dict, Any, List, Callable
-from flo_ai.models.base_agent import BaseAgent, AgentType, AgentError, aclient
+from typing import Dict, Any, List, Callable, Optional
+from flo_ai.models.base_agent import BaseAgent, AgentType, AgentError
+from flo_ai.llm.base_llm import BaseLLM
 import json
 
 
@@ -49,6 +50,7 @@ class ToolAgent(BaseAgent):
         name: str,
         system_prompt: str,
         tools: List[Tool],
+        llm: Optional[BaseLLM] = None,
         model: str = 'gpt-3.5-turbo',
         temperature: float = 0.7,
         max_retries: int = 3,
@@ -57,6 +59,7 @@ class ToolAgent(BaseAgent):
             name=name,
             system_prompt=system_prompt,
             agent_type=AgentType.TOOL_USING,
+            llm=llm,
             model=model,
             temperature=temperature,
             max_retries=max_retries,
@@ -74,21 +77,17 @@ class ToolAgent(BaseAgent):
                     {'role': 'system', 'content': self.system_prompt}
                 ] + self.conversation_history
 
-                response = await aclient.chat.completions.create(
-                    model=self.model,
-                    messages=messages,
+                response = await self.llm.generate(
+                    messages,
                     functions=[tool.to_openai_function() for tool in self.tools],
-                    temperature=self.temperature,
                 )
 
-                response_message = response.choices[0].message
+                function_call = await self.llm.get_function_call(response)
 
-                if response_message.function_call:
+                if function_call:
                     try:
-                        function_name = response_message.function_call.name
-                        function_args = json.loads(
-                            response_message.function_call.arguments
-                        )
+                        function_name = function_call['name']
+                        function_args = json.loads(function_call['arguments'])
 
                         tool = self.tools_dict[function_name]
                         function_response = await tool.execute(**function_args)
@@ -99,23 +98,19 @@ class ToolAgent(BaseAgent):
                         )
                         self.add_to_history('function', str(function_response))
 
-                        final_response = await aclient.chat.completions.create(
-                            model=self.model,
-                            messages=messages
-                            + [
-                                {'role': 'assistant', 'content': str(function_response)}
-                            ],
-                            temperature=self.temperature,
+                        final_response = await self.llm.generate(
+                            messages
+                            + [{'role': 'assistant', 'content': str(function_response)}]
                         )
 
-                        assistant_message = final_response.choices[0].message.content
+                        assistant_message = self.llm.get_message_content(final_response)
                         self.add_to_history('assistant', assistant_message)
                         return assistant_message
 
                     except (json.JSONDecodeError, KeyError, ToolExecutionError) as e:
                         context = {
                             'input_text': input_text,
-                            'function_call': response_message.function_call,
+                            'function_call': function_call,
                             'attempt': retry_count,
                         }
                         should_retry, analysis = await self.handle_error(e, context)
@@ -130,7 +125,7 @@ class ToolAgent(BaseAgent):
                         )
 
                 else:
-                    assistant_message = response_message.content
+                    assistant_message = self.llm.get_message_content(response)
                     self.add_to_history('assistant', assistant_message)
                     return assistant_message
 

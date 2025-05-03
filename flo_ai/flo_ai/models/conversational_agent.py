@@ -1,4 +1,6 @@
-from flo_ai.models.base_agent import BaseAgent, AgentType, AgentError, aclient
+from flo_ai.models.base_agent import BaseAgent, AgentType, AgentError
+from flo_ai.llm.base_llm import BaseLLM
+from typing import Optional
 
 
 class ConversationalAgent(BaseAgent):
@@ -6,6 +8,7 @@ class ConversationalAgent(BaseAgent):
         self,
         name: str,
         system_prompt: str,
+        llm: Optional[BaseLLM] = None,
         model: str = 'gpt-3.5-turbo',
         temperature: float = 0.7,
     ):
@@ -13,6 +16,7 @@ class ConversationalAgent(BaseAgent):
             name=name,
             system_prompt=system_prompt,
             agent_type=AgentType.CONVERSATIONAL,
+            llm=llm,
             model=model,
             temperature=temperature,
         )
@@ -27,11 +31,8 @@ class ConversationalAgent(BaseAgent):
                     {'role': 'system', 'content': self.system_prompt}
                 ] + self.conversation_history
 
-                response = await aclient.chat.completions.create(
-                    model=self.model, messages=messages, temperature=self.temperature
-                )
-
-                assistant_message = response.choices[0].message.content
+                response = await self.llm.generate(messages)
+                assistant_message = self.llm.get_message_content(response)
                 self.add_to_history('assistant', assistant_message)
                 return assistant_message
 

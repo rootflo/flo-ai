@@ -1,9 +1,8 @@
 from typing import Optional, Dict, Any, List, Tuple
 from abc import ABC, abstractmethod
 from enum import Enum
-from openai import AsyncOpenAI
-
-aclient = AsyncOpenAI()
+from flo_ai.llm.base_llm import BaseLLM
+from flo_ai.llm.openai_llm import OpenAILLM
 
 
 class AgentError(Exception):
@@ -25,6 +24,7 @@ class BaseAgent(ABC):
         name: str,
         system_prompt: str,
         agent_type: AgentType,
+        llm: Optional[BaseLLM] = None,
         model: str = 'gpt-3.5-turbo',
         temperature: float = 0.7,
         max_retries: int = 3,
@@ -32,8 +32,7 @@ class BaseAgent(ABC):
         self.name = name
         self.system_prompt = system_prompt
         self.agent_type = agent_type
-        self.model = model
-        self.temperature = temperature
+        self.llm = llm if llm is not None else OpenAILLM(model, temperature)
         self.max_retries = max_retries
         self.conversation_history: List[Dict[str, str]] = []
 
@@ -45,10 +44,6 @@ class BaseAgent(ABC):
     async def handle_error(
         self, error: Exception, context: Dict[str, Any]
     ) -> Tuple[bool, str]:
-        """
-        Handle errors by asking the LLM to suggest a correction
-        Returns: (should_retry: bool, correction_or_error_message: str)
-        """
         error_prompt = (
             f'An error occurred while processing the request: {str(error)}\n'
             f'Context: {context}\n'
@@ -66,11 +61,8 @@ class BaseAgent(ABC):
                 {'role': 'user', 'content': error_prompt},
             ]
 
-            response = await aclient.chat.completions.create(
-                model=self.model, messages=messages, temperature=0.7
-            )
-
-            analysis = response.choices[0].message.content
+            response = await self.llm.generate(messages)
+            analysis = self.llm.get_message_content(response)
             should_retry = 'not recoverable' not in analysis.lower()
             return should_retry, analysis
 
