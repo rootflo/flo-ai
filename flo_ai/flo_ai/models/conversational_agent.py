@@ -1,6 +1,5 @@
 from flo_ai.models.base_agent import BaseAgent, AgentType, AgentError
 from flo_ai.llm.base_llm import BaseLLM
-from typing import Optional
 
 
 class ConversationalAgent(BaseAgent):
@@ -8,17 +7,13 @@ class ConversationalAgent(BaseAgent):
         self,
         name: str,
         system_prompt: str,
-        llm: Optional[BaseLLM] = None,
-        model: str = 'gpt-3.5-turbo',
-        temperature: float = 0.7,
+        llm: BaseLLM,
     ):
         super().__init__(
             name=name,
             system_prompt=system_prompt,
             agent_type=AgentType.CONVERSATIONAL,
             llm=llm,
-            model=model,
-            temperature=temperature,
         )
 
     async def run(self, input_text: str) -> str:

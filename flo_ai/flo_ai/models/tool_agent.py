@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Callable, Optional
+from typing import Dict, Any, List, Callable
 from flo_ai.models.base_agent import BaseAgent, AgentType, AgentError
 from flo_ai.llm.base_llm import BaseLLM
 import json
@@ -50,9 +50,7 @@ class ToolAgent(BaseAgent):
         name: str,
         system_prompt: str,
         tools: List[Tool],
-        llm: Optional[BaseLLM] = None,
-        model: str = 'gpt-3.5-turbo',
-        temperature: float = 0.7,
+        llm: BaseLLM,
         max_retries: int = 3,
     ):
         super().__init__(
@@ -60,8 +58,6 @@ class ToolAgent(BaseAgent):
             system_prompt=system_prompt,
             agent_type=AgentType.TOOL_USING,
             llm=llm,
-            model=model,
-            temperature=temperature,
             max_retries=max_retries,
         )
         self.tools = tools

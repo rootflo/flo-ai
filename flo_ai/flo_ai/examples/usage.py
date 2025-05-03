@@ -2,14 +2,16 @@ import asyncio
 from flo_ai.models.conversational_agent import ConversationalAgent
 from flo_ai.models.tool_agent import ToolAgent, Tool
 from flo_ai.models.base_agent import AgentError
+from flo_ai.llm.openai_llm import OpenAILLM
 
 
 # Example of a simple conversational agent
 async def test_conversational():
+    llm = OpenAILLM(model='gpt-4', temperature=0.7)
     agent = ConversationalAgent(
         name='Assistant',
         system_prompt='You are a helpful AI assistant.',
-        model='gpt-4o',
+        llm=llm,
     )
 
     response = await agent.run('What is the capital of France?')
@@ -32,11 +34,12 @@ async def test_tool_agent():
         },
     )
 
+    llm = OpenAILLM(model='gpt-3.5-turbo', temperature=0.7)
     agent = ToolAgent(
         name='WeatherAssistant',
         system_prompt='You are a helpful weather assistant.',
         tools=[weather_tool],
-        model='gpt-3.5-turbo',
+        llm=llm,
     )
 
     response = await agent.run("What's the weather like in Paris?")
@@ -59,11 +62,12 @@ async def test_error_handling():
         },
     )
 
+    llm = OpenAILLM(model='gpt-3.5-turbo', temperature=0.7)
     agent = ToolAgent(
         name='WeatherAssistant',
         system_prompt='You are a helpful weather assistant.',
         tools=[weather_tool],
-        model='gpt-3.5-turbo',
+        llm=llm,
         max_retries=3,
     )
 

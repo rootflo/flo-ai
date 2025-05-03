@@ -18,7 +18,7 @@ async def test_claude_conversational():
     agent = ConversationalAgent(
         name='ClaudeAssistant',
         system_prompt='You are a helpful AI assistant powered by Claude.',
-        llm=claude_llm,  # Pass the Claude LLM instance
+        llm=claude_llm,
     )
 
     try:
@@ -63,7 +63,7 @@ async def test_claude_tool_agent():
         name='ClaudeWeatherAssistant',
         system_prompt='You are a helpful weather assistant. Use the weather tool to provide weather information.',
         tools=[weather_tool],
-        llm=claude_llm,  # Pass the Claude LLM instance
+        llm=claude_llm,
     )
 
     try:

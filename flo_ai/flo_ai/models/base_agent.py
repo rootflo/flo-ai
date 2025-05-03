@@ -2,7 +2,6 @@ from typing import Optional, Dict, Any, List, Tuple
 from abc import ABC, abstractmethod
 from enum import Enum
 from flo_ai.llm.base_llm import BaseLLM
-from flo_ai.llm.openai_llm import OpenAILLM
 
 
 class AgentError(Exception):
@@ -24,15 +23,13 @@ class BaseAgent(ABC):
         name: str,
         system_prompt: str,
         agent_type: AgentType,
-        llm: Optional[BaseLLM] = None,
-        model: str = 'gpt-3.5-turbo',
-        temperature: float = 0.7,
+        llm: BaseLLM,
         max_retries: int = 3,
     ):
         self.name = name
         self.system_prompt = system_prompt
         self.agent_type = agent_type
-        self.llm = llm if llm is not None else OpenAILLM(model, temperature)
+        self.llm = llm
         self.max_retries = max_retries
         self.conversation_history: List[Dict[str, str]] = []
 
