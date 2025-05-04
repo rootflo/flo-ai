@@ -15,6 +15,7 @@ class ToolAgent(BaseAgent):
         tools: Optional[List[Tool]] = None,
         max_retries: int = 3,
         reasoning_pattern: ReasoningPattern = ReasoningPattern.DIRECT,
+        output_schema: Optional[Dict[str, Any]] = None,
     ):
         # Determine agent type based on tools
         agent_type = AgentType.TOOL_USING if tools else AgentType.CONVERSATIONAL
@@ -29,6 +30,7 @@ class ToolAgent(BaseAgent):
         self.tools = tools or []
         self.tools_dict = {tool.name: tool for tool in self.tools}
         self.reasoning_pattern = reasoning_pattern
+        self.output_schema = output_schema
 
     async def run(self, input_text: str) -> str:
         self.add_to_history('user', input_text)
@@ -49,10 +51,25 @@ class ToolAgent(BaseAgent):
                     {'role': 'system', 'content': self.system_prompt}
                 ] + self.conversation_history
 
-                response = await self.llm.generate(messages)
+                print('Sending messages to LLM:', messages)  # Debug print
+                print('Output schema:', self.output_schema)  # Debug print
+
+                response = await self.llm.generate(
+                    messages, output_schema=self.output_schema
+                )
+                print('Raw LLM Response:', response)  # Debug print
+
                 assistant_message = self.llm.get_message_content(response)
-                self.add_to_history('assistant', assistant_message)
-                return assistant_message
+                print('Extracted message:', assistant_message)  # Debug print
+
+                if assistant_message:
+                    self.add_to_history('assistant', assistant_message)
+                    return assistant_message
+                else:
+                    print(
+                        'Warning: No message content found in response'
+                    )  # Debug print
+                    return None
 
             except Exception as e:
                 retry_count += 1
@@ -92,13 +109,21 @@ class ToolAgent(BaseAgent):
                 response = await self.llm.generate(
                     messages,
                     functions=formatted_tools,
+                    output_schema=self.output_schema,
                 )
                 print(f'Response: {response}')
+
                 # Handle ReACT pattern
                 if self.reasoning_pattern == ReasoningPattern.REACT:
                     function_call = await self._process_react_response(response)
                 else:
                     function_call = await self.llm.get_function_call(response)
+
+                if not function_call:
+                    assistant_message = self.llm.get_message_content(response)
+                    if assistant_message:  # Check if we got a valid message
+                        self.add_to_history('assistant', assistant_message)
+                        return assistant_message
 
                 if function_call:
                     try:
@@ -133,7 +158,9 @@ class ToolAgent(BaseAgent):
                             },
                         ]
 
-                        final_response = await self.llm.generate(final_messages)
+                        final_response = await self.llm.generate(
+                            final_messages, output_schema=self.output_schema
+                        )
                         assistant_message = self.llm.get_message_content(final_response)
                         self.add_to_history('assistant', assistant_message)
                         return assistant_message
@@ -154,11 +181,6 @@ class ToolAgent(BaseAgent):
                         raise AgentError(
                             f'Tool execution failed: {analysis}', original_error=e
                         )
-
-                else:
-                    assistant_message = self.llm.get_message_content(response)
-                    self.add_to_history('assistant', assistant_message)
-                    return assistant_message
 
             except Exception as e:
                 retry_count += 1

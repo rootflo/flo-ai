@@ -3,6 +3,7 @@ from textwrap import dedent
 from pydantic import BaseModel
 from flo_ai.llm.openai_llm import OpenAILLM
 from flo_ai.llm.claude_llm import ClaudeLLM
+from flo_ai.models.tool_agent import ToolAgent
 
 
 # Define the output schema using Pydantic
@@ -70,5 +71,69 @@ async def main():
     print('Claude Response:', claude_response)
 
 
+async def agent_example():
+    # Initialize LLMs
+    openai_llm = OpenAILLM(model='gpt-4-turbo-preview')
+    claude_llm = ClaudeLLM()
+
+    # Define output schema
+    math_schema = {
+        'type': 'object',
+        'properties': {
+            'solution': {
+                'type': 'string',
+                'description': 'The step-by-step solution to the math problem',
+            },
+            'answer': {'type': 'string', 'description': 'The final answer'},
+        },
+        'required': ['solution', 'answer'],
+    }
+
+    # Create OpenAI agent
+    openai_agent = ToolAgent(
+        name='OpenAI Math Tutor',
+        system_prompt=dedent("""
+            You are a helpful math tutor. When solving problems:
+            1. Show your step-by-step solution
+            2. Provide the final answer
+            
+            Format your response as JSON with this structure:
+            {
+                "solution": "Step by step solution here",
+                "answer": "Final answer here"
+            }
+        """),
+        llm=openai_llm,
+        output_schema=math_schema,
+    )
+
+    # Create Claude agent
+    claude_agent = ToolAgent(
+        name='Claude Math Tutor',
+        system_prompt=dedent("""
+            You are a helpful math tutor. When solving problems:
+            1. Show your step-by-step solution
+            2. Provide the final answer
+            
+            Format your response as JSON with this structure:
+            {
+                "solution": "Step by step solution here",
+                "answer": "Final answer here"
+            }
+        """),
+        llm=claude_llm,
+        output_schema=math_schema,
+    )
+
+    # Run both agents
+    problem = 'Solve 8x + 7 = -23'
+    openai_response = await openai_agent.run(problem)
+    claude_response = await claude_agent.run(problem)
+
+    print('\nOpenAI Agent Response:', openai_response)
+    print('\nClaude Agent Response:', claude_response)
+
+
 if __name__ == '__main__':
-    asyncio.run(main())
+    # asyncio.run(main())
+    asyncio.run(agent_example())
