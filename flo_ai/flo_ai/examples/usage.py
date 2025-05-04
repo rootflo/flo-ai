@@ -3,6 +3,7 @@ from flo_ai.models.tool_agent import ToolAgent
 from flo_ai.llm.openai_llm import OpenAILLM
 from flo_ai.tool.base_tool import Tool
 from flo_ai.models.agent_error import AgentError
+from flo_ai.models.base_agent import ReasoningPattern
 
 
 # Example of using ToolAgent as a conversational agent
@@ -81,6 +82,42 @@ async def test_error_handling():
             print(f'Original error: {str(e.original_error)}')
 
 
+async def test_direct_reasoning():
+    # Define a simple calculator tool
+    async def calculate(operation: str, x: float, y: float) -> float:
+        if operation == 'add':
+            return x + y
+        elif operation == 'multiply':
+            return x * y
+        raise ValueError(f'Unknown operation: {operation}')
+
+    calculator_tool = Tool(
+        name='calculate',
+        description='Perform basic calculations',
+        function=calculate,
+        parameters={
+            'operation': {
+                'type': 'string',
+                'description': 'The operation to perform (add or multiply)',
+            },
+            'x': {'type': 'number', 'description': 'First number'},
+            'y': {'type': 'number', 'description': 'Second number'},
+        },
+    )
+
+    llm = OpenAILLM(model='gpt-3.5-turbo', temperature=0.7)
+    agent = ToolAgent(
+        name='CalculatorAssistant',
+        system_prompt='You are a helpful calculator assistant. Use the calculator tool directly without explanation.',
+        llm=llm,
+        tools=[calculator_tool],
+        reasoning_pattern=ReasoningPattern.DIRECT,
+    )
+
+    response = await agent.run('Calculate 5 plus 3')
+    print(response)
+
+
 # Run the examples
 if __name__ == '__main__':
     print('Testing conversational agent...\n')
@@ -91,3 +128,6 @@ if __name__ == '__main__':
 
     print('\nTesting error handling...\n')
     asyncio.run(test_error_handling())
+
+    print('\nTesting direct reasoning...\n')
+    asyncio.run(test_direct_reasoning())

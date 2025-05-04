@@ -118,7 +118,6 @@ async def test_error_handling():
         llm=claude_llm,
         tools=[weather_tool],
         max_retries=3,
-        reasoning_pattern=ReasoningPattern.DIRECT,
     )
 
     try:
@@ -131,15 +130,59 @@ async def test_error_handling():
             print('Original error:', str(e.original_error))
 
 
+async def test_direct_reasoning():
+    # Define a simple calculator tool
+    async def calculate(operation: str, x: float, y: float) -> float:
+        if operation == 'add':
+            return x + y
+        elif operation == 'multiply':
+            return x * y
+        raise ValueError(f'Unknown operation: {operation}')
+
+    calculator_tool = Tool(
+        name='calculate',
+        description='Perform basic calculations',
+        function=calculate,
+        parameters={
+            'operation': {
+                'type': 'string',
+                'description': 'The operation to perform (add or multiply)',
+            },
+            'x': {'type': 'number', 'description': 'First number'},
+            'y': {'type': 'number', 'description': 'Second number'},
+        },
+    )
+
+    claude_llm = ClaudeLLM(
+        model='claude-3-5-sonnet-20240620',
+        temperature=0.7,
+        api_key=os.getenv('ANTHROPIC_API_KEY'),
+    )
+
+    agent = ToolAgent(
+        name='ClaudeCalculatorAssistant',
+        system_prompt='You are a helpful calculator assistant. Use the calculator tool directly without explanation.',
+        llm=claude_llm,
+        tools=[calculator_tool],
+        reasoning_pattern=ReasoningPattern.DIRECT,
+    )
+
+    response = await agent.run('Calculate 5 plus 3')
+    print('\nDirect Reasoning Response:', response)
+
+
 async def main():
-    # print('\n=== Testing Claude Conversational Agent ===')
-    # await test_claude_conversational()
+    print('\n=== Testing Claude Conversational Agent ===')
+    await test_claude_conversational()
 
     print('\n=== Testing Claude Tool Agent ===')
     await test_claude_tool_agent()
 
-    # print('\n=== Testing Error Handling ===')
-    # await test_error_handling()
+    print('\n=== Testing Error Handling ===')
+    await test_error_handling()
+
+    print('\n=== Testing Direct Reasoning ===')
+    await test_direct_reasoning()
 
 
 if __name__ == '__main__':
