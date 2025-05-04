@@ -5,30 +5,43 @@ from flo_ai.tool.base_tool import Tool
 
 
 class OpenAILLM(BaseLLM):
-    def __init__(
-        self,
-        model: str = 'gpt-3.5-turbo',
-        temperature: float = 0.7,
-        api_key: Optional[str] = None,
-    ):
-        super().__init__(model, temperature)
-        self.client = AsyncOpenAI(api_key=api_key)
+    def __init__(self, model='gpt-4-turbo-preview', **kwargs):
+        super().__init__(model=model)
+        self.client = AsyncOpenAI()
+        self.model = model
+        self.kwargs = kwargs
 
     async def generate(
-        self,
-        messages: List[Dict[str, str]],
-        functions: Optional[List[Dict[str, Any]]] = None,
-    ) -> Dict[str, Any]:
-        kwargs = {
+        self, messages: list[dict], output_schema: dict = None, **kwargs
+    ) -> Any:
+        # Convert output_schema to OpenAI format if provided
+        if output_schema:
+            kwargs['response_format'] = {'type': 'json_object'}
+            kwargs['functions'] = [
+                {
+                    'name': output_schema.get('name', 'default'),
+                    'parameters': output_schema.get('schema', output_schema),
+                }
+            ]
+            kwargs['function_call'] = {'name': output_schema.get('name', 'default')}
+
+        # Prepare OpenAI API parameters
+        openai_kwargs = {
             'model': self.model,
             'messages': messages,
-            'temperature': self.temperature,
+            **kwargs,
+            **self.kwargs,
         }
-        if functions:
-            kwargs['functions'] = functions
 
-        response = await self.client.chat.completions.create(**kwargs)
-        return response.choices[0].message
+        # Make the API call
+        response = await self.client.chat.completions.create(**openai_kwargs)
+        message = response.choices[0].message
+
+        # Handle function call responses
+        if message.function_call:
+            return message.function_call.arguments
+
+        return message.content
 
     async def get_function_call(
         self, response: Dict[str, Any]

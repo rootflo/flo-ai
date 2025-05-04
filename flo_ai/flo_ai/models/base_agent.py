@@ -12,7 +12,7 @@ class AgentType(Enum):
 class ReasoningPattern(Enum):
     DIRECT = 'direct'  # Direct response without explicit reasoning
     REACT = 'react'  # Thought-Action-Observation cycle
-    COT = 'cot'  # Chain of Thought reasoning
+    # COT = 'cot'  # TODO Chain of Thought reasoning
 
 
 class BaseAgent(ABC):

@@ -21,11 +21,18 @@ class ClaudeLLM(BaseLLM):
         self,
         messages: List[Dict[str, str]],
         functions: Optional[List[Dict[str, Any]]] = None,
+        output_schema: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         # Convert messages to Claude format
         system_message = next(
             (msg['content'] for msg in messages if msg['role'] == 'system'), None
         )
+
+        # If output schema is provided, append it to system message
+        if output_schema and system_message:
+            system_message = f'{system_message}\n\nProvide output in the following JSON schema:\n{json.dumps(output_schema, indent=2)}\n\nResponse:'
+        elif output_schema:
+            system_message = f'Provide output in the following JSON schema:\n{json.dumps(output_schema, indent=2)}\n\nResponse:'
 
         conversation = []
         for msg in messages:

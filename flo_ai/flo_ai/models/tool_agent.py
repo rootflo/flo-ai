@@ -187,7 +187,6 @@ class ToolAgent(BaseAgent):
     ) -> Optional[Dict[str, Any]]:
         """Process response in ReACT format and return function call if action is needed"""
         content = self.llm.get_message_content(response)
-        print(f'Content ------> : {content}')
 
         # Add thought to history
         if 'Thought:' in content:
