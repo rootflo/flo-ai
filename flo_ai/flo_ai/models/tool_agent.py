@@ -1,7 +1,8 @@
 from typing import Dict, Any, List, Optional
-from flo_ai.models.base_agent import BaseAgent, AgentType, AgentError, ReasoningPattern
+from flo_ai.models.base_agent import BaseAgent, AgentType, ReasoningPattern
 from flo_ai.llm.base_llm import BaseLLM
 from flo_ai.tool.base_tool import Tool, ToolExecutionError
+from flo_ai.models.agent_error import AgentError
 import json
 
 
@@ -75,25 +76,24 @@ class ToolAgent(BaseAgent):
 
     async def _run_with_tools(self, retry_count: int) -> str:
         """Run as a tool-using agent when tools are provided"""
-        messages = [
-            {
-                'role': 'system',
-                'content': self._get_react_prompt()
-                if self.reasoning_pattern == ReasoningPattern.REACT
-                else self.system_prompt,
-            }
-        ]
-        messages.extend(self.conversation_history)
-
         while retry_count < self.max_retries:
             try:
+                messages = [
+                    {
+                        'role': 'system',
+                        'content': self._get_react_prompt()
+                        if self.reasoning_pattern == ReasoningPattern.REACT
+                        else self.system_prompt,
+                    }
+                ] + self.conversation_history
+
                 # Use LLM's tool formatting method
                 formatted_tools = self.llm.format_tools_for_llm(self.tools)
                 response = await self.llm.generate(
                     messages,
                     functions=formatted_tools,
                 )
-
+                print(f'Response: {response}')
                 # Handle ReACT pattern
                 if self.reasoning_pattern == ReasoningPattern.REACT:
                     function_call = await self._process_react_response(response)
@@ -107,6 +107,7 @@ class ToolAgent(BaseAgent):
 
                         tool = self.tools_dict[function_name]
                         function_response = await tool.execute(**function_args)
+                        print(f'Function response: {function_response}')
 
                         # Add thought process to history if present
                         thought_content = self.llm.get_message_content(response)
@@ -120,18 +121,19 @@ class ToolAgent(BaseAgent):
                             name=function_name,
                         )
 
-                        # Get final response that includes the weather information
-                        final_response = await self.llm.generate(
-                            messages
-                            + [
-                                {
-                                    'role': 'function',
-                                    'name': function_name,
-                                    'content': str(function_response),
-                                }
-                            ]
-                        )
+                        # Create a new message list for the final response
+                        final_messages = [
+                            {
+                                'role': 'system',
+                                'content': 'You are a helpful assistant. Provide a natural response based on the tool results.',
+                            },
+                            {
+                                'role': 'user',
+                                'content': f'Here is the {tool.name} information: {str(function_response)}. Please provide a natural response based on this {tool.name} data.',
+                            },
+                        ]
 
+                        final_response = await self.llm.generate(final_messages)
                         assistant_message = self.llm.get_message_content(final_response)
                         self.add_to_history('assistant', assistant_message)
                         return assistant_message
@@ -185,10 +187,12 @@ class ToolAgent(BaseAgent):
     ) -> Optional[Dict[str, Any]]:
         """Process response in ReACT format and return function call if action is needed"""
         content = self.llm.get_message_content(response)
+        print(f'Content ------> : {content}')
 
         # Add thought to history
         if 'Thought:' in content:
             thought = content.split('Action:')[0].strip()
+            print(f'Thought: {thought}')
             self.add_to_history('thought', thought)
 
         # Extract action if present
@@ -196,6 +200,7 @@ class ToolAgent(BaseAgent):
             action = content.split('Action:')[1]
             if 'Observation:' in action:
                 action = action.split('Observation:')[0]
+            print(f'Action: {action}')
             action = action.strip()
 
             # Parse action into function call format

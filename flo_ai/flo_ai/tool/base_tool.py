@@ -1,5 +1,5 @@
 from typing import Dict, Any, Callable
-from flo_ai.models.base_agent import AgentError
+from flo_ai.models.agent_error import AgentError
 
 
 class ToolExecutionError(AgentError):
@@ -31,6 +31,7 @@ class Tool:
     async def execute(self, **kwargs) -> Any:
         """Execute the tool with error handling"""
         try:
+            print(f'Executing tool {self.name} with kwargs: {kwargs}')
             return await self.function(**kwargs)
         except Exception as e:
             raise ToolExecutionError(

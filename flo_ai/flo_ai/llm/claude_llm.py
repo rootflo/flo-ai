@@ -8,7 +8,7 @@ from flo_ai.tool.base_tool import Tool
 class ClaudeLLM(BaseLLM):
     def __init__(
         self,
-        model: str = 'claude-3-opus-20240229',
+        model: str = 'claude-3-5-sonnet-20240620',
         temperature: float = 0.7,
         api_key: Optional[str] = None,
         max_tokens: int = 4096,
@@ -53,30 +53,19 @@ class ClaudeLLM(BaseLLM):
 
             response = await self.client.messages.create(**kwargs)
 
-            # Check if there's a tool call in the response
-            if hasattr(response, 'tool_calls') and response.tool_calls:
-                tool_call = response.tool_calls[0]
-                # Extract the actual parameters from the tool call
-                tool_parameters = (
-                    tool_call.parameters if hasattr(tool_call, 'parameters') else {}
-                )
+            # Check if there's a tool use in the response
+            for content_block in response.content:
+                if content_block.type == 'tool_use':
+                    return {
+                        'content': response.content[0].text if response.content else '',
+                        'function_call': {
+                            'name': content_block.name,
+                            'arguments': json.dumps(content_block.input),
+                        },
+                    }
 
-                return {
-                    'content': response.content[0].text if response.content else '',
-                    'function_call': {
-                        'name': tool_call.name,  # Changed from tool.name
-                        'arguments': json.dumps(
-                            tool_parameters
-                        ),  # Use actual parameters
-                    },
-                }
-            elif hasattr(response, 'content') and response.content:
-                # Handle regular text response
-                if isinstance(response.content, list) and len(response.content) > 0:
-                    return {'content': response.content[0].text}
-                return {'content': str(response.content)}
-            else:
-                return {'content': ''}
+            # Handle regular text response
+            return {'content': response.content[0].text if response.content else ''}
 
         except Exception as e:
             raise Exception(f'Error in Claude API call: {str(e)}')

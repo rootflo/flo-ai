@@ -1,15 +1,7 @@
-from typing import Optional, Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple
 from abc import ABC, abstractmethod
 from enum import Enum
 from flo_ai.llm.base_llm import BaseLLM
-
-
-class AgentError(Exception):
-    """Base exception for agent errors"""
-
-    def __init__(self, message: str, original_error: Optional[Exception] = None):
-        super().__init__(message)
-        self.original_error = original_error
 
 
 class AgentType(Enum):

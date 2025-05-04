@@ -1,8 +1,8 @@
 import asyncio
 from flo_ai.models.tool_agent import ToolAgent
-from flo_ai.models.base_agent import AgentError
 from flo_ai.llm.openai_llm import OpenAILLM
 from flo_ai.tool.base_tool import Tool
+from flo_ai.models.agent_error import AgentError
 
 
 # Example of using ToolAgent as a conversational agent
