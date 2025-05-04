@@ -3,7 +3,7 @@ from textwrap import dedent
 from pydantic import BaseModel
 from flo_ai.llm.openai_llm import OpenAILLM
 from flo_ai.llm.claude_llm import ClaudeLLM
-from flo_ai.models.tool_agent import ToolAgent
+from flo_ai.models.agent import Agent as ToolAgent
 
 
 # Define the output schema using Pydantic

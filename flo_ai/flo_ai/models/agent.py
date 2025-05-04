@@ -6,7 +6,7 @@ from flo_ai.models.agent_error import AgentError
 import json
 
 
-class ToolAgent(BaseAgent):
+class Agent(BaseAgent):
     def __init__(
         self,
         name: str,
