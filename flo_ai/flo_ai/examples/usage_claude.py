@@ -1,9 +1,10 @@
 import asyncio
 import os
-from flo_ai.models.conversational_agent import ConversationalAgent
-from flo_ai.models.tool_agent import ToolAgent, Tool
+from flo_ai.models.base_agent import ReasoningPattern
+from flo_ai.models.tool_agent import ToolAgent
 from flo_ai.models.base_agent import AgentError
 from flo_ai.llm.claude_llm import ClaudeLLM
+from flo_ai.tool.base_tool import Tool
 
 
 async def test_claude_conversational():
@@ -15,7 +16,7 @@ async def test_claude_conversational():
     )
 
     # Create conversational agent with Claude
-    agent = ConversationalAgent(
+    agent = ToolAgent(
         name='ClaudeAssistant',
         system_prompt='You are a helpful AI assistant powered by Claude.',
         llm=claude_llm,
@@ -34,8 +35,9 @@ async def test_claude_conversational():
 async def test_claude_tool_agent():
     # Example weather tool
     async def get_weather(city: str, country: str = None) -> str:
+        location = f'{city}, {country}' if country else city
         # This would normally call a weather API
-        return f'The weather in {city}{", " + country if country else ""} is sunny and warm.'
+        return f"Currently in {location}, it's sunny and warm with a temperature of 25°C (77°F)."
 
     weather_tool = Tool(
         name='get_weather',
@@ -61,9 +63,13 @@ async def test_claude_tool_agent():
     # Create tool agent with Claude
     agent = ToolAgent(
         name='ClaudeWeatherAssistant',
-        system_prompt='You are a helpful weather assistant. Use the weather tool to provide weather information.',
-        tools=[weather_tool],
+        system_prompt="""You are a helpful weather assistant. When asked about weather, always use the weather tool to get information.
+        After getting the weather information, provide a natural response incorporating the data.
+        Do not just think about using the tool - actually use it and share the results.""",
         llm=claude_llm,
+        tools=[weather_tool],
+        max_retries=1,
+        reasoning_pattern=ReasoningPattern.DIRECT,
     )
 
     try:
@@ -110,9 +116,10 @@ async def test_error_handling():
     agent = ToolAgent(
         name='ClaudeWeatherAssistant',
         system_prompt='You are a helpful weather assistant.',
-        tools=[weather_tool],
         llm=claude_llm,
+        tools=[weather_tool],
         max_retries=3,
+        reasoning_pattern=ReasoningPattern.DIRECT,
     )
 
     try:
@@ -126,14 +133,14 @@ async def test_error_handling():
 
 
 async def main():
-    print('\n=== Testing Claude Conversational Agent ===')
-    await test_claude_conversational()
+    # print('\n=== Testing Claude Conversational Agent ===')
+    # await test_claude_conversational()
 
     print('\n=== Testing Claude Tool Agent ===')
     await test_claude_tool_agent()
 
-    print('\n=== Testing Error Handling ===')
-    await test_error_handling()
+    # print('\n=== Testing Error Handling ===')
+    # await test_error_handling()
 
 
 if __name__ == '__main__':

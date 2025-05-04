@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional
+from flo_ai.tool.base_tool import Tool
 
 
 class BaseLLM(ABC):
@@ -30,4 +31,14 @@ class BaseLLM(ABC):
     @abstractmethod
     def get_message_content(self, response: Dict[str, Any]) -> str:
         """Extract message content from response"""
+        pass
+
+    @abstractmethod
+    def format_tool_for_llm(self, tool: 'Tool') -> Dict[str, Any]:
+        """Format a tool for the specific LLM's API"""
+        pass
+
+    @abstractmethod
+    def format_tools_for_llm(self, tools: List['Tool']) -> List[Dict[str, Any]]:
+        """Format a list of tools for the specific LLM's API"""
         pass

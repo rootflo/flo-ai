@@ -2,6 +2,7 @@ from typing import Dict, Any, List, Optional
 from anthropic import AsyncAnthropic
 import json
 from .base_llm import BaseLLM
+from flo_ai.tool.base_tool import Tool
 
 
 class ClaudeLLM(BaseLLM):
@@ -36,47 +37,46 @@ class ClaudeLLM(BaseLLM):
                     }
                 )
 
-        # Convert functions to Claude tools format if provided
-        tools = None
-        if functions:
-            tools = [
-                {
-                    'name': func['name'],
-                    'description': func.get('description', ''),
-                    'input_schema': {
-                        'type': 'object',
-                        'properties': func['parameters'].get('properties', {}),
-                        'required': func['parameters'].get('required', []),
-                    },
-                }
-                for func in functions
-            ]
-
         try:
-            response = await self.client.messages.create(
-                model=self.model,
-                max_tokens=self.max_tokens,
-                messages=conversation,
-                system=system_message,
-                temperature=self.temperature,
-                tools=tools,
-            )
+            kwargs = {
+                'model': self.model,
+                'max_tokens': self.max_tokens,
+                'messages': conversation,
+                'temperature': self.temperature,
+            }
+
+            if system_message:
+                kwargs['system'] = system_message
+
+            if functions:
+                kwargs['tools'] = functions
+
+            response = await self.client.messages.create(**kwargs)
 
             # Check if there's a tool call in the response
-            if (
-                hasattr(response.content[0], 'tool_calls')
-                and response.content[0].tool_calls
-            ):
-                tool_call = response.content[0].tool_calls[0]
+            if hasattr(response, 'tool_calls') and response.tool_calls:
+                tool_call = response.tool_calls[0]
+                # Extract the actual parameters from the tool call
+                tool_parameters = (
+                    tool_call.parameters if hasattr(tool_call, 'parameters') else {}
+                )
+
                 return {
-                    'content': '',  # Empty content since we're using a tool
+                    'content': response.content[0].text if response.content else '',
                     'function_call': {
-                        'name': tool_call.name,
-                        'arguments': json.dumps(tool_call.arguments),
+                        'name': tool_call.name,  # Changed from tool.name
+                        'arguments': json.dumps(
+                            tool_parameters
+                        ),  # Use actual parameters
                     },
                 }
-
-            return {'content': response.content[0].text}
+            elif hasattr(response, 'content') and response.content:
+                # Handle regular text response
+                if isinstance(response.content, list) and len(response.content) > 0:
+                    return {'content': response.content[0].text}
+                return {'content': str(response.content)}
+            else:
+                return {'content': ''}
 
         except Exception as e:
             raise Exception(f'Error in Claude API call: {str(e)}')
@@ -84,12 +84,43 @@ class ClaudeLLM(BaseLLM):
     async def get_function_call(
         self, response: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
+        """Extract function call from response if present"""
         if 'function_call' in response:
             return {
                 'name': response['function_call']['name'],
-                'arguments': json.dumps(response['function_call']['arguments']),
+                'arguments': response['function_call']['arguments'],
             }
         return None
 
     def get_message_content(self, response: Dict[str, Any]) -> str:
-        return response['content']
+        """Extract message content from response"""
+        if isinstance(response, dict):
+            return response.get('content', '')
+        return str(response)
+
+    def format_tool_for_llm(self, tool: 'Tool') -> Dict[str, Any]:
+        """Format a single tool for Claude's API"""
+        return {
+            'type': 'custom',
+            'name': tool.name,
+            'description': tool.description,
+            'input_schema': {
+                'type': 'object',
+                'properties': {
+                    name: {
+                        'type': info.get('type', 'string'),
+                        'description': info.get('description', ''),
+                    }
+                    for name, info in tool.parameters.items()
+                },
+                'required': [
+                    name
+                    for name, info in tool.parameters.items()
+                    if info.get('required', True)
+                ],
+            },
+        }
+
+    def format_tools_for_llm(self, tools: List['Tool']) -> List[Dict[str, Any]]:
+        """Format tools for Claude's API"""
+        return [self.format_tool_for_llm(tool) for tool in tools]

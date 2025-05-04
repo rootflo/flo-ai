@@ -17,6 +17,12 @@ class AgentType(Enum):
     TOOL_USING = 'tool_using'
 
 
+class ReasoningPattern(Enum):
+    DIRECT = 'direct'  # Direct response without explicit reasoning
+    REACT = 'react'  # Thought-Action-Observation cycle
+    COT = 'cot'  # Chain of Thought reasoning
+
+
 class BaseAgent(ABC):
     def __init__(
         self,
@@ -66,9 +72,11 @@ class BaseAgent(ABC):
         except Exception as e:
             return False, f'Error during error handling: {str(e)}'
 
-    def add_to_history(self, role: str, content: str):
+    def add_to_history(self, role: str, content: str, **kwargs):
         """Add a message to conversation history"""
-        self.conversation_history.append({'role': role, 'content': content})
+        message = {'role': role, 'content': content}
+        message.update(kwargs)  # Add any additional fields like name
+        self.conversation_history.append(message)
 
     def clear_history(self):
         """Clear conversation history"""

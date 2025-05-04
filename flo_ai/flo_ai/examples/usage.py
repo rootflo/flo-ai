@@ -1,14 +1,14 @@
 import asyncio
-from flo_ai.models.conversational_agent import ConversationalAgent
-from flo_ai.models.tool_agent import ToolAgent, Tool
+from flo_ai.models.tool_agent import ToolAgent
 from flo_ai.models.base_agent import AgentError
 from flo_ai.llm.openai_llm import OpenAILLM
+from flo_ai.tool.base_tool import Tool
 
 
-# Example of a simple conversational agent
+# Example of using ToolAgent as a conversational agent
 async def test_conversational():
     llm = OpenAILLM(model='gpt-4', temperature=0.7)
-    agent = ConversationalAgent(
+    agent = ToolAgent(
         name='Assistant',
         system_prompt='You are a helpful AI assistant.',
         llm=llm,
@@ -18,7 +18,7 @@ async def test_conversational():
     print(response)
 
 
-# Example of a tool-using agent
+# Example of using ToolAgent with tools
 async def test_tool_agent():
     # Define a simple tool
     async def get_weather(city: str) -> str:
@@ -38,8 +38,8 @@ async def test_tool_agent():
     agent = ToolAgent(
         name='WeatherAssistant',
         system_prompt='You are a helpful weather assistant.',
-        tools=[weather_tool],
         llm=llm,
+        tools=[weather_tool],
     )
 
     response = await agent.run("What's the weather like in Paris?")
@@ -66,8 +66,8 @@ async def test_error_handling():
     agent = ToolAgent(
         name='WeatherAssistant',
         system_prompt='You are a helpful weather assistant.',
-        tools=[weather_tool],
         llm=llm,
+        tools=[weather_tool],
         max_retries=3,
     )
 
@@ -83,6 +83,11 @@ async def test_error_handling():
 
 # Run the examples
 if __name__ == '__main__':
+    print('Testing conversational agent...\n')
     asyncio.run(test_conversational())
+
+    print('\nTesting tool agent...\n')
     asyncio.run(test_tool_agent())
+
+    print('\nTesting error handling...\n')
     asyncio.run(test_error_handling())
