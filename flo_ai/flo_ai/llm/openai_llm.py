@@ -37,11 +37,8 @@ class OpenAILLM(BaseLLM):
         response = await self.client.chat.completions.create(**openai_kwargs)
         message = response.choices[0].message
 
-        # Handle function call responses
-        if message.function_call:
-            return message.function_call.arguments
-
-        return message.content
+        # Return the full message object instead of just the content
+        return message
 
     async def get_function_call(
         self, response: Dict[str, Any]
@@ -54,7 +51,10 @@ class OpenAILLM(BaseLLM):
         return None
 
     def get_message_content(self, response: Dict[str, Any]) -> str:
-        return response.content
+        # Handle both string responses and message objects
+        if isinstance(response, str):
+            return response
+        return response.content if hasattr(response, 'content') else str(response)
 
     def format_tool_for_llm(self, tool: 'Tool') -> Dict[str, Any]:
         """Format a single tool for OpenAI's API"""

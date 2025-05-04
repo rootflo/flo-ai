@@ -74,7 +74,7 @@ class ToolAgent(BaseAgent):
                         original_error=e,
                     )
 
-    async def _run_with_tools(self, retry_count: int) -> str:
+    async def _run_with_tools(self, retry_count: int = 0) -> str:
         """Run as a tool-using agent when tools are provided"""
         while retry_count < self.max_retries:
             try:
