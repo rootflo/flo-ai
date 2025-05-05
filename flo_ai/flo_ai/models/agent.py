@@ -104,24 +104,23 @@ class Agent(BaseAgent):
                     }
                 ] + self.conversation_history
 
-                # Use LLM's tool formatting method
                 formatted_tools = self.llm.format_tools_for_llm(self.tools)
                 response = await self.llm.generate(
                     messages,
                     functions=formatted_tools,
                     output_schema=self.output_schema,
                 )
-                print(f'Response: {response}')
 
                 # Handle ReACT pattern
                 if self.reasoning_pattern == ReasoningPattern.REACT:
                     function_call = await self._process_react_response(response)
+                    print(f'Function call -> {function_call}')
                 else:
                     function_call = await self.llm.get_function_call(response)
 
                 if not function_call:
                     assistant_message = self.llm.get_message_content(response)
-                    if assistant_message:  # Check if we got a valid message
+                    if assistant_message:
                         self.add_to_history('assistant', assistant_message)
                         return assistant_message
 
@@ -132,11 +131,10 @@ class Agent(BaseAgent):
 
                         tool = self.tools_dict[function_name]
                         function_response = await tool.execute(**function_args)
-                        print(f'Function response: {function_response}')
 
                         # Add thought process to history if present
                         thought_content = self.llm.get_message_content(response)
-                        if thought_content:
+                        if thought_content:  # Only add if there's actual content
                             self.add_to_history('assistant', thought_content)
 
                         # Add function call to history
@@ -147,10 +145,11 @@ class Agent(BaseAgent):
                         )
 
                         # Create a new message list for the final response
-                        final_messages = [
+                        final_messages = messages + [
                             {
-                                'role': 'system',
-                                'content': 'You are a helpful assistant. Provide a natural response based on the tool results.',
+                                'role': 'function',
+                                'name': function_name,
+                                'content': str(function_response),
                             },
                             {
                                 'role': 'user',
@@ -161,9 +160,15 @@ class Agent(BaseAgent):
                         final_response = await self.llm.generate(
                             final_messages, output_schema=self.output_schema
                         )
+
                         assistant_message = self.llm.get_message_content(final_response)
-                        self.add_to_history('assistant', assistant_message)
-                        return assistant_message
+
+                        if assistant_message:
+                            self.add_to_history('assistant', assistant_message)
+                            return assistant_message
+
+                        # Fallback if no proper response
+                        return f'The result is {function_response}'
 
                     except (json.JSONDecodeError, KeyError, ToolExecutionError) as e:
                         retry_count += 1
@@ -208,33 +213,30 @@ class Agent(BaseAgent):
         self, response: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
         """Process response in ReACT format and return function call if action is needed"""
+
+        # Handle both OpenAI and Claude response formats
+        function_call = None
+        if hasattr(response, 'function_call'):  # OpenAI format
+            function_call = response.function_call
+        elif (
+            isinstance(response, dict) and 'function_call' in response
+        ):  # Claude format
+            function_call = response['function_call']
+
+        if function_call:
+            return {
+                'name': function_call.name
+                if hasattr(function_call, 'name')
+                else function_call['name'],
+                'arguments': function_call.arguments
+                if hasattr(function_call, 'arguments')
+                else function_call['arguments'],
+            }
+
+        # Get the message content for thought process
         content = self.llm.get_message_content(response)
-
-        # Add thought to history
-        if 'Thought:' in content:
-            thought = content.split('Action:')[0].strip()
-            print(f'Thought: {thought}')
-            self.add_to_history('thought', thought)
-
-        # Extract action if present
-        if 'Action:' in content:
-            action = content.split('Action:')[1]
-            if 'Observation:' in action:
-                action = action.split('Observation:')[0]
-            print(f'Action: {action}')
-            action = action.strip()
-
-            # Parse action into function call format
-            try:
-                action_parts = action.split('(', 1)
-                function_name = action_parts[0].strip()
-                args_str = action_parts[1].rstrip(')')
-                function_args = json.loads('{' + args_str + '}')
-
-                return {'name': function_name, 'arguments': json.dumps(function_args)}
-            except Exception as e:
-                self.add_to_history('system', f'Failed to parse action: {str(e)}')
-                return None
+        if content:
+            self.add_to_history('thought', content)
 
         return None
 

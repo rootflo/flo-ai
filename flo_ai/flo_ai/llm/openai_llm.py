@@ -56,8 +56,8 @@ class OpenAILLM(BaseLLM):
             return response
 
         # If there's a function call with arguments, return that
-        if hasattr(response, 'function_call') and response.function_call:
-            return response.function_call.arguments
+        # if hasattr(response, 'function_call') and response.function_call:
+        #     return response.cont
 
         # Otherwise return content if available
         return response.content if hasattr(response, 'content') else str(response)

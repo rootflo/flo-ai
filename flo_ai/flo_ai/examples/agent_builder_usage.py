@@ -44,7 +44,18 @@ async def example_tool_agent():
     )
 
     # Create a tool-using agent with Claude
-    agent = (
+    agent_openai = (
+        AgentBuilder()
+        .with_name('Calculator Assistant')
+        .with_prompt('You are a math assistant that can perform calculations.')
+        .with_llm(OpenAILLM(model='gpt-4o', temperature=0.7))
+        .with_tools([calculator_tool])
+        .with_reasoning(ReasoningPattern.REACT)
+        .with_retries(2)
+        .build()
+    )
+
+    agent_claude = (
         AgentBuilder()
         .with_name('Calculator Assistant')
         .with_prompt('You are a math assistant that can perform calculations.')
@@ -55,8 +66,11 @@ async def example_tool_agent():
         .build()
     )
 
-    response = await agent.run('Calculate 5 plus 3')
-    print(f'Tool Agent Response: {response}')
+    response = await agent_openai.run('Calculate 5 plus 3')
+    print(f'OpenAI Tool Agent Response: {response}')
+
+    response = await agent_claude.run('Calculate 5 plus 3')
+    print(f'Claude Tool Agent Response: {response}')
 
 
 async def example_structured_output():
