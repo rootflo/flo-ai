@@ -4,7 +4,7 @@ from flo_ai.tool.base_tool import Tool
 from flo_ai.models.base_agent import ReasoningPattern
 from flo_ai.llm.openai_llm import OpenAILLM
 
-# from flo_ai.llm.claude_llm import ClaudeLLM
+from flo_ai.llm.claude_llm import ClaudeLLM
 from flo_ai.llm.base_llm import BaseLLM
 
 
@@ -138,8 +138,8 @@ async def main():
     await test_multi_tool_agent(openai_llm, 'OpenAI Multi-Tool Agent')
 
     # Test with Claude
-    # claude_llm = ClaudeLLM(model="claude-3-5-sonnet-20240620", temperature=0.7)
-    # await test_multi_tool_agent(claude_llm, "Claude Multi-Tool Agent")
+    claude_llm = ClaudeLLM(model='claude-3-5-sonnet-20240620', temperature=0.7)
+    await test_multi_tool_agent(claude_llm, 'Claude Multi-Tool Agent')
 
 
 if __name__ == '__main__':

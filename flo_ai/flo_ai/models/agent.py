@@ -104,33 +104,47 @@ class Agent(BaseAgent):
                     }
                 ] + self.conversation_history
 
-                formatted_tools = self.llm.format_tools_for_llm(self.tools)
-                response = await self.llm.generate(
-                    messages,
-                    functions=formatted_tools,
-                    output_schema=self.output_schema,
-                )
+                # Keep executing tools until we get a final answer
+                max_tool_calls = 5  # Limit the number of tool calls per query
+                tool_call_count = 0
+                last_tool_response = None
 
-                # Handle ReACT pattern
-                if self.reasoning_pattern == ReasoningPattern.REACT:
-                    function_call = await self._process_react_response(response)
-                    print(f'Function call -> {function_call}')
-                else:
-                    function_call = await self.llm.get_function_call(response)
+                while tool_call_count < max_tool_calls:
+                    formatted_tools = self.llm.format_tools_for_llm(self.tools)
+                    response = await self.llm.generate(
+                        messages,
+                        functions=formatted_tools,
+                        output_schema=self.output_schema,
+                    )
 
-                if not function_call:
-                    assistant_message = self.llm.get_message_content(response)
-                    if assistant_message:
-                        self.add_to_history('assistant', assistant_message)
-                        return assistant_message
+                    # Handle ReACT pattern
+                    if self.reasoning_pattern == ReasoningPattern.REACT:
+                        function_call = await self._process_react_response(response)
+                    else:
+                        function_call = await self.llm.get_function_call(response)
 
-                if function_call:
+                    # If no function call, we have our final answer
+                    if not function_call:
+                        assistant_message = self.llm.get_message_content(response)
+                        if assistant_message:
+                            self.add_to_history('assistant', assistant_message)
+                            return assistant_message
+                        break
+
+                    # Execute the tool
                     try:
                         function_name = function_call['name']
                         function_args = json.loads(function_call['arguments'])
+                        tool_call_key = f'{function_name}:{json.dumps(function_args)}'
+
+                        # Check if we're repeating the same tool call
+                        if tool_call_key == last_tool_response:
+                            break  # Exit if we're in a loop
+                        last_tool_response = tool_call_key
 
                         tool = self.tools_dict[function_name]
                         function_response = await tool.execute(**function_args)
+                        tool_call_count += 1
 
                         # Add thought process to history if present
                         thought_content = self.llm.get_message_content(response)
@@ -144,31 +158,14 @@ class Agent(BaseAgent):
                             name=function_name,
                         )
 
-                        # Create a new message list for the final response
-                        final_messages = messages + [
+                        # Add the function response to messages for context
+                        messages.append(
                             {
                                 'role': 'function',
                                 'name': function_name,
                                 'content': str(function_response),
-                            },
-                            {
-                                'role': 'user',
-                                'content': f'Here is the {tool.name} information: {str(function_response)}. Please provide a natural response based on this {tool.name} data.',
-                            },
-                        ]
-
-                        final_response = await self.llm.generate(
-                            final_messages, output_schema=self.output_schema
+                            }
                         )
-
-                        assistant_message = self.llm.get_message_content(final_response)
-
-                        if assistant_message:
-                            self.add_to_history('assistant', assistant_message)
-                            return assistant_message
-
-                        # Fallback if no proper response
-                        return f'The result is {function_response}'
 
                     except (json.JSONDecodeError, KeyError, ToolExecutionError) as e:
                         retry_count += 1
@@ -182,10 +179,27 @@ class Agent(BaseAgent):
                                 'system', f'Tool execution error: {analysis}'
                             )
                             continue
-
                         raise AgentError(
                             f'Tool execution failed: {analysis}', original_error=e
                         )
+
+                # Generate final response if we've hit the tool call limit or exited the loop
+                final_response = await self.llm.generate(
+                    messages
+                    + [
+                        {
+                            'role': 'system',
+                            'content': 'Please provide a final answer based on all the tool results above.',
+                        }
+                    ],
+                    output_schema=self.output_schema,
+                )
+                assistant_message = self.llm.get_message_content(final_response)
+                if assistant_message:
+                    self.add_to_history('assistant', assistant_message)
+                    return assistant_message
+
+                return f'The result is {function_response}'
 
             except Exception as e:
                 retry_count += 1
@@ -195,7 +209,6 @@ class Agent(BaseAgent):
                 }
 
                 should_retry, analysis = await self.handle_error(e, context)
-
                 if should_retry and retry_count < self.max_retries:
                     self.add_to_history(
                         'system', f'Error occurred. Analysis: {analysis}'
@@ -224,6 +237,12 @@ class Agent(BaseAgent):
             function_call = response['function_call']
 
         if function_call:
+            # Get the message content for thought process
+            content = self.llm.get_message_content(response)
+            if content:
+                # Use 'assistant' role instead of 'thought'
+                self.add_to_history('assistant', content)
+
             return {
                 'name': function_call.name
                 if hasattr(function_call, 'name')
@@ -233,10 +252,10 @@ class Agent(BaseAgent):
                 else function_call['arguments'],
             }
 
-        # Get the message content for thought process
+        # Get the message content for final response
         content = self.llm.get_message_content(response)
         if content:
-            self.add_to_history('thought', content)
+            self.add_to_history('assistant', content)
 
         return None
 
