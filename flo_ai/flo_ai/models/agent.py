@@ -107,7 +107,6 @@ class Agent(BaseAgent):
                 # Keep executing tools until we get a final answer
                 max_tool_calls = 5  # Limit the number of tool calls per query
                 tool_call_count = 0
-                last_tool_response = None
 
                 while tool_call_count < max_tool_calls:
                     formatted_tools = self.llm.format_tools_for_llm(self.tools)
@@ -135,21 +134,10 @@ class Agent(BaseAgent):
                     try:
                         function_name = function_call['name']
                         function_args = json.loads(function_call['arguments'])
-                        tool_call_key = f'{function_name}:{json.dumps(function_args)}'
-
-                        # Check if we're repeating the same tool call
-                        if tool_call_key == last_tool_response:
-                            break  # Exit if we're in a loop
-                        last_tool_response = tool_call_key
 
                         tool = self.tools_dict[function_name]
                         function_response = await tool.execute(**function_args)
                         tool_call_count += 1
-
-                        # Add thought process to history if present
-                        thought_content = self.llm.get_message_content(response)
-                        if thought_content:  # Only add if there's actual content
-                            self.add_to_history('assistant', thought_content)
 
                         # Add function call to history
                         self.add_to_history(
@@ -164,6 +152,14 @@ class Agent(BaseAgent):
                                 'role': 'function',
                                 'name': function_name,
                                 'content': str(function_response),
+                            }
+                        )
+
+                        # Add a prompt to continue the reasoning
+                        messages.append(
+                            {
+                                'role': 'user',
+                                'content': 'Continue with your reasoning based on this result. What should be done next?',
                             }
                         )
 
@@ -194,12 +190,13 @@ class Agent(BaseAgent):
                     ],
                     output_schema=self.output_schema,
                 )
+
                 assistant_message = self.llm.get_message_content(final_response)
                 if assistant_message:
                     self.add_to_history('assistant', assistant_message)
                     return assistant_message
 
-                return f'The result is {function_response}'
+                return f'The final result based on the tool executions is: {function_response}'
 
             except Exception as e:
                 retry_count += 1
@@ -227,6 +224,11 @@ class Agent(BaseAgent):
     ) -> Optional[Dict[str, Any]]:
         """Process response in ReACT format and return function call if action is needed"""
 
+        # Get the message content first (contains the thought process)
+        content = self.llm.get_message_content(response)
+        if content:
+            self.add_to_history('assistant', content)
+
         # Handle both OpenAI and Claude response formats
         function_call = None
         if hasattr(response, 'function_call'):  # OpenAI format
@@ -237,12 +239,6 @@ class Agent(BaseAgent):
             function_call = response['function_call']
 
         if function_call:
-            # Get the message content for thought process
-            content = self.llm.get_message_content(response)
-            if content:
-                # Use 'assistant' role instead of 'thought'
-                self.add_to_history('assistant', content)
-
             return {
                 'name': function_call.name
                 if hasattr(function_call, 'name')
@@ -251,11 +247,6 @@ class Agent(BaseAgent):
                 if hasattr(function_call, 'arguments')
                 else function_call['arguments'],
             }
-
-        # Get the message content for final response
-        content = self.llm.get_message_content(response)
-        if content:
-            self.add_to_history('assistant', content)
 
         return None
 

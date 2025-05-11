@@ -32,7 +32,9 @@ class Tool:
         """Execute the tool with error handling"""
         try:
             print(f'Executing tool {self.name} with kwargs: {kwargs}')
-            return await self.function(**kwargs)
+            tool_result = await self.function(**kwargs)
+            print(f'Tool {self.name} returned: {tool_result}')
+            return tool_result
         except Exception as e:
             raise ToolExecutionError(
                 f'Error executing tool {self.name}: {str(e)}', original_error=e
