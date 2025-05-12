@@ -52,7 +52,6 @@ class Agent(BaseAgent):
                 ] + self.conversation_history
 
                 print('Sending messages to LLM:', messages)  # Debug print
-                print('Output schema:', self.output_schema)  # Debug print
 
                 response = await self.llm.generate(
                     messages, output_schema=self.output_schema
