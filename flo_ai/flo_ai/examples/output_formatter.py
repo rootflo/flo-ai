@@ -1,9 +1,10 @@
 import asyncio
 from textwrap import dedent
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from flo_ai.llm.openai_llm import OpenAILLM
 from flo_ai.llm.claude_llm import ClaudeLLM
 from flo_ai.models.agent import Agent as ToolAgent
+from flo_ai.builder.agent_builder import AgentBuilder
 
 
 # Define the output schema using Pydantic
@@ -17,6 +18,11 @@ class MathReasoning(BaseModel):
     final_answer: str
 
 
+class MathSolution(BaseModel):
+    solution: str = Field(description='The step-by-step solution to the math problem')
+    answer: str = Field(description='The final answer')
+
+
 math_tutor_prompt = """
     You are a helpful math tutor. You will be provided with a math problem,
     and your goal will be to output a step by step solution, along with a final answer.
@@ -24,6 +30,58 @@ math_tutor_prompt = """
     
     Provide your response in JSON format following the specified schema.
 """
+
+
+async def pydantic_builder_example():
+    """Example demonstrating the use of Pydantic models with AgentBuilder"""
+    # Initialize LLMs
+    openai_llm = OpenAILLM(model='gpt-4-turbo-preview')
+    claude_llm = ClaudeLLM()
+
+    # Create OpenAI agent using AgentBuilder with Pydantic model
+    openai_agent = (
+        AgentBuilder()
+        .with_name('OpenAI Math Tutor')
+        .with_prompt(
+            dedent("""
+            You are a helpful math tutor. When solving problems:
+            1. Show your step-by-step solution
+            2. Provide the final answer
+            
+            Format your response according to the specified json schema.
+        """)
+        )
+        .with_llm(openai_llm)
+        .with_output_schema(MathSolution)  # Using Pydantic model directly
+        .build()
+    )
+
+    # Create Claude agent using AgentBuilder with Pydantic model
+    claude_agent = (
+        AgentBuilder()
+        .with_name('Claude Math Tutor')
+        .with_prompt(
+            dedent("""
+            You are a helpful math tutor. When solving problems:
+            1. Show your step-by-step solution
+            2. Provide the final answer
+            
+            Format your response according to the specified schema.
+        """)
+        )
+        .with_llm(claude_llm)
+        .with_output_schema(MathSolution)  # Using Pydantic model directly
+        .build()
+    )
+
+    # Run both agents
+    problem = 'Solve 8x + 7 = -23'
+    openai_response = await openai_agent.run(problem)
+    claude_response = await claude_agent.run(problem)
+
+    print('\n=== Pydantic Builder Example ===')
+    print('\nOpenAI Agent Response:', openai_response)
+    print('\nClaude Agent Response:', claude_response)
 
 
 async def main():
@@ -136,4 +194,5 @@ async def agent_example():
 
 if __name__ == '__main__':
     # asyncio.run(main())
-    asyncio.run(agent_example())
+    # asyncio.run(agent_example())
+    asyncio.run(pydantic_builder_example())

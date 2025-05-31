@@ -1,8 +1,9 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union, Type
 from flo_ai.models.agent import Agent
 from flo_ai.models.base_agent import ReasoningPattern
 from flo_ai.llm.base_llm import BaseLLM
 from flo_ai.tool.base_tool import Tool
+from pydantic import BaseModel
 
 
 class AgentBuilder:
@@ -53,9 +54,18 @@ class AgentBuilder:
         self._max_retries = max_retries
         return self
 
-    def with_output_schema(self, schema: Dict[str, Any]) -> 'AgentBuilder':
-        """Set output schema for structured responses"""
-        self._output_schema = schema
+    def with_output_schema(
+        self, schema: Union[Dict[str, Any], Type[BaseModel]]
+    ) -> 'AgentBuilder':
+        """Set output schema for structured responses
+
+        Args:
+            schema: Either a JSON schema dictionary or a Pydantic model class
+        """
+        if isinstance(schema, type) and issubclass(schema, BaseModel):
+            self._output_schema = schema.model_json_schema()
+        else:
+            self._output_schema = schema
         return self
 
     def build(self) -> Agent:
