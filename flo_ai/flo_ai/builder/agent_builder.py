@@ -1,8 +1,10 @@
 from typing import List, Optional, Dict, Any, Union, Type
+import yaml
 from flo_ai.models.agent import Agent
 from flo_ai.models.base_agent import ReasoningPattern
 from flo_ai.llm.base_llm import BaseLLM
 from flo_ai.tool.base_tool import Tool
+from flo_ai.formatter.yaml_format_parser import FloYamlParser
 from pydantic import BaseModel
 
 
@@ -19,6 +21,7 @@ class AgentBuilder:
         self._max_retries = 3
         self._reasoning_pattern = ReasoningPattern.DIRECT
         self._output_schema: Optional[Dict[str, Any]] = None
+        self._role: Optional[str] = None
 
     def with_name(self, name: str) -> 'AgentBuilder':
         """Set the agent's name"""
@@ -68,6 +71,11 @@ class AgentBuilder:
             self._output_schema = schema
         return self
 
+    def with_role(self, role: str) -> 'AgentBuilder':
+        """Set the agent's role"""
+        self._role = role
+        return self
+
     def build(self) -> Agent:
         """Build and return the configured agent"""
         if not self._llm:
@@ -81,4 +89,45 @@ class AgentBuilder:
             max_retries=self._max_retries,
             reasoning_pattern=self._reasoning_pattern,
             output_schema=self._output_schema,
+            role=self._role,
         )
+
+    @classmethod
+    def from_yaml(
+        cls, yaml_str: str, llm: BaseLLM, tools: Optional[List[Tool]] = None
+    ) -> 'AgentBuilder':
+        """Create an agent builder from a YAML configuration string
+
+        Args:
+            yaml_str: YAML string containing agent configuration
+            llm: LLM instance to use with the agent
+            tools: Optional list of tools to use with the agent
+
+        Returns:
+            AgentBuilder: Configured agent builder instance
+        """
+        config = yaml.safe_load(yaml_str)
+
+        if 'agent' not in config:
+            raise ValueError('YAML must contain an "agent" section')
+
+        agent_config = config['agent']
+        builder = cls()
+
+        # Set basic properties
+        builder.with_name(agent_config.get('name', 'AI Assistant'))
+        builder.with_prompt(agent_config.get('job', 'You are a helpful AI assistant.'))
+        builder.with_llm(llm)
+        builder.with_role(agent_config.get('role'))
+
+        # Set tools if provided
+        if tools:
+            builder.with_tools(tools)
+
+        # Set parser if present
+        if 'parser' in agent_config:
+            parser = FloYamlParser.create(yaml_dict=config)
+            # TODO: add json instruction for output parsers
+            builder.with_output_schema(parser.get_format())
+
+        return builder

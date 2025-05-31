@@ -16,13 +16,19 @@ class Agent(BaseAgent):
         max_retries: int = 3,
         reasoning_pattern: ReasoningPattern = ReasoningPattern.DIRECT,
         output_schema: Optional[Dict[str, Any]] = None,
+        role: Optional[str] = None,
     ):
         # Determine agent type based on tools
         agent_type = AgentType.TOOL_USING if tools else AgentType.CONVERSATIONAL
 
+        # Enhance system prompt with role if provided
+        enhanced_prompt = system_prompt
+        if role:
+            enhanced_prompt = f'You are {role}. {system_prompt}'
+
         super().__init__(
             name=name,
-            system_prompt=system_prompt,
+            system_prompt=enhanced_prompt,
             agent_type=agent_type,
             llm=llm,
             max_retries=max_retries,
@@ -31,6 +37,7 @@ class Agent(BaseAgent):
         self.tools_dict = {tool.name: tool for tool in self.tools}
         self.reasoning_pattern = reasoning_pattern
         self.output_schema = output_schema
+        self.role = role
 
     async def run(self, input_text: str) -> str:
         self.add_to_history('user', input_text)
