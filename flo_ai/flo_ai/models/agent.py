@@ -65,6 +65,9 @@ class Agent(BaseAgent):
                     self.add_to_history('assistant', assistant_message)
                     return assistant_message
                 else:
+                    possible_tool_message = await self.llm.get_function_call(response)
+                    if possible_tool_message:
+                        return possible_tool_message['arguments']
                     print(
                         'Warning: No message content found in response'
                     )  # Debug print
