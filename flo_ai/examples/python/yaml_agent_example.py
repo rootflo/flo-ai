@@ -6,51 +6,106 @@ from flo_ai.models.base_agent import ReasoningPattern
 yaml_config = """
 apiVersion: flo/alpha-v1
 kind: FloAgent
-name: email-summary-flo
+metadata:
+  name: email-summary-flo
+  version: 1.0.0
+  description: "Agent for analyzing email threads between customers and support"
+  tags: ["email", "analysis", "support"]
+
 agent:
   name: EmailSummaryAgent
   kind: llm
   role: Email communication expert
+  settings:
+    temperature: 0
+    max_retries: 3
+    reasoning_pattern: DIRECT
   job: >
     You are given an email thread between a customer and a support agent of a bank.
     Your job is to analyze the behavior, sentiment, and communication style from the latest email in the thread.
     Focus the data extraction based on ONLY the latest email, and use the previous emails for context of the conversation and the product.
     First, identify whether the latest email is from the customer or the support agent.
+
   parser:
     name: EmailSummary
+    version: 1.0.0
+    description: "Parser for email thread analysis"
     fields:
       - name: sub_category
         type: literal
+        required: true
         description: >
           Identifies who sent the latest email in the thread.
         values:
-          - description: The latest email was sent by the customer to the bank
-            value: customer
-          - description: The latest email was sent by the bank's support agent to the customer
-            value: agent
+          - value: customer
+            description: The latest email was sent by the customer to the bank
+            examples: ["From: customer@example.com", "Sent by: John Smith"]
+          - value: agent
+            description: The latest email was sent by the bank's support agent to the customer
+            examples: ["From: support@bank.com", "Sent by: Sarah from Support"]
+            
       - name: call_summary
         type: str
+        required: true
         description: >
           A comprehensive summary of the latest email in the thread, capturing all major points raised.
           Never mention customer's personal identifiable information like full name, account numbers, etc.
+          
       - name: thread_context
         type: str
+        required: true
         description: >
           Brief context of the overall thread based on references in the latest email.
           This should help understand what has transpired before this email.
+            
       - name: call_resolution
         type: literal
+        required: true
         description: >
           Assessment of whether the customer issue appears to be resolved based on the latest email.
         values: 
           - value: resolved
             description: The issue appears to be fully resolved and the customer seems satisfied
+            examples: ["Customer confirms resolution", "Issue has been fixed"]
+            
           - value: partial
             description: The issue appears to be partially resolved but requires further action or confirmation
+            examples: ["Customer needs to follow up", "Waiting for customer response"]
+            
           - value: unresolved
             description: The issue remains unresolved and requires further attention
+            examples: ["Customer still experiencing issues", "Problem persists"]
+            
           - value: open
             description: If only customer email is present in the email thread or cannot determine the resolution status
+            examples: ["Initial customer contact", "No response from support yet"]
+
+  examples:
+    - input: |
+        From: customer@example.com
+        Subject: Issue with my account
+        
+        Hi,
+        I'm having trouble accessing my account. The login page keeps showing an error.
+        Can you please help me resolve this?
+        
+        Best regards,
+        John
+      output:
+        sub_category: customer
+        call_summary: "Customer reports login issues with their account"
+        thread_context: "Initial contact about account access problems"
+        call_resolution: open
+
+  error_handling:
+    retry_strategy:
+      max_attempts: 3
+      backoff_factor: 2
+    fallback_responses:
+      - condition: "parsing_error"
+        response: "Unable to parse email content. Please provide a valid email thread."
+      - condition: "missing_required_field"
+        response: "Required information is missing from the email thread."
 """
 
 

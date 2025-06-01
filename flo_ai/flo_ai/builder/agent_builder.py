@@ -127,7 +127,16 @@ class AgentBuilder:
         # Set parser if present
         if 'parser' in agent_config:
             parser = FloYamlParser.create(yaml_dict=config)
-            # TODO: add json instruction for output parsers
             builder.with_output_schema(parser.get_format())
+
+        # Apply settings if present
+        if 'settings' in agent_config:
+            settings = agent_config['settings']
+            if 'temperature' in settings:
+                llm.temperature = settings['temperature']
+            if 'max_retries' in settings:
+                builder.with_retries(settings['max_retries'])
+            if 'reasoning_pattern' in settings:
+                builder.with_reasoning(ReasoningPattern[settings['reasoning_pattern']])
 
         return builder

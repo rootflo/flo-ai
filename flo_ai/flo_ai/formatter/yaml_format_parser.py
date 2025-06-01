@@ -195,6 +195,30 @@ class FloYamlParser(FloJsonParser):
             if 'agent' in parser_def and 'parser' in parser_def['agent']:
                 parser_def = parser_def['agent']['parser']
 
+            # Extract required fields
             name = parser_def['name']
             fields = parser_def['fields']
-            return FloYamlParser(ParseContract(name=name, fields=fields))
+
+            # Process fields to handle examples and required flag
+            processed_fields = []
+            for field in fields:
+                processed_field = field.copy()
+
+                # Handle examples in literal values
+                if field['type'] == 'literal' and 'values' in field:
+                    for value in field['values']:
+                        if 'examples' in value:
+                            # Add examples to description
+                            examples_str = '\nExamples:\n' + '\n'.join(
+                                f'- {ex}' for ex in value['examples']
+                            )
+                            value['description'] = value['description'] + examples_str
+                            del value['examples']
+
+                # Remove required flag as it's not used in model creation
+                if 'required' in processed_field:
+                    del processed_field['required']
+
+                processed_fields.append(processed_field)
+
+            return FloYamlParser(ParseContract(name=name, fields=processed_fields))

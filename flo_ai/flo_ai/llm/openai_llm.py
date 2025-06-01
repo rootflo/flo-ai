@@ -25,6 +25,21 @@ class OpenAILLM(BaseLLM):
             ]
             kwargs['function_call'] = {'name': output_schema.get('name', 'default')}
 
+            # Add JSON format instruction to the system prompt
+            if messages and messages[0]['role'] == 'system':
+                messages[0]['content'] = (
+                    messages[0]['content']
+                    + '\n\nPlease provide your response in JSON format according to the specified schema.'
+                )
+            else:
+                messages.insert(
+                    0,
+                    {
+                        'role': 'system',
+                        'content': 'Please provide your response in JSON format according to the specified schema.',
+                    },
+                )
+
         # Prepare OpenAI API parameters
         openai_kwargs = {
             'model': self.model,
