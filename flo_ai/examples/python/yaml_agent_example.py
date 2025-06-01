@@ -1,6 +1,4 @@
 from flo_ai.builder.agent_builder import AgentBuilder
-from flo_ai.llm.openai_llm import OpenAILLM
-from flo_ai.models.base_agent import ReasoningPattern
 
 # Example YAML configuration
 yaml_config = """
@@ -16,6 +14,9 @@ agent:
   name: EmailSummaryAgent
   kind: llm
   role: Email communication expert
+  model:
+    provider: openai  # or claude
+    name: gpt-4o-mini  # or claude-3-5-sonnet-20240620
   settings:
     temperature: 0
     max_retries: 3
@@ -110,15 +111,8 @@ agent:
 
 
 async def main():
-    # Initialize LLM
-    llm = OpenAILLM(model='gpt-4o-mini', temperature=0)
-
     # Create agent builder from YAML
-    builder = AgentBuilder.from_yaml(yaml_str=yaml_config, llm=llm)
-
-    # Configure additional settings
-    builder.with_reasoning(ReasoningPattern.DIRECT)
-    builder.with_retries(3)
+    builder = AgentBuilder.from_yaml(yaml_str=yaml_config)
 
     # Build the agent
     agent = builder.build()

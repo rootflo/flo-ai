@@ -3,6 +3,8 @@ import yaml
 from flo_ai.models.agent import Agent
 from flo_ai.models.base_agent import ReasoningPattern
 from flo_ai.llm.base_llm import BaseLLM
+from flo_ai.llm.openai_llm import OpenAILLM
+from flo_ai.llm.claude_llm import ClaudeLLM
 from flo_ai.tool.base_tool import Tool
 from flo_ai.formatter.yaml_format_parser import FloYamlParser
 from pydantic import BaseModel
@@ -94,13 +96,12 @@ class AgentBuilder:
 
     @classmethod
     def from_yaml(
-        cls, yaml_str: str, llm: BaseLLM, tools: Optional[List[Tool]] = None
+        cls, yaml_str: str, tools: Optional[List[Tool]] = None
     ) -> 'AgentBuilder':
         """Create an agent builder from a YAML configuration string
 
         Args:
             yaml_str: YAML string containing agent configuration
-            llm: LLM instance to use with the agent
             tools: Optional list of tools to use with the agent
 
         Returns:
@@ -117,8 +118,23 @@ class AgentBuilder:
         # Set basic properties
         builder.with_name(agent_config.get('name', 'AI Assistant'))
         builder.with_prompt(agent_config.get('job', 'You are a helpful AI assistant.'))
-        builder.with_llm(llm)
         builder.with_role(agent_config.get('role'))
+
+        # Configure LLM based on model settings
+        if 'model' in agent_config:
+            model_config = agent_config['model']
+            provider = model_config.get('provider', 'openai').lower()
+            model_name = model_config.get('name')
+
+            if not model_name:
+                raise ValueError('Model name must be specified in YAML configuration')
+
+            if provider == 'openai':
+                builder.with_llm(OpenAILLM(model=model_name))
+            elif provider == 'claude':
+                builder.with_llm(ClaudeLLM(model=model_name))
+            else:
+                raise ValueError(f'Unsupported model provider: {provider}')
 
         # Set tools if provided
         if tools:
@@ -133,7 +149,7 @@ class AgentBuilder:
         if 'settings' in agent_config:
             settings = agent_config['settings']
             if 'temperature' in settings:
-                llm.temperature = settings['temperature']
+                builder._llm.temperature = settings['temperature']
             if 'max_retries' in settings:
                 builder.with_retries(settings['max_retries'])
             if 'reasoning_pattern' in settings:
