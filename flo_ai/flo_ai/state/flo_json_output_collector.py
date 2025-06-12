@@ -1,5 +1,5 @@
 import json
-import regex
+import re
 from typing import Dict, List, Any, Callable, Optional
 
 from flo_ai.error.flo_exception import FloException
@@ -84,7 +84,7 @@ class FloJsonOutputCollector(FloOutputCollector):
         4) On strict mode, raise FloException if no JSON found
         """
         pattern = r'\{(?:[^{}]|(?R))*\}'
-        matches = regex.findall(pattern, llm_response)
+        matches = re.findall(pattern, llm_response)
         merged: Dict[str, Any] = {}
 
         for json_str in matches:
