@@ -1,5 +1,5 @@
 import json
-import regex
+import re
 from flo_ai.error.flo_exception import FloException
 from typing import Dict, List, Any
 from flo_ai.common.flo_logger import get_logger
@@ -64,7 +64,7 @@ class FloJsonOutputCollector(FloOutputCollector):
 
     def __extract_jsons(self, llm_response):
         json_pattern = r'\{(?:[^{}]|(?R))*\}'
-        json_matches = regex.findall(json_pattern, llm_response)
+        json_matches = re.findall(json_pattern, llm_response)
         json_object = {}
         for json_str in json_matches:
             try:
