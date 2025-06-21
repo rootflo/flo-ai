@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from openai import AsyncOpenAI
 from .base_llm import BaseLLM
 from flo_ai.tool.base_tool import Tool
@@ -54,16 +54,6 @@ class OpenAILLM(BaseLLM):
 
         # Return the full message object instead of just the content
         return message
-
-    async def get_function_call(
-        self, response: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
-        if hasattr(response, 'function_call') and response.function_call:
-            return {
-                'name': response.function_call.name,
-                'arguments': response.function_call.arguments,
-            }
-        return None
 
     def get_message_content(self, response: Dict[str, Any]) -> str:
         # Handle both string responses and message objects

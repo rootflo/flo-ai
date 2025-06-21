@@ -21,12 +21,20 @@ class BaseLLM(ABC):
         """Generate a response from the LLM"""
         pass
 
-    @abstractmethod
     async def get_function_call(
         self, response: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
-        """Extract function call from response if present"""
-        pass
+        if hasattr(response, 'function_call') and response.function_call:
+            return {
+                'name': response.function_call.name,
+                'arguments': response.function_call.arguments,
+            }
+        elif isinstance(response, dict) and 'function_call' in response:
+            return {
+                'name': response['function_call']['name'],
+                'arguments': response['function_call']['arguments'],
+            }
+        return None
 
     @abstractmethod
     def get_message_content(self, response: Dict[str, Any]) -> str:

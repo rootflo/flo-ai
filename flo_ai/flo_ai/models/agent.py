@@ -133,12 +133,7 @@ class Agent(BaseAgent):
                     )
 
                     # Handle ReACT and CoT patterns
-                    if self.reasoning_pattern == ReasoningPattern.REACT:
-                        function_call = await self._process_react_response(response)
-                    elif self.reasoning_pattern == ReasoningPattern.COT:
-                        function_call = await self._process_cot_response(response)
-                    else:
-                        function_call = await self.llm.get_function_call(response)
+                    function_call = await self.llm.get_function_call(response)
 
                     # If no function call, we have our final answer
                     if not function_call:
@@ -236,68 +231,6 @@ class Agent(BaseAgent):
                 )
 
         raise AgentError(f'Failed after maximum {self.max_retries} attempts.')
-
-    async def _process_react_response(
-        self, response: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
-        """Process response in ReACT format and return function call if action is needed"""
-
-        # Get the message content first (contains the thought process)
-        content = self.llm.get_message_content(response)
-        if content:
-            self.add_to_history('assistant', content)
-
-        # Handle both OpenAI and Claude response formats
-        function_call = None
-        if hasattr(response, 'function_call'):  # OpenAI format
-            function_call = response.function_call
-        elif (
-            isinstance(response, dict) and 'function_call' in response
-        ):  # Claude format
-            function_call = response['function_call']
-
-        if function_call:
-            return {
-                'name': function_call.name
-                if hasattr(function_call, 'name')
-                else function_call['name'],
-                'arguments': function_call.arguments
-                if hasattr(function_call, 'arguments')
-                else function_call['arguments'],
-            }
-
-        return None
-
-    async def _process_cot_response(
-        self, response: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
-        """Process response in Chain of Thought format and return function call if action is needed"""
-
-        # Get the message content first (contains the reasoning process)
-        content = self.llm.get_message_content(response)
-        if content:
-            self.add_to_history('assistant', content)
-
-        # Handle both OpenAI and Claude response formats
-        function_call = None
-        if hasattr(response, 'function_call'):  # OpenAI format
-            function_call = response.function_call
-        elif (
-            isinstance(response, dict) and 'function_call' in response
-        ):  # Claude format
-            function_call = response['function_call']
-
-        if function_call:
-            return {
-                'name': function_call.name
-                if hasattr(function_call, 'name')
-                else function_call['name'],
-                'arguments': function_call.arguments
-                if hasattr(function_call, 'arguments')
-                else function_call['arguments'],
-            }
-
-        return None
 
     def _get_react_prompt(self) -> str:
         """Get system prompt modified for ReACT pattern"""

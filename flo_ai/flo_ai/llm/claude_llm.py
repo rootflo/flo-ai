@@ -77,18 +77,7 @@ class ClaudeLLM(BaseLLM):
         except Exception as e:
             raise Exception(f'Error in Claude API call: {str(e)}')
 
-    async def get_function_call(
-        self, response: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
-        """Extract function call from response if present"""
-        if 'function_call' in response:
-            return {
-                'name': response['function_call']['name'],
-                'arguments': response['function_call']['arguments'],
-            }
-        return None
-
-    def get_message_content(self, response: Dict[str, Any]) -> str:
+    def get_message_content(self, response: Any) -> str:
         """Extract message content from response"""
         if isinstance(response, dict):
             return response.get('content', '')

@@ -62,15 +62,7 @@ class OllamaLLM(BaseLLM):
                     'function_call': result.get('function_call'),
                 }
 
-    async def get_function_call(
-        self, response: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
-        """Extract function call from response if present"""
-        if 'function_call' in response:
-            return response['function_call']
-        return None
-
-    def get_message_content(self, response: Dict[str, Any]) -> str:
+    def get_message_content(self, response: Any) -> str:
         """Extract message content from response"""
         if isinstance(response, dict):
             return response.get('content', '')
