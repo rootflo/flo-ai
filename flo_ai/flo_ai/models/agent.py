@@ -55,7 +55,12 @@ class Agent(BaseAgent):
         while retry_count < self.max_retries:
             try:
                 messages = [
-                    {'role': 'system', 'content': self.system_prompt}
+                    {
+                        'role': 'system',
+                        'content': self._get_cot_prompt()
+                        if self.reasoning_pattern == ReasoningPattern.COT
+                        else self.system_prompt,
+                    }
                 ] + self.conversation_history
 
                 print('Sending messages to LLM:', messages)  # Debug print
@@ -109,6 +114,8 @@ class Agent(BaseAgent):
                         'role': 'system',
                         'content': self._get_react_prompt()
                         if self.reasoning_pattern == ReasoningPattern.REACT
+                        else self._get_cot_prompt()
+                        if self.reasoning_pattern == ReasoningPattern.COT
                         else self.system_prompt,
                     }
                 ] + self.conversation_history
@@ -125,9 +132,11 @@ class Agent(BaseAgent):
                         output_schema=self.output_schema,
                     )
 
-                    # Handle ReACT pattern
+                    # Handle ReACT and CoT patterns
                     if self.reasoning_pattern == ReasoningPattern.REACT:
                         function_call = await self._process_react_response(response)
+                    elif self.reasoning_pattern == ReasoningPattern.COT:
+                        function_call = await self._process_cot_response(response)
                     else:
                         function_call = await self.llm.get_function_call(response)
 
@@ -259,6 +268,37 @@ class Agent(BaseAgent):
 
         return None
 
+    async def _process_cot_response(
+        self, response: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """Process response in Chain of Thought format and return function call if action is needed"""
+
+        # Get the message content first (contains the reasoning process)
+        content = self.llm.get_message_content(response)
+        if content:
+            self.add_to_history('assistant', content)
+
+        # Handle both OpenAI and Claude response formats
+        function_call = None
+        if hasattr(response, 'function_call'):  # OpenAI format
+            function_call = response.function_call
+        elif (
+            isinstance(response, dict) and 'function_call' in response
+        ):  # Claude format
+            function_call = response['function_call']
+
+        if function_call:
+            return {
+                'name': function_call.name
+                if hasattr(function_call, 'name')
+                else function_call['name'],
+                'arguments': function_call.arguments
+                if hasattr(function_call, 'arguments')
+                else function_call['arguments'],
+            }
+
+        return None
+
     def _get_react_prompt(self) -> str:
         """Get system prompt modified for ReACT pattern"""
         tools_desc = '\n'.join(
@@ -282,3 +322,29 @@ class Agent(BaseAgent):
             4. Conclude with a final answer when the task is complete"""
 
         return react_prompt
+
+    def _get_cot_prompt(self) -> str:
+        """Get system prompt modified for Chain of Thought pattern"""
+        tools_desc = '\n'.join(
+            [f'- {tool.name}: {tool.description}' for tool in self.tools]
+        )
+        cot_prompt = f"""{self.system_prompt}
+            When solving tasks, follow this Chain of Thought reasoning format:
+
+            Let me think through this step by step:
+            1. First, I need to understand what is being asked...
+            2. Then, I should consider what information or tools I need.... Use available tools in the format: tool_name(param1: "value1", param2: "value2")
+            3. Next, I'll analyze the available options...
+            4. Finally, I'll provide a well-reasoned answer...
+
+            Available tools:
+            {tools_desc}
+
+            Remember to:
+            1. Break down complex problems into smaller steps
+            2. Think through each step logically
+            3. Use tools when needed to gather information
+            4. Provide clear reasoning for your conclusions
+            5. End with a final, well-justified answer"""
+
+        return cot_prompt
