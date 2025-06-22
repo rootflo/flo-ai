@@ -4,6 +4,7 @@ from flo_ai.llm.base_llm import BaseLLM
 from flo_ai.tool.base_tool import Tool, ToolExecutionError
 from flo_ai.models.agent_error import AgentError
 import json
+from flo_ai.utils.logger import logger
 
 
 class Agent(BaseAgent):
@@ -63,15 +64,14 @@ class Agent(BaseAgent):
                     }
                 ] + self.conversation_history
 
-                print('Sending messages to LLM:', messages)  # Debug print
-
+                logger.debug('Sending messages to LLM:', messages)
                 response = await self.llm.generate(
                     messages, output_schema=self.output_schema
                 )
-                print('Raw LLM Response:', response)  # Debug print
+                logger.debug('Raw LLM Response:', response)
 
                 assistant_message = self.llm.get_message_content(response)
-                print('Extracted message:', assistant_message)  # Debug print
+                logger.debug('Extracted message:', assistant_message)
 
                 if assistant_message:
                     self.add_to_history('assistant', assistant_message)
@@ -80,9 +80,7 @@ class Agent(BaseAgent):
                     possible_tool_message = await self.llm.get_function_call(response)
                     if possible_tool_message:
                         return possible_tool_message['arguments']
-                    print(
-                        'Warning: No message content found in response'
-                    )  # Debug print
+                    logger.debug('Warning: No message content found in response')
                     return None
 
             except Exception as e:
