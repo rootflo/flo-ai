@@ -255,6 +255,81 @@ agent = (
 )
 ```
 
+### 🎯 @flo_tool Decorator
+
+The `@flo_tool` decorator automatically converts any Python function into a `Tool` object with minimal boilerplate:
+
+```python
+from flo_ai.tool import flo_tool
+
+@flo_tool(
+    description="Perform mathematical calculations",
+    parameter_descriptions={
+        "operation": "The operation to perform (add, subtract, multiply, divide)",
+        "x": "First number",
+        "y": "Second number"
+    }
+)
+async def calculate(operation: str, x: float, y: float) -> float:
+    """Calculate mathematical operations between two numbers."""
+    operations = {
+        'add': lambda: x + y,
+        'subtract': lambda: x - y,
+        'multiply': lambda: x * y,
+        'divide': lambda: x / y if y != 0 else 'Cannot divide by zero',
+    }
+    if operation not in operations:
+        raise ValueError(f'Unknown operation: {operation}')
+    return operations[operation]()
+
+# Function can be called normally
+result = await calculate("add", 5, 3)  # Returns 8
+
+# Tool object is automatically available
+agent = (
+    AgentBuilder()
+    .with_name('Calculator Agent')
+    .with_llm(OpenAI(model='gpt-4o-mini'))
+    .with_tools([calculate.tool])  # Access the tool via .tool attribute
+    .build()
+)
+```
+
+**Key Benefits:**
+- ✅ **Automatic parameter extraction** from type hints
+- ✅ **Flexible descriptions** via docstrings or custom descriptions
+- ✅ **Type conversion** from Python types to JSON schema
+- ✅ **Dual functionality** - functions work normally AND as tools
+- ✅ **Async support** for both sync and async functions
+
+**Simple Usage:**
+```python
+@flo_tool()
+async def convert_units(value: float, from_unit: str, to_unit: str) -> str:
+    """Convert between different units (km/miles, kg/lbs, celsius/fahrenheit)."""
+    # Implementation here
+    return f"{value} {from_unit} = {result} {to_unit}"
+
+# Tool is automatically available as convert_units.tool
+```
+
+**With Custom Metadata:**
+```python
+@flo_tool(
+    name="weather_checker",
+    description="Get current weather information for a city",
+    parameter_descriptions={
+        "city": "The city to get weather for",
+        "country": "The country (optional)",
+    }
+)
+async def get_weather(city: str, country: str = None) -> str:
+    """Get weather information for a specific city."""
+    return f"Weather in {city}: sunny"
+```
+
+> 📖 **For detailed documentation on the `@flo_tool` decorator, see [README_flo_tool.md](flo_ai/README_flo_tool.md)**
+
 ## 🧠 Reasoning Patterns
 
 Flo AI supports multiple reasoning patterns:
@@ -401,6 +476,11 @@ Visit our [comprehensive documentation](https://flo-ai.rootflo.ai) for:
 - Best practices
 - Advanced examples
 - Architecture deep-dives
+
+**Additional Resources:**
+- [@flo_tool Decorator Guide](flo_ai/README_flo_tool.md) - Complete guide to the `@flo_tool` decorator
+- [Examples Directory](examples/) - Ready-to-run code examples
+- [Contributing Guide](CONTRIBUTING.md) - How to contribute to Flo AI
 
 ## 🌟 Why Flo AI?
 
