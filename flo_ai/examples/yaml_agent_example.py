@@ -96,16 +96,6 @@ agent:
         call_summary: "Customer reports login issues with their account"
         thread_context: "Initial contact about account access problems"
         call_resolution: open
-
-  error_handling:
-    retry_strategy:
-      max_attempts: 3
-      backoff_factor: 2
-    fallback_responses:
-      - condition: "parsing_error"
-        response: "Unable to parse email content. Please provide a valid email thread."
-      - condition: "missing_required_field"
-        response: "Required information is missing from the email thread."
 """
 
 
