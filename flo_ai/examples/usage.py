@@ -1,6 +1,6 @@
 import asyncio
 from flo_ai.models.agent import Agent as ToolAgent
-from flo_ai.llm.openai_llm import OpenAILLM
+from flo_ai.llm.openai_llm import OpenAI
 from flo_ai.tool.base_tool import Tool
 from flo_ai.models.agent_error import AgentError
 from flo_ai.models.base_agent import ReasoningPattern
@@ -8,7 +8,7 @@ from flo_ai.models.base_agent import ReasoningPattern
 
 # Example of using ToolAgent as a conversational agent
 async def test_conversational():
-    llm = OpenAILLM(model='gpt-4', temperature=0.7)
+    llm = OpenAI(model='gpt-4', temperature=0.7)
     agent = ToolAgent(
         name='Assistant',
         system_prompt='You are a helpful AI assistant.',
@@ -35,7 +35,7 @@ async def test_tool_agent():
         },
     )
 
-    llm = OpenAILLM(model='gpt-3.5-turbo', temperature=0.7)
+    llm = OpenAI(model='gpt-3.5-turbo', temperature=0.7)
     agent = ToolAgent(
         name='WeatherAssistant',
         system_prompt='You are a helpful weather assistant.',
@@ -63,7 +63,7 @@ async def test_error_handling():
         },
     )
 
-    llm = OpenAILLM(model='gpt-3.5-turbo', temperature=0.7)
+    llm = OpenAI(model='gpt-3.5-turbo', temperature=0.7)
     agent = ToolAgent(
         name='WeatherAssistant',
         system_prompt='You are a helpful weather assistant.',
@@ -105,7 +105,7 @@ async def test_direct_reasoning():
         },
     )
 
-    llm = OpenAILLM(model='gpt-3.5-turbo', temperature=0.7)
+    llm = OpenAI(model='gpt-3.5-turbo', temperature=0.7)
     agent = ToolAgent(
         name='CalculatorAssistant',
         system_prompt='You are a helpful calculator assistant. Use the calculator tool directly without explanation.',

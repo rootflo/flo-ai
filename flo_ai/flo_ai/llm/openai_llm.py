@@ -4,10 +4,18 @@ from .base_llm import BaseLLM
 from flo_ai.tool.base_tool import Tool
 
 
-class OpenAILLM(BaseLLM):
-    def __init__(self, model='gpt-4-turbo-preview', **kwargs):
-        super().__init__(model=model)
-        self.client = AsyncOpenAI()
+class OpenAI(BaseLLM):
+    def __init__(
+        self,
+        model='gpt-40-mini',
+        api_key: str = None,
+        temperature: float = 0.7,
+        **kwargs,
+    ):
+        super().__init__(
+            model=model, api_key=api_key, temperature=temperature, **kwargs
+        )
+        self.client = AsyncOpenAI(api_key=api_key, **kwargs)
         self.model = model
         self.kwargs = kwargs
 

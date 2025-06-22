@@ -1,8 +1,8 @@
 import asyncio
 from textwrap import dedent
 from pydantic import BaseModel, Field
-from flo_ai.llm.openai_llm import OpenAILLM
-from flo_ai.llm.claude_llm import ClaudeLLM
+from flo_ai.llm.openai_llm import OpenAI
+from flo_ai.llm.anthropic_llm import Anthropic
 from flo_ai.models.agent import Agent as ToolAgent
 from flo_ai.builder.agent_builder import AgentBuilder
 
@@ -35,8 +35,8 @@ math_tutor_prompt = """
 async def pydantic_builder_example():
     """Example demonstrating the use of Pydantic models with AgentBuilder"""
     # Initialize LLMs
-    openai_llm = OpenAILLM(model='gpt-4-turbo-preview')
-    claude_llm = ClaudeLLM()
+    openai_llm = OpenAI(model='gpt-4-turbo-preview')
+    claude_llm = Anthropic()
 
     # Create OpenAI agent using AgentBuilder with Pydantic model
     openai_agent = (
@@ -86,8 +86,8 @@ async def pydantic_builder_example():
 
 async def main():
     # Initialize LLMs
-    openai_llm = OpenAILLM(model='gpt-4-turbo-preview')
-    claude_llm = ClaudeLLM()
+    openai_llm = OpenAI(model='gpt-4-turbo-preview')
+    claude_llm = Anthropic()
 
     # OpenAI example
     openai_response = await openai_llm.generate(
@@ -131,8 +131,8 @@ async def main():
 
 async def agent_example():
     # Initialize LLMs
-    openai_llm = OpenAILLM(model='gpt-4-turbo-preview')
-    claude_llm = ClaudeLLM()
+    openai_llm = OpenAI(model='gpt-4-turbo-preview')
+    claude_llm = Anthropic()
 
     # Define output schema
     math_schema = {

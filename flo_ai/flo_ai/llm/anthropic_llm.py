@@ -5,17 +5,16 @@ from .base_llm import BaseLLM
 from flo_ai.tool.base_tool import Tool
 
 
-class ClaudeLLM(BaseLLM):
+class Anthropic(BaseLLM):
     def __init__(
         self,
         model: str = 'claude-3-5-sonnet-20240620',
         temperature: float = 0.7,
         api_key: Optional[str] = None,
-        max_tokens: int = 4096,
+        **kwargs,
     ):
-        super().__init__(model, temperature)
-        self.client = AsyncAnthropic(api_key=api_key)
-        self.max_tokens = max_tokens
+        super().__init__(model, api_key, temperature, **kwargs)
+        self.client = AsyncAnthropic(api_key=self.api_key)
 
     async def generate(
         self,
@@ -47,9 +46,10 @@ class ClaudeLLM(BaseLLM):
         try:
             kwargs = {
                 'model': self.model,
-                'max_tokens': self.max_tokens,
                 'messages': conversation,
                 'temperature': self.temperature,
+                'max_tokens': 8192,
+                **self.kwargs,
             }
 
             if system_message:

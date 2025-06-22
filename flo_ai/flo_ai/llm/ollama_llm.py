@@ -9,10 +9,12 @@ class OllamaLLM(BaseLLM):
     def __init__(
         self,
         model: str = 'llama2',
+        api_key: str = None,
         temperature: float = 0.7,
         base_url: str = 'http://localhost:11434',
+        **kwargs,
     ):
-        super().__init__(model, temperature)
+        super().__init__(model, api_key, temperature, **kwargs)
         self.base_url = base_url.rstrip('/')
 
     async def generate(
@@ -43,6 +45,7 @@ class OllamaLLM(BaseLLM):
             'prompt': prompt,
             'temperature': self.temperature,
             'stream': False,
+            **self.kwargs,
         }
 
         # Add function information if provided

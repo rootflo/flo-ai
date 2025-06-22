@@ -7,7 +7,7 @@ from flo_ai.tool.base_tool import Tool
 
 async def create_tools():
     """Create a set of tools for the Ollama agent to use"""
-    
+
     # Calculator tool
     async def calculate(operation: str, x: float, y: float) -> float:
         operations = {
@@ -67,9 +67,7 @@ async def create_tools():
 async def example_ollama_agent():
     # Create an Ollama LLM instance using the phi4 model
     ollama_llm = OllamaLLM(
-        model='phi4',
-        temperature=0.7,
-        base_url='http://localhost:11434'
+        model='phi4', temperature=0.7, base_url='http://localhost:11434'
     )
 
     # Create a simple conversational agent with Ollama
@@ -94,23 +92,26 @@ async def example_ollama_structured_output():
         'properties': {
             'city': {'type': 'string', 'description': 'The name of the city'},
             'country': {'type': 'string', 'description': 'The name of the country'},
-            'population': {'type': 'number', 'description': 'The population of the city'},
+            'population': {
+                'type': 'number',
+                'description': 'The population of the city',
+            },
         },
         'required': ['city', 'country', 'population'],
     }
 
     # Create an Ollama LLM instance using the llama3.2:1b model
     ollama_llm = OllamaLLM(
-        model='llama3.2:1b',
-        temperature=0.7,
-        base_url='http://localhost:11434'
+        model='llama3.2:1b', temperature=0.7, base_url='http://localhost:11434'
     )
 
     # Create an agent with structured output
     agent = (
         AgentBuilder()
         .with_name('Structured Location Assistant')
-        .with_prompt('You are a location information assistant that provides structured data about cities.')
+        .with_prompt(
+            'You are a location information assistant that provides structured data about cities.'
+        )
         .with_llm(ollama_llm)
         .with_output_schema(location_schema)
         .build()
@@ -123,9 +124,7 @@ async def example_ollama_structured_output():
 async def example_ollama_tools():
     # Create an Ollama LLM instance using the phi4 model
     ollama_llm = OllamaLLM(
-        model='phi4',
-        temperature=0.7,
-        base_url='http://localhost:11434'
+        model='phi4', temperature=0.7, base_url='http://localhost:11434'
     )
 
     # Create tools
@@ -146,9 +145,9 @@ async def example_ollama_tools():
 
     # Test cases that require tool usage
     test_queries = [
-        "What is 25 kilometers in miles?",
-        "If I have 2.5 kg of flour and need to triple it, how many pounds would that be?",
-        "Calculate 15 multiplied by 7 and then convert the result from kg to lbs",
+        'What is 25 kilometers in miles?',
+        'If I have 2.5 kg of flour and need to triple it, how many pounds would that be?',
+        'Calculate 15 multiplied by 7 and then convert the result from kg to lbs',
     ]
 
     print('\n=== Testing Ollama Tool Agent ===')
@@ -171,4 +170,4 @@ async def main():
 
 
 if __name__ == '__main__':
-    asyncio.run(main()) 
+    asyncio.run(main())

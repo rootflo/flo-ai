@@ -2,9 +2,9 @@ import asyncio
 from flo_ai.builder.agent_builder import AgentBuilder
 from flo_ai.tool.base_tool import Tool
 from flo_ai.models.base_agent import ReasoningPattern
-from flo_ai.llm.openai_llm import OpenAILLM
+from flo_ai.llm.openai_llm import OpenAI
 
-from flo_ai.llm.claude_llm import ClaudeLLM
+from flo_ai.llm.anthropic_llm import Anthropic
 from flo_ai.llm.base_llm import BaseLLM
 
 
@@ -134,11 +134,11 @@ async def test_multi_tool_agent(llm: BaseLLM, agent_name: str):
 
 async def main():
     # Test with OpenAI
-    openai_llm = OpenAILLM(model='gpt-4-turbo-preview', temperature=0.7)
+    openai_llm = OpenAI(model='gpt-4-turbo-preview', temperature=0.7)
     await test_multi_tool_agent(openai_llm, 'OpenAI Multi-Tool Agent')
 
     # # Test with Claude
-    claude_llm = ClaudeLLM(model='claude-3-5-sonnet-20240620', temperature=0.7)
+    claude_llm = Anthropic(model='claude-3-5-sonnet-20240620', temperature=0.7)
     await test_multi_tool_agent(claude_llm, 'Claude Multi-Tool Agent')
 
 

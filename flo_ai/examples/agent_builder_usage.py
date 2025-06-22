@@ -2,8 +2,8 @@ import asyncio
 from flo_ai.builder.agent_builder import AgentBuilder
 from flo_ai.tool.base_tool import Tool
 from flo_ai.models.base_agent import ReasoningPattern
-from flo_ai.llm.openai_llm import OpenAILLM
-from flo_ai.llm.claude_llm import ClaudeLLM
+from flo_ai.llm.openai_llm import OpenAI
+from flo_ai.llm.anthropic_llm import Anthropic
 
 
 async def example_simple_agent():
@@ -12,7 +12,7 @@ async def example_simple_agent():
         AgentBuilder()
         .with_name('Math Tutor')
         .with_prompt('You are a helpful math tutor.')
-        .with_llm(OpenAILLM(model='gpt-4-turbo-preview'))
+        .with_llm(OpenAI(model='gpt-4o-mini'))
         .build()
     )
 
@@ -48,7 +48,7 @@ async def example_tool_agent():
         AgentBuilder()
         .with_name('Calculator Assistant')
         .with_prompt('You are a math assistant that can perform calculations.')
-        .with_llm(OpenAILLM(model='gpt-4o', temperature=0.7))
+        .with_llm(OpenAI(model='gpt-4o', temperature=0.7))
         .with_tools([calculator_tool])
         .with_reasoning(ReasoningPattern.REACT)
         .with_retries(2)
@@ -59,7 +59,7 @@ async def example_tool_agent():
         AgentBuilder()
         .with_name('Calculator Assistant')
         .with_prompt('You are a math assistant that can perform calculations.')
-        .with_llm(ClaudeLLM(model='claude-3-5-sonnet-20240620', temperature=0.7))
+        .with_llm(Anthropic(model='claude-3-5-sonnet-20240620', temperature=0.7))
         .with_tools([calculator_tool])
         .with_reasoning(ReasoningPattern.REACT)
         .with_retries(2)
@@ -91,7 +91,7 @@ async def example_structured_output():
         .with_prompt(
             'You are a math problem solver that provides structured solutions.'
         )
-        .with_llm(OpenAILLM(model='gpt-4o'))
+        .with_llm(OpenAI(model='gpt-4o'))
         .with_output_schema(math_schema)
         .build()
     )

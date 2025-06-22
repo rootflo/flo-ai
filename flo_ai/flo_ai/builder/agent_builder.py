@@ -3,8 +3,8 @@ import yaml
 from flo_ai.models.agent import Agent
 from flo_ai.models.base_agent import ReasoningPattern
 from flo_ai.llm.base_llm import BaseLLM
-from flo_ai.llm.openai_llm import OpenAILLM
-from flo_ai.llm.claude_llm import ClaudeLLM
+from flo_ai.llm.openai_llm import OpenAI
+from flo_ai.llm.anthropic_llm import Anthropic
 from flo_ai.tool.base_tool import Tool
 from flo_ai.formatter.yaml_format_parser import FloYamlParser
 from pydantic import BaseModel
@@ -130,9 +130,9 @@ class AgentBuilder:
                 raise ValueError('Model name must be specified in YAML configuration')
 
             if provider == 'openai':
-                builder.with_llm(OpenAILLM(model=model_name))
+                builder.with_llm(OpenAI(model=model_name))
             elif provider == 'claude':
-                builder.with_llm(ClaudeLLM(model=model_name))
+                builder.with_llm(Anthropic(model=model_name))
             else:
                 raise ValueError(f'Unsupported model provider: {provider}')
 

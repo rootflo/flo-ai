@@ -6,7 +6,7 @@ Example demonstrating Chain of Thought (CoT) reasoning pattern in conversational
 import asyncio
 from flo_ai.models.agent import Agent
 from flo_ai.models.base_agent import ReasoningPattern
-from flo_ai.llm.openai_llm import OpenAILLM
+from flo_ai.llm.openai_llm import OpenAI
 import os
 
 
@@ -19,7 +19,7 @@ async def main():
         print('Please set OPENAI_API_KEY environment variable')
         return
 
-    llm = OpenAILLM(model='gpt-3.5-turbo')
+    llm = OpenAI(model='gpt-3.5-turbo')
 
     # Create agent with CoT reasoning pattern (no tools)
     agent = Agent(

@@ -2,14 +2,14 @@ import asyncio
 import os
 from flo_ai.models.base_agent import ReasoningPattern
 from flo_ai.models.agent import Agent as ToolAgent
-from flo_ai.llm.claude_llm import ClaudeLLM
+from flo_ai.llm.anthropic_llm import Anthropic
 from flo_ai.tool.base_tool import Tool
 from flo_ai.models.agent_error import AgentError
 
 
 async def test_claude_conversational():
     # Initialize Claude LLM
-    claude_llm = ClaudeLLM(
+    claude_llm = Anthropic(
         model='claude-3-5-sonnet-20240620',
         temperature=0.7,
         api_key=os.getenv('ANTHROPIC_API_KEY'),
@@ -54,7 +54,7 @@ async def test_claude_tool_agent():
     )
 
     # Initialize Claude LLM
-    claude_llm = ClaudeLLM(
+    claude_llm = Anthropic(
         model='claude-3-5-sonnet-20240620',
         temperature=0.7,
         api_key=os.getenv('ANTHROPIC_API_KEY'),
@@ -106,7 +106,7 @@ async def test_error_handling():
         },
     )
 
-    claude_llm = ClaudeLLM(
+    claude_llm = Anthropic(
         model='claude-3-opus-20240229',
         temperature=0.7,
         api_key=os.getenv('ANTHROPIC_API_KEY'),
@@ -153,7 +153,7 @@ async def test_direct_reasoning():
         },
     )
 
-    claude_llm = ClaudeLLM(
+    claude_llm = Anthropic(
         model='claude-3-5-sonnet-20240620',
         temperature=0.7,
         api_key=os.getenv('ANTHROPIC_API_KEY'),

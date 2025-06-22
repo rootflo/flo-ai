@@ -5,12 +5,12 @@ from flo_ai.tool.base_tool import Tool
 
 class BaseLLM(ABC):
     def __init__(
-        self,
-        model: str,
-        temperature: float = 0.7,
+        self, model: str, api_key: str = None, temperature: float = 0.7, **kwargs
     ):
         self.model = model
+        self.api_key = api_key
         self.temperature = temperature
+        self.kwargs = kwargs
 
     @abstractmethod
     async def generate(
