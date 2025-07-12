@@ -66,7 +66,7 @@ poetry add flo-ai
 ```python
 import asyncio
 from flo_ai.builder.agent_builder import AgentBuilder
-from flo_ai.llm.openai_llm import OpenAI
+from flo_ai.llm import OpenAI
 
 async def main():
     # Create a simple conversational agent
@@ -91,7 +91,7 @@ import asyncio
 from flo_ai.builder.agent_builder import AgentBuilder
 from flo_ai.tool.base_tool import Tool
 from flo_ai.models.base_agent import ReasoningPattern
-from flo_ai.llm.anthropic_llm import Anthropic
+from flo_ai.llm import Anthropic
 
 async def calculate(operation: str, x: float, y: float) -> float:
     if operation == 'add':
@@ -136,7 +136,7 @@ print(f'Response: {response}')
 ```python
 import asyncio
 from flo_ai.builder.agent_builder import AgentBuilder
-from flo_ai.llm.openai_llm import OpenAI
+from flo_ai.llm import OpenAI
 
 # Define output schema for structured responses
 math_schema = {
@@ -354,7 +354,7 @@ agent = (
 
 ### OpenAI
 ```python
-from flo_ai.llm.openai_llm import OpenAI
+from flo_ai.llm import OpenAI
 
 llm = OpenAI(
     model='gpt-4o',
@@ -365,7 +365,7 @@ llm = OpenAI(
 
 ### Anthropic Claude
 ```python
-from flo_ai.llm.anthropic_llm import Anthropic
+from flo_ai.llm import Anthropic
 
 llm = Anthropic(
     model='claude-3-5-sonnet-20240620',
@@ -376,7 +376,7 @@ llm = Anthropic(
 
 ### Ollama (Local)
 ```python
-from flo_ai.llm.ollama_llm import Ollama
+from flo_ai.llm import Ollama
 
 llm = Ollama(
     model='llama2',
