@@ -2,7 +2,7 @@ from typing import List, Optional, Dict, Any, Union, Type
 import yaml
 from flo_ai.models.agent import Agent
 from flo_ai.models.base_agent import ReasoningPattern
-from flo_ai.llm import BaseLLM, OpenAI, Anthropic, GeminiLLM, OllamaLLM
+from flo_ai.llm import BaseLLM, OpenAI, Anthropic, Gemini, OllamaLLM
 from flo_ai.tool.base_tool import Tool
 from flo_ai.formatter.yaml_format_parser import FloYamlParser
 from pydantic import BaseModel
@@ -132,7 +132,7 @@ class AgentBuilder:
             elif provider == 'claude':
                 builder.with_llm(Anthropic(model=model_name))
             elif provider == 'gemini':
-                builder.with_llm(GeminiLLM(model=model_name))
+                builder.with_llm(Gemini(model=model_name))
             elif provider == 'ollama':
                 builder.with_llm(OllamaLLM(model=model_name))
             else:

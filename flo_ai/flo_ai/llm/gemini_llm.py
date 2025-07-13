@@ -6,7 +6,7 @@ from flo_ai.tool.base_tool import Tool
 from flo_ai.utils.logger import logger
 
 
-class GeminiLLM(BaseLLM):
+class Gemini(BaseLLM):
     def __init__(
         self,
         model: str = 'gemini-2.5-flash',

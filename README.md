@@ -374,6 +374,17 @@ llm = Anthropic(
 )
 ```
 
+### Google Gemini
+```python
+from flo_ai.llm import Gemini
+
+llm = Gemini(
+    model='gemini-2.5-flash',  # or gemini-2.5-pro
+    temperature=0.7,
+    api_key='your-api-key'  # or set GOOGLE_API_KEY env var
+)
+```
+
 ### Ollama (Local)
 ```python
 from flo_ai.llm import Ollama
