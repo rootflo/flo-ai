@@ -28,10 +28,10 @@ class Arium(BaseArium):
         if not self.nodes:
             raise ValueError('Arium has no nodes')
 
-        await self._execute_graph(inputs)
+        return await self._execute_graph(inputs)
 
     async def _execute_graph(self, inputs: List[str | ImageMessage]):
-        [self.memory.add({'role': 'user', 'content': msg}) for msg in inputs]
+        [self.memory.add(msg) for msg in inputs]
 
         current_node = self.nodes[self.start_node_name]
         current_edge = self.edges[self.start_node_name]
@@ -48,7 +48,10 @@ class Arium(BaseArium):
             next_node_name = current_edge.router_fn(memory=self.memory)
 
             # find next edge
-            next_edge = self.edges[next_node_name]
+            # TODO: next_node_name might not be in self.edges if it's the end node. Handle this case
+            next_edge = (
+                self.edges[next_node_name] if next_node_name in self.edges else None
+            )
 
             # update current node
             current_node = self.nodes[next_node_name]
@@ -67,4 +70,6 @@ class Arium(BaseArium):
             return None
 
     def _add_to_memory(self, result: str):
-        self.memory.add({'role': 'assistant', 'content': result})
+        # TODO result will be None for start and end nodes
+        if result:
+            self.memory.add(result)
