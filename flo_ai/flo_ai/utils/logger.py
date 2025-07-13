@@ -1,7 +1,7 @@
 import logging
 import os
 
-log_level = os.environ.get('LOG_LEVEL', 'DEBUG')
+log_level = os.environ.get('LOG_LEVEL', 'INFO')
 logging.getLogger('uvicorn').setLevel(log_level)
 log_format = (
     '%(asctime)s | %(levelname)-8s | %(name)s | %(filename)s:%(lineno)d | %(message)s'

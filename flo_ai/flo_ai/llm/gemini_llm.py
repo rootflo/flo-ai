@@ -27,34 +27,37 @@ class Gemini(BaseLLM):
     ) -> Dict[str, Any]:
         # Convert messages to Gemini format
         # Gemini uses a simple content string format
-        content = ''
+        contents = []
+        system_prompt = ''
         for msg in messages:
             role = msg['role']
             message_content = msg['content']
 
             if role == 'system':
-                content += f'System: {message_content}\n'
-            elif role == 'user':
-                content += f'User: {message_content}\n'
-            elif role == 'assistant':
-                content += f'Assistant: {message_content}\n'
+                system_prompt += f'{message_content}\n'
+            else:
+                contents.append(message_content)
 
         # Add output schema instruction if provided
         if output_schema:
-            content += f'\nPlease provide your response in JSON format according to this schema:\n{json.dumps(output_schema, indent=2)}\n'
+            contents += f'\nPlease provide your response in JSON format according to this schema:\n{json.dumps(output_schema, indent=2)}\n'
 
         # Add function information if provided
         if functions:
-            content += f'\nAvailable functions:\n{json.dumps(functions, indent=2)}\n'
+            contents += f'\nAvailable functions:\n{json.dumps(functions, indent=2)}\n'
 
         try:
             # Prepare generation config
-            generation_config = {'temperature': self.temperature, **self.kwargs}
+            generation_config = genai.types.GenerateContentConfig(
+                temperature=self.temperature,
+                system_instruction=system_prompt,
+                **self.kwargs,
+            )
 
             # Make the API call
             response = self.client.models.generate_content(
                 model=self.model,
-                contents=content,
+                contents=contents,
                 config=generation_config if generation_config else None,
             )
 
