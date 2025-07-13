@@ -40,7 +40,10 @@ class Agent(BaseAgent):
         self.output_schema = output_schema
         self.role = role
 
-    async def run(self, inputs: List[str | ImageMessage]) -> str:
+    async def run(self, inputs: List[str | ImageMessage] | str) -> str:
+        if isinstance(inputs, str):
+            inputs = [inputs]
+
         for input in inputs:
             if isinstance(input, ImageMessage):
                 self.add_to_history('user', self.llm.format_image_in_message(input))
