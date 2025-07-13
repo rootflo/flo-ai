@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 from typing import Callable, List
 from functools import partial
+from flo_ai.arium.memory import BaseMemory
 
 
-def default_router(to_node: str) -> str:
+def default_router(to_node: str, memory: BaseMemory) -> str:
     return to_node
 
 

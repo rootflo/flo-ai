@@ -10,6 +10,8 @@ from pathlib import Path
 
 class BaseArium:
     def __init__(self):
+        self.start_node_name = '__start__'
+        self.end_node_name = '__end__'
         self.nodes: Dict[str, Agent | Tool | StartNode | EndNode] = dict()
         self.edges: Dict[str, Edge] = dict()
 
@@ -22,7 +24,7 @@ class BaseArium:
             raise ValueError(f'Start node {start_node.name} already exists')
         self.nodes[start_node.name] = start_node
         self.edges[start_node.name] = Edge(
-            router_fn=partial(default_router, node.name), to_nodes=[node.name]
+            router_fn=partial(default_router, to_node=node.name), to_nodes=[node.name]
         )
 
     def add_end_to(self, node: Agent | Tool | StartNode | EndNode):
@@ -31,7 +33,8 @@ class BaseArium:
             raise ValueError(f'End node {end_node.name} already exists')
         self.nodes[end_node.name] = end_node
         self.edges[node.name] = Edge(
-            router_fn=partial(default_router, end_node.name), to_nodes=[end_node.name]
+            router_fn=partial(default_router, to_node=end_node.name),
+            to_nodes=[end_node.name],
         )
 
     def _check_router_return_type(self, router: Callable) -> Optional[List]:
@@ -107,7 +110,8 @@ class BaseArium:
         else:
             # TODO fix _default_router
             self.edges[from_node] = Edge(
-                router_fn=partial(default_router, to_nodes[0]), to_nodes=to_nodes
+                router_fn=partial(default_router, to_node=to_nodes[0]),
+                to_nodes=to_nodes,
             )
 
     def check_orphan_nodes(self) -> List[str]:

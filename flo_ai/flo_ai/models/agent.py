@@ -1,9 +1,9 @@
+import json
 from typing import Dict, Any, List, Optional
 from flo_ai.models.base_agent import BaseAgent, AgentType, ReasoningPattern
 from flo_ai.llm.base_llm import BaseLLM, ImageMessage
 from flo_ai.tool.base_tool import Tool, ToolExecutionError
 from flo_ai.models.agent_error import AgentError
-import json
 from flo_ai.utils.logger import logger
 
 
@@ -132,6 +132,7 @@ class Agent(BaseAgent):
 
                 while tool_call_count < max_tool_calls:
                     formatted_tools = self.llm.format_tools_for_llm(self.tools)
+                    print(messages)
                     response = await self.llm.generate(
                         messages,
                         functions=formatted_tools,
@@ -170,7 +171,7 @@ class Agent(BaseAgent):
                             {
                                 'role': 'function',
                                 'name': function_name,
-                                'content': str(function_response),
+                                'content': f'Here is the result of the tool call: \n {str(function_response)}',
                             }
                         )
 
