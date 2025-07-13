@@ -1,6 +1,6 @@
 from typing import Dict, Any, List, Optional
 from flo_ai.models.base_agent import BaseAgent, AgentType, ReasoningPattern
-from flo_ai.llm.base_llm import BaseLLM
+from flo_ai.llm.base_llm import BaseLLM, ImageMessage
 from flo_ai.tool.base_tool import Tool, ToolExecutionError
 from flo_ai.models.agent_error import AgentError
 import json
@@ -40,8 +40,13 @@ class Agent(BaseAgent):
         self.output_schema = output_schema
         self.role = role
 
-    async def run(self, input_text: str) -> str:
-        self.add_to_history('user', input_text)
+    async def run(self, inputs: List[str | ImageMessage]) -> str:
+        for input in inputs:
+            if isinstance(input, ImageMessage):
+                self.add_to_history('user', self.llm.format_image_in_message(input))
+            else:
+                self.add_to_history('user', input)
+
         retry_count = 0
 
         # If no tools, act as conversational agent

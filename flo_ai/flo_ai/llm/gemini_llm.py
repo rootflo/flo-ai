@@ -1,7 +1,7 @@
 from typing import Dict, Any, List, Optional
 from google import genai
 import json
-from .base_llm import BaseLLM
+from .base_llm import BaseLLM, ImageMessage
 from flo_ai.tool.base_tool import Tool
 from flo_ai.utils.logger import logger
 
@@ -140,3 +140,16 @@ class GeminiLLM(BaseLLM):
     def format_tools_for_llm(self, tools: List['Tool']) -> List[Dict[str, Any]]:
         """Format tools for Gemini's API"""
         return [self.format_tool_for_llm(tool) for tool in tools]
+
+    def format_image_in_message(self, image: ImageMessage) -> str:
+        """Format a image in the message"""
+        if image.image_file_path:
+            with open(image.image_file_path, 'rb') as image_file:
+                image_bytes = image_file.read()
+            return genai.types.Part.from_bytes(
+                data=image_bytes,
+                mime_type=image.mime_type,
+            )
+        raise NotImplementedError(
+            'Not other way other than file path has been implemented'
+        )
