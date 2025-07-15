@@ -19,6 +19,7 @@ google-genai = "^1.25.0"
 # TODO: make into optional dependency
 matplotlib = "^3.7.0"
 networkx = "^3.0"
+anthropic = "^0.57.1"
 
 
 [tool.poetry.group.dev.dependencies]

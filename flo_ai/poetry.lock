@@ -38,6 +38,32 @@ files = [
 ]
 
 [[package]]
+name = "anthropic"
+version = "0.57.1"
+description = "The official Python library for the anthropic API"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "anthropic-0.57.1-py3-none-any.whl", hash = "sha256:33afc1f395af207d07ff1bffc0a3d1caac53c371793792569c5d2f09283ea306"},
+    {file = "anthropic-0.57.1.tar.gz", hash = "sha256:7815dd92245a70d21f65f356f33fc80c5072eada87fb49437767ea2918b2c4b0"},
+]
+
+[package.dependencies]
+anyio = ">=3.5.0,<5"
+distro = ">=1.7.0,<2"
+httpx = ">=0.25.0,<1"
+jiter = ">=0.4.0,<1"
+pydantic = ">=1.9.0,<3"
+sniffio = "*"
+typing-extensions = ">=4.10,<5"
+
+[package.extras]
+aiohttp = ["aiohttp", "httpx-aiohttp (>=0.1.6)"]
+bedrock = ["boto3 (>=1.28.57)", "botocore (>=1.31.57)"]
+vertex = ["google-auth[requests] (>=2,<3)"]
+
+[[package]]
 name = "antiorm"
 version = "1.2.1"
 description = "A Pythonic Helper for DBAPI-2.0 SQL Access"
@@ -3590,4 +3616,4 @@ requests = ">=2.0.0,<3.0.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "72b552d1e5ef915db93f0ac23ff2f75edba68190604501450c14d0b87a420c19"
+content-hash = "5bf507493ea56e65677e99bf1afd428d12fa4473b1cf0ef47977177c75de2d00"
