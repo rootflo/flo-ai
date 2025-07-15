@@ -6,10 +6,10 @@ from dataclasses import dataclass
 
 @dataclass
 class ImageMessage:
-    image_url: str
-    image_file_path: str
-    image_base64: str
-    mime_type: str
+    image_url: Optional[str] = None
+    image_file_path: Optional[str] = None
+    image_base64: Optional[str] = None
+    mime_type: Optional[str] = None
 
 
 class BaseLLM(ABC):
