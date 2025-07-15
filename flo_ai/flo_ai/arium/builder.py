@@ -1,4 +1,4 @@
-from typing import List, Optional, Callable, Union
+from typing import List, Optional, Callable, Union, Dict
 from flo_ai.arium.arium import Arium
 from flo_ai.arium.memory import MessageMemory, BaseMemory
 from flo_ai.models.agent import Agent
@@ -27,7 +27,9 @@ class AriumBuilder:
         self._tools: List[Tool] = []
         self._start_node: Optional[Union[Agent, Tool]] = None
         self._end_nodes: List[Union[Agent, Tool]] = []
-        self._edges: List[tuple] = []  # (from_node, to_nodes, router)
+        self._edges: List[
+            tuple
+        ] = []  # (from_node, to_nodes, router, navigation_threshold)
         self._arium: Optional[Arium] = None
 
     def with_memory(self, memory: BaseMemory) -> 'AriumBuilder':
@@ -71,16 +73,22 @@ class AriumBuilder:
         from_node: Union[Agent, Tool],
         to_nodes: List[Union[Agent, Tool]],
         router: Optional[Callable] = None,
+        navigation_threshold: Dict[str, int] = {},
     ) -> 'AriumBuilder':
         """Add an edge between nodes with an optional router function."""
-        self._edges.append((from_node, to_nodes, router))
+        self._edges.append((from_node, to_nodes, router, navigation_threshold))
         return self
 
     def connect(
-        self, from_node: Union[Agent, Tool], to_node: Union[Agent, Tool]
+        self,
+        from_node: Union[Agent, Tool],
+        to_node: Union[Agent, Tool],
+        navigation_threshold: Dict[str, int] = {},
     ) -> 'AriumBuilder':
         """Simple connection between two nodes without a router."""
-        return self.add_edge(from_node, [to_node])
+        return self.add_edge(
+            from_node, [to_node], navigation_threshold=navigation_threshold
+        )
 
     def build(self) -> Arium:
         """Build the Arium instance from the configured components."""
@@ -110,8 +118,13 @@ class AriumBuilder:
         arium.start_at(self._start_node)
 
         # Add edges
-        for from_node, to_nodes, router in self._edges:
-            arium.add_edge(from_node.name, [node.name for node in to_nodes], router)
+        for from_node, to_nodes, router, navigation_threshold in self._edges:
+            arium.add_edge(
+                from_node.name,
+                [node.name for node in to_nodes],
+                router,
+                navigation_threshold,
+            )
 
         # Add end nodes
         if not self._end_nodes:

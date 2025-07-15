@@ -67,6 +67,7 @@ class BaseArium:
         from_node: str,
         to_nodes: List[str] = None,
         router: Optional[Callable] = None,
+        navigation_threshold: Dict[str, int] = {},
     ):
         if router and not callable(router):
             raise ValueError('Router must be a callable')
@@ -106,13 +107,13 @@ class BaseArium:
                     f'Router return type values {literal_values} do not match to_nodes {to_nodes}'
                 )
 
-            self.edges[from_node] = Edge(router_fn=router, to_nodes=to_nodes)
-        else:
-            # TODO fix _default_router
-            self.edges[from_node] = Edge(
-                router_fn=partial(default_router, to_node=to_nodes[0]),
-                to_nodes=to_nodes,
-            )
+        self.edges[from_node] = Edge(
+            router_fn=router
+            if router
+            else partial(default_router, to_node=to_nodes[0]),
+            to_nodes=to_nodes,
+            navigation_threshold=navigation_threshold,
+        )
 
     def check_orphan_nodes(self) -> List[str]:
         if not self.nodes:

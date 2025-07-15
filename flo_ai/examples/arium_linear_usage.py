@@ -82,8 +82,7 @@ async def main():
 
     result = await (
         AriumBuilder()
-        .add_agent(content_analyst)
-        .add_agent(summary_generator)
+        .add_agents([content_analyst, summary_generator])
         .start_with(content_analyst)
         .connect(content_analyst, summary_generator)  # Direct connection
         .end_with(summary_generator)
@@ -109,6 +108,6 @@ if __name__ == '__main__':
     print('Running simple example first...')
     asyncio.run(simple_example())
 
-    # print("\n" + "="*80)
-    # print("Now running detailed example...")
-    # asyncio.run(main())
+    print('\n' + '=' * 80)
+    print('Now running detailed example...')
+    asyncio.run(main())
