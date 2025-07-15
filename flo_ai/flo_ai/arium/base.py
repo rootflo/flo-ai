@@ -67,7 +67,6 @@ class BaseArium:
         from_node: str,
         to_nodes: List[str] = None,
         router: Optional[Callable] = None,
-        navigation_threshold: Dict[str, int] = {},
     ):
         if router and not callable(router):
             raise ValueError('Router must be a callable')
@@ -112,7 +111,6 @@ class BaseArium:
             if router
             else partial(default_router, to_node=to_nodes[0]),
             to_nodes=to_nodes,
-            navigation_threshold=navigation_threshold,
         )
 
     def check_orphan_nodes(self) -> List[str]:

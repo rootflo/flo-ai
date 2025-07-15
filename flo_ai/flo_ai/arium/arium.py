@@ -45,10 +45,7 @@ class Arium(BaseArium):
             self._add_to_memory(result)
 
             # find next node post current node
-            next_node_name = current_edge.router_fn(
-                memory=self.memory,
-                navigation_thresholds=current_edge.navigation_threshold,
-            )
+            next_node_name = current_edge.router_fn(memory=self.memory)
 
             # find next edge
             # TODO: next_node_name might not be in self.edges if it's the end node. Handle this case
