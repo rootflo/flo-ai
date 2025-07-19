@@ -2,9 +2,7 @@
   <img src="./images/rootflo-logo.png" alt="Rootflo" width="150" />
 </p>
 
-<h1 align="center">Composable AI Agentic Workflow</h1>
-
-<img src="https://github.blog/wp-content/uploads/2020/09/github-stars-logo_Color.png" alt="drawing" width="25"/> **Please, star the project on github (see top-right corner) if you appreciate our contribution to the community!**<img src="https://github.blog/wp-content/uploads/2020/09/github-stars-logo_Color.png" alt="drawing" width="25"/>
+<h1 align="center">Composable Agentic AI Workflow</h1>
 
 <p align="center">
 Flo AI is a Python framework for building structured AI agents with support for multiple LLM providers, tool integration, and YAML-based configuration. Create production-ready AI agents with minimal code and maximum flexibility.
@@ -50,6 +48,44 @@ Flo AI is a Python framework that makes building production-ready AI agents and 
 - 🔧 **Flexible**: Use pre-built components or create your own
 - 🤝 **Team-Oriented**: Create and manage teams of AI agents working together
 - 🔄 **Langchain Compatible**: Works with all your favorite Langchain tools
+
+## 📖 Table of Contents
+
+- [🚀 Quick Start](#-quick-start)
+  - [Installation](#installation)
+  - [Create Your First AI Agent in 30 seconds](#create-your-first-ai-agent-in-30-seconds)
+  - [Create a Tool-Using Agent](#create-a-tool-using-agent)
+  - [Create an Agent with Structured Output](#create-an-agent-with-structured-output)
+- [📝 YAML Configuration](#-yaml-configuration)
+- [🛠️ Tools](#️-tools)
+  - [🎯 @flo_tool Decorator](#-flo_tool-decorator)
+- [🧠 Reasoning Patterns](#-reasoning-patterns)
+- [🔧 LLM Providers](#-llm-providers)
+  - [OpenAI](#openai)
+  - [Anthropic Claude](#anthropic-claude)
+  - [Google Gemini](#google-gemini)
+  - [Ollama (Local)](#ollama-local)
+- [📊 Output Formatting](#-output-formatting)
+- [🔄 Error Handling](#-error-handling)
+- [📚 Examples](#-examples)
+- [🚀 Advanced Features](#-advanced-features)
+  - [Custom Tool Creation](#custom-tool-creation)
+  - [YAML Parser Integration](#yaml-parser-integration)
+- [🔄 Agent Orchestration with Arium](#-agent-orchestration-with-arium)
+  - [🌟 Key Features](#-key-features)
+  - [Quick Start: Simple Agent Chain](#quick-start-simple-agent-chain)
+  - [Advanced: Conditional Routing](#advanced-conditional-routing)
+  - [Agent + Tool Workflows](#agent--tool-workflows)
+  - [Workflow Visualization](#workflow-visualization)
+  - [Memory and Context Sharing](#memory-and-context-sharing)
+  - [📊 Use Cases for Arium](#-use-cases-for-arium)
+  - [Builder Pattern Benefits](#builder-pattern-benefits)
+- [📖 Documentation](#-documentation)
+- [🌟 Why Flo AI?](#-why-flo-ai)
+- [🎯 Use Cases](#-use-cases)
+- [🤝 Contributing](#-contributing)
+- [📜 License](#-license)
+- [🙏 Acknowledgments](#-acknowledgments)
 
 ## 🚀 Quick Start
 
