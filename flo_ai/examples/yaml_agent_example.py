@@ -3,7 +3,6 @@ from flo_ai.builder.agent_builder import AgentBuilder
 # Example YAML configuration
 yaml_config = """
 metadata:
-  name: email-summary-flo
   version: 1.0.0
   description: "Agent for analyzing email threads between customers and support"
   tags: ["email", "analysis", "support"]
