@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 from abc import ABC, abstractmethod
 from enum import Enum
 from flo_ai.llm.base_llm import BaseLLM
@@ -29,6 +29,7 @@ class BaseAgent(ABC):
         self.agent_type = agent_type
         self.llm = llm
         self.max_retries = max_retries
+        self.resolved_variables = False
         self.conversation_history: List[Dict[str, str]] = []
 
     @abstractmethod
