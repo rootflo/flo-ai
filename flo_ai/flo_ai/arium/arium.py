@@ -6,7 +6,12 @@ from flo_ai.models.agent import Agent
 from flo_ai.tool.base_tool import Tool
 from flo_ai.arium.models import StartNode, EndNode
 from flo_ai.utils.logger import logger
-from flo_ai.utils.variable_extractor import extract_variables_from_inputs, extract_agent_variables, validate_multi_agent_variables, resolve_variables
+from flo_ai.utils.variable_extractor import (
+    extract_variables_from_inputs,
+    extract_agent_variables,
+    validate_multi_agent_variables,
+    resolve_variables,
+)
 
 
 class Arium(BaseArium):
@@ -19,7 +24,11 @@ class Arium(BaseArium):
         self.validate_graph()
         self.is_compiled = True
 
-    async def run(self, inputs: List[str | ImageMessage], variables: Optional[Dict[str, Any]] = None):
+    async def run(
+        self,
+        inputs: List[str | ImageMessage],
+        variables: Optional[Dict[str, Any]] = None,
+    ):
         if not self.is_compiled:
             raise ValueError('Arium is not compiled')
 
@@ -28,10 +37,10 @@ class Arium(BaseArium):
 
         if not self.nodes:
             raise ValueError('Arium has no nodes')
-        
+
         # Extract and validate variables from inputs and all agents
         self._extract_and_validate_variables(inputs, variables)
-        
+
         # Resolve variables in inputs and agent prompts
         resolved_inputs = self._resolve_inputs(inputs, variables)
         self._resolve_agent_prompts(variables)
@@ -66,20 +75,22 @@ class Arium(BaseArium):
             current_edge = next_edge
 
         return self.memory.get()
-    
-    def _extract_and_validate_variables(self, inputs: List[str | ImageMessage], variables: Dict[str, Any]) -> None:
+
+    def _extract_and_validate_variables(
+        self, inputs: List[str | ImageMessage], variables: Dict[str, Any]
+    ) -> None:
         """Extract variables from inputs and agents, then validate them.
-        
+
         Args:
             inputs: List of input messages
             variables: Dictionary of variable name to value mappings
-            
+
         Raises:
             ValueError: If any required variables are missing
         """
         # Extract variables from inputs
         input_variables = extract_variables_from_inputs(inputs)
-        
+
         # Extract variables from all agents in the workflow
         agents_variables = {}
         for node in self.nodes.values():
@@ -87,28 +98,30 @@ class Arium(BaseArium):
                 agent_vars = extract_agent_variables(node)
                 if agent_vars:
                     agents_variables[node.name] = agent_vars
-        
+
         # Validate input variables separately with cleaner error message
         if input_variables:
             missing_input_vars = input_variables - set(variables.keys())
             if missing_input_vars:
                 provided_keys = sorted(variables.keys())
                 raise ValueError(
-                    f"Input contains missing variables: {sorted(missing_input_vars)}. "
-                    f"Provided variables: {provided_keys}"
+                    f'Input contains missing variables: {sorted(missing_input_vars)}. '
+                    f'Provided variables: {provided_keys}'
                 )
-        
+
         # Validate agent variables with detailed agent breakdown
         if agents_variables:
             validate_multi_agent_variables(agents_variables, variables)
-            
-    def _resolve_inputs(self, inputs: List[str | ImageMessage], variables: Dict[str, Any]) -> List[str | ImageMessage]:
+
+    def _resolve_inputs(
+        self, inputs: List[str | ImageMessage], variables: Dict[str, Any]
+    ) -> List[str | ImageMessage]:
         """Resolve variables in input messages.
-        
+
         Args:
             inputs: List of input messages
             variables: Dictionary of variable name to value mappings
-            
+
         Returns:
             List of inputs with variables resolved
         """
@@ -122,10 +135,10 @@ class Arium(BaseArium):
                 # ImageMessage objects don't need variable resolution
                 resolved_inputs.append(input_item)
         return resolved_inputs
-        
+
     def _resolve_agent_prompts(self, variables: Dict[str, Any]) -> None:
         """Resolve variables in all agent system prompts and mark them as resolved.
-        
+
         Args:
             variables: Dictionary of variable name to value mappings
         """

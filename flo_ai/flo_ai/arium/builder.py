@@ -129,9 +129,9 @@ class AriumBuilder:
         return arium
 
     async def build_and_run(
-        self, 
-        inputs: List[Union[str, ImageMessage]], 
-        variables: Optional[Dict[str, Any]] = None
+        self,
+        inputs: List[Union[str, ImageMessage]],
+        variables: Optional[Dict[str, Any]] = None,
     ) -> List[dict]:
         """Build the Arium and run it with the given inputs and optional runtime variables."""
         arium = self.build()

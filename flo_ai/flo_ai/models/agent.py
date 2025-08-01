@@ -5,7 +5,12 @@ from flo_ai.llm.base_llm import BaseLLM, ImageMessage
 from flo_ai.tool.base_tool import Tool, ToolExecutionError
 from flo_ai.models.agent_error import AgentError
 from flo_ai.utils.logger import logger
-from flo_ai.utils.variable_extractor import extract_variables_from_inputs, extract_agent_variables, validate_multi_agent_variables, resolve_variables
+from flo_ai.utils.variable_extractor import (
+    extract_variables_from_inputs,
+    extract_agent_variables,
+    validate_multi_agent_variables,
+    resolve_variables,
+)
 
 
 class Agent(BaseAgent):
@@ -41,27 +46,31 @@ class Agent(BaseAgent):
         self.output_schema = output_schema
         self.role = role
 
-    async def run(self, inputs: List[str | ImageMessage] | str, variables: Optional[Dict[str, Any]] = None) -> str:
+    async def run(
+        self,
+        inputs: List[str | ImageMessage] | str,
+        variables: Optional[Dict[str, Any]] = None,
+    ) -> str:
         variables = variables or {}
-        
+
         if isinstance(inputs, str):
             inputs = [inputs]
-            
+
         # Perform runtime variable validation if not already resolved (single agent usage)
         if not self.resolved_variables:
             # Extract variables from inputs and system prompt
             input_variables = extract_variables_from_inputs(inputs)
             agent_variables = extract_agent_variables(self)
             all_required_variables = input_variables.union(agent_variables)
-            
+
             # Validate that all required variables are provided
             if all_required_variables:
                 agents_variables = {self.name: all_required_variables}
                 validate_multi_agent_variables(agents_variables, variables)
-                
+
             # Resolve variables and mark as resolved
             self.system_prompt = resolve_variables(self.system_prompt, variables)
-            
+
             # Process inputs and resolve variables in string inputs
             for input in inputs:
                 if isinstance(input, ImageMessage):
@@ -70,7 +79,7 @@ class Agent(BaseAgent):
                     # Resolve variables in text input
                     resolved_input = resolve_variables(input, variables)
                     self.add_to_history('user', resolved_input)
-            
+
             # after resolving agent system prompts and inputs, mark variables as resolved
             self.resolved_variables = True
 
@@ -91,10 +100,12 @@ class Agent(BaseAgent):
         # Otherwise, run as tool agent
         return await self._run_with_tools(retry_count, variables)
 
-    async def _run_conversational(self, retry_count: int, variables: Optional[Dict[str, Any]] = None) -> str:
+    async def _run_conversational(
+        self, retry_count: int, variables: Optional[Dict[str, Any]] = None
+    ) -> str:
         """Run as a conversational agent when no tools are provided"""
         variables = variables or {}
-        
+
         while retry_count < self.max_retries:
             try:
                 # Resolve variables in system prompt
@@ -103,7 +114,7 @@ class Agent(BaseAgent):
                     if self.reasoning_pattern == ReasoningPattern.COT
                     else resolve_variables(self.system_prompt, variables)
                 )
-                
+
                 messages = [
                     {
                         'role': 'system',
@@ -150,10 +161,12 @@ class Agent(BaseAgent):
                         original_error=e,
                     )
 
-    async def _run_with_tools(self, retry_count: int = 0, variables: Optional[Dict[str, Any]] = None) -> str:
+    async def _run_with_tools(
+        self, retry_count: int = 0, variables: Optional[Dict[str, Any]] = None
+    ) -> str:
         """Run as a tool-using agent when tools are provided"""
         variables = variables or {}
-        
+
         while retry_count < self.max_retries:
             try:
                 # Resolve variables in system prompt based on reasoning pattern
@@ -163,7 +176,7 @@ class Agent(BaseAgent):
                     system_content = self._get_cot_prompt(variables)
                 else:
                     system_content = resolve_variables(self.system_prompt, variables)
-                
+
                 messages = [
                     {
                         'role': 'system',
@@ -287,14 +300,14 @@ class Agent(BaseAgent):
     def _get_react_prompt(self, variables: Optional[Dict[str, Any]] = None) -> str:
         """Get system prompt modified for ReACT pattern"""
         variables = variables or {}
-        
+
         tools_desc = '\n'.join(
             [f'- {tool.name}: {tool.description}' for tool in self.tools]
         )
-        
+
         # Resolve variables in the base system prompt
         resolved_system_prompt = resolve_variables(self.system_prompt, variables)
-        
+
         react_prompt = f"""{resolved_system_prompt}
             When solving tasks, follow this format:
 
@@ -317,14 +330,14 @@ class Agent(BaseAgent):
     def _get_cot_prompt(self, variables: Optional[Dict[str, Any]] = None) -> str:
         """Get system prompt modified for Chain of Thought pattern"""
         variables = variables or {}
-        
+
         tools_desc = '\n'.join(
             [f'- {tool.name}: {tool.description}' for tool in self.tools]
         )
-        
+
         # Resolve variables in the base system prompt
         resolved_system_prompt = resolve_variables(self.system_prompt, variables)
-        
+
         cot_prompt = f"""{resolved_system_prompt}
             When solving tasks, follow this Chain of Thought reasoning format:
 
