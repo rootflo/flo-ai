@@ -6,7 +6,7 @@ class OpenAIVLLM(OpenAI):
     def __init__(
         self,
         base_url: str,
-        model='microsoft/phi-4',
+        model: str,
         api_key: str = None,
         temperature: float = 0.7,
         **kwargs,
