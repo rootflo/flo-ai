@@ -1,0 +1,45 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* React Flow Customizations */
+.react-flow__node {
+  font-family: inherit;
+}
+
+.react-flow__edge {
+  stroke-width: 2px;
+}
+
+.react-flow__edge.selected {
+  stroke: #3b82f6;
+  stroke-width: 3px;
+}
+
+.react-flow__connection-line {
+  stroke: #3b82f6;
+  stroke-width: 2px;
+}
+
+.react-flow__handle {
+  width: 10px;
+  height: 10px;
+  border: 2px solid white;
+}
+
+/* Focus styles for better accessibility */
+.react-flow__node:focus,
+.react-flow__node:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Animation for node hover */
+.react-flow__node {
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.react-flow__node:hover {
+  transform: scale(1.02);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}

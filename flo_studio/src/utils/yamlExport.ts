@@ -1,0 +1,214 @@
+import { dump } from 'js-yaml';
+import { Agent, AriumWorkflow } from '@/types/agent';
+import { CustomNode, CustomEdge } from '@/types/reactflow';
+
+export interface ExportData {
+  nodes: CustomNode[];
+  edges: CustomEdge[];
+  workflowName: string;
+  workflowDescription: string;
+  workflowVersion: string;
+}
+
+export function generateAriumYAML(data: ExportData): string {
+  const { nodes, edges, workflowName, workflowDescription, workflowVersion } = data;
+
+  // Extract agents and tools
+  const agents: Agent[] = [];
+  const tools: string[] = [];
+  
+  nodes.forEach((node) => {
+    if (node.type === 'agent') {
+      const agentData = node.data as any;
+      agents.push(agentData.agent);
+    } else if (node.type === 'tool') {
+      const toolData = node.data as any;
+      tools.push(toolData.tool.name);
+    }
+  });
+
+  // Determine start and end nodes
+  const nodeConnections = new Map<string, { incoming: string[], outgoing: string[] }>();
+  
+  // Initialize connections map
+  nodes.forEach((node) => {
+    nodeConnections.set(node.id, { incoming: [], outgoing: [] });
+  });
+
+  // Build connections
+  edges.forEach((edge) => {
+    const sourceConnections = nodeConnections.get(edge.source);
+    const targetConnections = nodeConnections.get(edge.target);
+    
+    if (sourceConnections) {
+      sourceConnections.outgoing.push(edge.target);
+    }
+    if (targetConnections) {
+      targetConnections.incoming.push(edge.source);
+    }
+  });
+
+  // Find start nodes (nodes with no incoming connections)
+  const startNodes = nodes.filter((node) => {
+    const connections = nodeConnections.get(node.id);
+    return connections && connections.incoming.length === 0;
+  });
+
+  // Find end nodes (nodes with no outgoing connections)
+  const endNodes = nodes.filter((node) => {
+    const connections = nodeConnections.get(node.id);
+    return connections && connections.outgoing.length === 0;
+  });
+
+  // Build workflow edges
+  const workflowEdges: Array<{
+    from: string;
+    to: string[];
+    router?: string;
+  }> = [];
+
+  // Group edges by source
+  const edgesBySource = new Map<string, CustomEdge[]>();
+  edges.forEach((edge) => {
+    if (!edgesBySource.has(edge.source)) {
+      edgesBySource.set(edge.source, []);
+    }
+    edgesBySource.get(edge.source)!.push(edge);
+  });
+
+  // Create workflow edges
+  edgesBySource.forEach((sourceEdges, sourceId) => {
+    const targets = sourceEdges.map((edge) => edge.target);
+    const router = sourceEdges[0]?.data?.router;
+
+    workflowEdges.push({
+      from: sourceId,
+      to: targets,
+      router: router || undefined,
+    });
+  });
+
+  // Convert agents to YAML format
+  const yamlAgents = agents.map((agent) => {
+    const yamlAgent: any = {
+      name: agent.name,
+      role: agent.role,
+      job: agent.job,
+      model: {
+        provider: agent.model.provider,
+        name: agent.model.name,
+      },
+    };
+
+    // Add base_url if present
+    if (agent.model.base_url) {
+      yamlAgent.model.base_url = agent.model.base_url;
+    }
+
+    // Add settings if present
+    if (agent.settings) {
+      yamlAgent.settings = {};
+      if (agent.settings.temperature !== undefined) {
+        yamlAgent.settings.temperature = agent.settings.temperature;
+      }
+      if (agent.settings.max_retries !== undefined) {
+        yamlAgent.settings.max_retries = agent.settings.max_retries;
+      }
+      if (agent.settings.reasoning_pattern !== undefined) {
+        yamlAgent.settings.reasoning_pattern = agent.settings.reasoning_pattern;
+      }
+    }
+
+    // Add tools if present
+    if (agent.tools && agent.tools.length > 0) {
+      yamlAgent.tools = agent.tools;
+    }
+
+    // Add parser if present
+    if (agent.parser && agent.parser.fields && agent.parser.fields.length > 0) {
+      yamlAgent.parser = {
+        name: agent.parser.name,
+        version: agent.parser.version || '1.0.0',
+        description: agent.parser.description,
+        fields: agent.parser.fields.map((field) => ({
+          name: field.name,
+          type: field.type,
+          description: field.description,
+          required: field.required,
+          values: field.values,
+          items: field.items,
+        })),
+      };
+    }
+
+    return yamlAgent;
+  });
+
+  // Build the final YAML structure
+  const yamlStructure: AriumWorkflow = {
+    metadata: {
+      name: workflowName || 'Flo AI Workflow',
+      version: workflowVersion || '1.0.0',
+      description: workflowDescription || 'Generated with Flo AI Studio',
+      tags: ['flo-ai', 'studio-generated'],
+    },
+    arium: {
+      agents: yamlAgents,
+      tools: tools.length > 0 ? tools.map(name => ({ name })) : undefined,
+      workflow: {
+        start: startNodes.length > 0 ? startNodes[0].id : agents[0]?.id || '',
+        edges: workflowEdges.filter(edge => edge.to.length > 0),
+        end: endNodes.map((node) => node.id),
+      },
+    },
+  };
+
+  // Remove undefined fields
+  const cleanYamlStructure = JSON.parse(JSON.stringify(yamlStructure, (key, value) => {
+    return value === undefined ? null : value;
+  }));
+
+  // Remove null values
+  function removeNulls(obj: any): any {
+    if (Array.isArray(obj)) {
+      return obj.map(removeNulls).filter(item => item !== null);
+    } else if (obj !== null && typeof obj === 'object') {
+      const cleaned: any = {};
+      for (const [key, value] of Object.entries(obj)) {
+        const cleanValue = removeNulls(value);
+        if (cleanValue !== null && cleanValue !== undefined) {
+          cleaned[key] = cleanValue;
+        }
+      }
+      return cleaned;
+    }
+    return obj;
+  }
+
+  const finalStructure = removeNulls(cleanYamlStructure);
+
+  return dump(finalStructure, {
+    indent: 2,
+    lineWidth: 100,
+    noRefs: true,
+    sortKeys: false,
+  });
+}
+
+export function downloadYAML(content: string, filename: string = 'flo-ai-workflow.yaml'): void {
+  const blob = new Blob([content], { type: 'text/yaml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  URL.revokeObjectURL(url);
+}
+
+export function copyToClipboard(content: string): Promise<void> {
+  return navigator.clipboard.writeText(content);
+}
