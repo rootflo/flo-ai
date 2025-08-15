@@ -21,11 +21,12 @@ const ToolNode: React.FC<NodeProps<ToolNodeData>> = ({ data, selected, id }) => 
         isEnd && "border-red-500"
       )}
     >
-      {/* Input Handle */}
+      {/* Input Handle (Left) */}
       <Handle
         type="target"
-        position={Position.Top}
-        className="w-4 h-4 !bg-orange-500"
+        position={Position.Left}
+        className="w-4 h-4 !bg-orange-500 !border-2 !border-white"
+        style={{ left: -8 }}
       />
 
       {/* Header */}
@@ -58,11 +59,12 @@ const ToolNode: React.FC<NodeProps<ToolNodeData>> = ({ data, selected, id }) => 
         </button>
       </div>
 
-      {/* Output Handle */}
+      {/* Output Handle (Right) */}
       <Handle
         type="source"
-        position={Position.Bottom}
-        className="w-4 h-4 !bg-orange-500"
+        position={Position.Right}
+        className="w-4 h-4 !bg-orange-500 !border-2 !border-white"
+        style={{ right: -8 }}
       />
     </div>
   );

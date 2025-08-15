@@ -79,10 +79,49 @@ const defaultConfig: DesignerConfig = {
     { provider: 'ollama', name: 'llama3' },
   ],
   availableRouters: [
-    { name: 'default_router', description: 'Default router that passes to the next node' },
-    { name: 'content_router', description: 'Routes based on content analysis' },
-    { name: 'classification_router', description: 'Routes based on classification results' },
-    { name: 'sentiment_router', description: 'Routes based on sentiment analysis' },
+    { 
+      name: 'default_router', 
+      description: 'Default router that passes to the next node',
+      code: `def route(memory: BaseMemory) -> str:
+    # Always route to the first available target
+    return target_nodes[0]`
+    },
+    { 
+      name: 'content_router', 
+      description: 'Routes based on content analysis',
+      code: `def route(memory: BaseMemory) -> str:
+    content = str(memory.get()[-1]).lower()
+    if 'technical' in content:
+        return 'tech_specialist'
+    elif 'business' in content:
+        return 'business_specialist'
+    return 'general_handler'`
+    },
+    { 
+      name: 'classification_router', 
+      description: 'Routes based on classification results',
+      code: `def route(memory: BaseMemory) -> str:
+    last_message = memory.get()[-1]
+    if 'urgent' in str(last_message).lower():
+        return 'priority_handler'
+    elif 'routine' in str(last_message).lower():
+        return 'standard_handler'
+    return 'default_handler'`
+    },
+    { 
+      name: 'sentiment_router', 
+      description: 'Routes based on sentiment analysis',
+      code: `def route(memory: BaseMemory) -> str:
+    content = str(memory.get()[-1]).lower()
+    positive_words = ['good', 'great', 'excellent', 'happy']
+    negative_words = ['bad', 'terrible', 'angry', 'frustrated']
+    
+    if any(word in content for word in negative_words):
+        return 'escalation_agent'
+    elif any(word in content for word in positive_words):
+        return 'satisfaction_agent'
+    return 'neutral_agent'`
+    },
   ],
 };
 

@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { ReactFlowProvider } from 'reactflow';
 import { useDesignerStore } from '@/store/designerStore';
 import { Button } from '@/components/ui/button';
-import { Plus, Download, Settings, FileText } from 'lucide-react';
+import { Plus, Settings, FileText } from 'lucide-react';
 import FlowCanvas from '@/components/flow/FlowCanvas';
 import Sidebar from '@/components/sidebar/Sidebar';
 import AgentEditor from '@/components/editors/AgentEditor';
-import { generateAriumYAML, downloadYAML } from '@/utils/yamlExport';
+import EdgeEditor from '@/components/editors/EdgeEditor';
+import YamlPreviewDrawer from '@/components/drawer/YamlPreviewDrawer';
 import './App.css';
 
 // Simplified Config Editor Modal
@@ -27,28 +28,8 @@ const ConfigEditorModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
 };
 
 const ToolbarComponent: React.FC = () => {
-  const { 
-    openAgentEditor, 
-    nodes, 
-    edges, 
-    workflowName, 
-    workflowDescription, 
-    workflowVersion 
-  } = useDesignerStore();
-  
+  const { openAgentEditor } = useDesignerStore();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-
-  const handleExport = () => {
-    const yaml = generateAriumYAML({
-      nodes,
-      edges,
-      workflowName,
-      workflowDescription,
-      workflowVersion,
-    });
-    
-    downloadYAML(yaml, `${workflowName.replace(/\s+/g, '-').toLowerCase()}.yaml`);
-  };
 
   return (
     <>
@@ -66,10 +47,6 @@ const ToolbarComponent: React.FC = () => {
             <Settings className="w-4 h-4 mr-1" />
             Config
           </Button>
-          <Button size="sm" onClick={handleExport} disabled={nodes.length === 0}>
-            <Download className="w-4 h-4 mr-1" />
-            Export
-          </Button>
         </div>
       </div>
       <ConfigEditorModal isOpen={isConfigOpen} onClose={() => setIsConfigOpen(false)} />
@@ -83,13 +60,19 @@ function App() {
       <ToolbarComponent />
       <div className="flex-1 flex overflow-hidden">
         <Sidebar />
-        <ReactFlowProvider>
-          <FlowCanvas />
-        </ReactFlowProvider>
+        <div className="flex-1 relative">
+          <ReactFlowProvider>
+            <FlowCanvas />
+          </ReactFlowProvider>
+        </div>
       </div>
       
       {/* Modals */}
       <AgentEditor />
+      <EdgeEditor />
+      
+      {/* YAML Preview Drawer */}
+      <YamlPreviewDrawer />
     </div>
   );
 }
