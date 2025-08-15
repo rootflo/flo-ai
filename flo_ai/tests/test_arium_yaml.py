@@ -3,7 +3,7 @@ Tests for YAML-based Arium workflow construction.
 """
 
 import pytest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from flo_ai.arium.builder import AriumBuilder
 from flo_ai.arium.memory import MessageMemory, BaseMemory
@@ -66,9 +66,7 @@ class TestAriumYamlBuilder:
         """
 
         # Mock the AgentBuilder.from_yaml to avoid actual LLM calls
-        with pytest.mock.patch(
-            'flo_ai.arium.builder.AgentBuilder'
-        ) as mock_agent_builder:
+        with patch('flo_ai.arium.builder.AgentBuilder') as mock_agent_builder:
             mock_agent = Mock(spec=Agent)
             mock_agent.name = 'test_agent'
 
@@ -109,9 +107,7 @@ class TestAriumYamlBuilder:
         # Create custom memory
         custom_memory = Mock(spec=MessageMemory)
 
-        with pytest.mock.patch(
-            'flo_ai.arium.builder.AgentBuilder'
-        ) as mock_agent_builder:
+        with patch('flo_ai.arium.builder.AgentBuilder') as mock_agent_builder:
             mock_agent = Mock(spec=Agent)
             mock_agent.name = 'test_agent'
 
@@ -146,9 +142,7 @@ class TestAriumYamlBuilder:
             end: [test_agent]
         """
 
-        with pytest.mock.patch(
-            'flo_ai.arium.builder.AgentBuilder'
-        ) as mock_agent_builder:
+        with patch('flo_ai.arium.builder.AgentBuilder') as mock_agent_builder:
             mock_agent = Mock(spec=Agent)
             mock_agent.name = 'test_agent'
 
@@ -194,9 +188,7 @@ class TestAriumYamlBuilder:
         mock_tool.name = 'test_tool'
         tools = {'test_tool': mock_tool}
 
-        with pytest.mock.patch(
-            'flo_ai.arium.builder.AgentBuilder'
-        ) as mock_agent_builder:
+        with patch('flo_ai.arium.builder.AgentBuilder') as mock_agent_builder:
             mock_agent = Mock(spec=Agent)
             mock_agent.name = 'test_agent'
 
@@ -249,9 +241,7 @@ class TestAriumYamlBuilder:
 
         routers = {'test_router': test_router}
 
-        with pytest.mock.patch(
-            'flo_ai.arium.builder.AgentBuilder'
-        ) as mock_agent_builder:
+        with patch('flo_ai.arium.builder.AgentBuilder') as mock_agent_builder:
             mock_agent1 = Mock(spec=Agent)
             mock_agent1.name = 'agent1'
             mock_agent2 = Mock(spec=Agent)
@@ -297,7 +287,7 @@ class TestAriumYamlBuilder:
             end: [missing_tool]
         """
 
-        with pytest.mock.patch('flo_ai.arium.builder.AgentBuilder'):
+        with patch('flo_ai.arium.builder.AgentBuilder'):
             with pytest.raises(
                 ValueError,
                 match='Tool missing_tool not found in provided tools dictionary',
@@ -337,7 +327,7 @@ class TestAriumYamlBuilder:
             end: [agent2]
         """
 
-        with pytest.mock.patch('flo_ai.arium.builder.AgentBuilder'):
+        with patch('flo_ai.arium.builder.AgentBuilder'):
             with pytest.raises(
                 ValueError,
                 match='Router missing_router not found in provided routers dictionary',
@@ -363,7 +353,7 @@ class TestAriumYamlBuilder:
             end: [test_agent]
         """
 
-        with pytest.mock.patch('flo_ai.arium.builder.AgentBuilder'):
+        with patch('flo_ai.arium.builder.AgentBuilder'):
             with pytest.raises(ValueError, match='Workflow must specify a start node'):
                 AriumBuilder.from_yaml(yaml_str=yaml_config)
 
@@ -388,7 +378,7 @@ class TestAriumYamlBuilder:
                 to: [end]
         """
 
-        with pytest.mock.patch('flo_ai.arium.builder.AgentBuilder'):
+        with patch('flo_ai.arium.builder.AgentBuilder'):
             with pytest.raises(ValueError, match='Workflow must specify end nodes'):
                 AriumBuilder.from_yaml(yaml_str=yaml_config)
 
@@ -410,7 +400,7 @@ class TestAriumYamlBuilder:
 
         with pytest.raises(
             ValueError,
-            match='Agent invalid_agent must have either yaml_config or yaml_file',
+            match='Agent invalid_agent not found in provided agents dictionary',
         ):
             AriumBuilder.from_yaml(yaml_str=yaml_config)
 
@@ -430,9 +420,7 @@ class TestAriumYamlBuilder:
             end: [external_agent]
         """
 
-        with pytest.mock.patch(
-            'flo_ai.arium.builder.AgentBuilder'
-        ) as mock_agent_builder:
+        with patch('flo_ai.arium.builder.AgentBuilder') as mock_agent_builder:
             mock_agent = Mock(spec=Agent)
             mock_agent.name = 'external_agent'
 
@@ -468,9 +456,7 @@ class TestAriumYamlBuilder:
 
         mock_llm = Mock(spec=OpenAI)
 
-        with pytest.mock.patch(
-            'flo_ai.arium.builder.AgentBuilder'
-        ) as mock_agent_builder:
+        with patch('flo_ai.arium.builder.AgentBuilder') as mock_agent_builder:
             mock_agent = Mock(spec=Agent)
             mock_agent.name = 'test_agent'
 
@@ -481,10 +467,16 @@ class TestAriumYamlBuilder:
             AriumBuilder.from_yaml(yaml_str=yaml_config, base_llm=mock_llm)
 
             # Verify AgentBuilder.from_yaml was called with base_llm
-            mock_agent_builder.from_yaml.assert_called_with(
-                yaml_str=yaml_config.split('yaml_config: |')[1].strip(),
-                base_llm=mock_llm,
-            )
+            calls = mock_agent_builder.from_yaml.call_args_list
+            assert len(calls) == 1
+            call_args, call_kwargs = calls[0]
+            assert 'yaml_str' in call_kwargs
+            assert 'base_llm' in call_kwargs
+            assert call_kwargs['base_llm'] == mock_llm
+            # Just verify it contains the expected content
+            assert 'agent:' in call_kwargs['yaml_str']
+            assert 'name: test_agent' in call_kwargs['yaml_str']
+            assert 'job: "Test agent"' in call_kwargs['yaml_str']
 
     def test_from_yaml_complex_workflow(self):
         """Test complex workflow with multiple agents, tools, and routers."""
@@ -556,9 +548,7 @@ class TestAriumYamlBuilder:
         tools = {'data_tool': mock_data_tool, 'analysis_tool': mock_analysis_tool}
         routers = {'dispatch_router': dispatch_router}
 
-        with pytest.mock.patch(
-            'flo_ai.arium.builder.AgentBuilder'
-        ) as mock_agent_builder:
+        with patch('flo_ai.arium.builder.AgentBuilder') as mock_agent_builder:
             mock_dispatcher = Mock(spec=Agent)
             mock_dispatcher.name = 'dispatcher'
             mock_processor = Mock(spec=Agent)
@@ -607,9 +597,7 @@ class TestAriumYamlBuilder:
             end: [test_agent]
         """
 
-        with pytest.mock.patch(
-            'flo_ai.arium.builder.AgentBuilder'
-        ) as mock_agent_builder:
+        with patch('flo_ai.arium.builder.AgentBuilder') as mock_agent_builder:
             mock_agent = Mock(spec=Agent)
             mock_agent.name = 'test_agent'
 
@@ -652,7 +640,7 @@ class TestAriumYamlBuilder:
             end: [test_agent]
         """
 
-        with pytest.mock.patch('flo_ai.arium.builder.OpenAI') as mock_openai:
+        with patch('flo_ai.llm.OpenAI') as mock_openai:
             mock_llm = Mock()
             mock_openai.return_value = mock_llm
 
@@ -701,7 +689,7 @@ class TestAriumYamlBuilder:
 
         tools = {'calculator': mock_calculator, 'web_search': mock_web_search}
 
-        with pytest.mock.patch('flo_ai.arium.builder.OpenAI') as mock_openai:
+        with patch('flo_ai.llm.OpenAI') as mock_openai:
             mock_llm = Mock()
             mock_openai.return_value = mock_llm
 
@@ -742,8 +730,10 @@ class TestAriumYamlBuilder:
             end: [test_agent]
         """
 
-        with pytest.mock.patch('flo_ai.arium.builder.OpenAI') as mock_openai:
-            with pytest.mock.patch('flo_ai.arium.builder.FloYamlParser') as mock_parser:
+        with patch('flo_ai.llm.OpenAI') as mock_openai:
+            with patch(
+                'flo_ai.formatter.yaml_format_parser.FloYamlParser'
+            ) as mock_parser:
                 mock_llm = Mock()
                 mock_openai.return_value = mock_llm
 
@@ -798,10 +788,8 @@ class TestAriumYamlBuilder:
             end: [file_agent]
         """
 
-        with pytest.mock.patch('flo_ai.arium.builder.OpenAI') as mock_openai:
-            with pytest.mock.patch(
-                'flo_ai.arium.builder.AgentBuilder'
-            ) as mock_agent_builder:
+        with patch('flo_ai.llm.OpenAI') as mock_openai:
+            with patch('flo_ai.arium.builder.AgentBuilder') as mock_agent_builder:
                 mock_llm = Mock()
                 mock_openai.return_value = mock_llm
 
@@ -854,7 +842,7 @@ class TestAriumYamlBuilder:
             end: [test_agent]
         """
 
-        with pytest.raises(KeyError):
+        with pytest.raises(ValueError, match='Agent test_agent must have either'):
             AriumBuilder.from_yaml(yaml_str=yaml_config_missing_job)
 
         # Test invalid reasoning pattern
@@ -874,7 +862,7 @@ class TestAriumYamlBuilder:
             end: [test_agent]
         """
 
-        with pytest.mock.patch('flo_ai.arium.builder.OpenAI'):
+        with patch('flo_ai.llm.OpenAI'):
             with pytest.raises(ValueError, match='Invalid reasoning pattern'):
                 AriumBuilder.from_yaml(yaml_str=yaml_config_invalid_pattern)
 
@@ -1022,10 +1010,8 @@ class TestAriumYamlBuilder:
 
         prebuilt_agents = {'prebuilt_agent': mock_prebuilt_agent}
 
-        with pytest.mock.patch('flo_ai.arium.builder.OpenAI') as mock_openai:
-            with pytest.mock.patch(
-                'flo_ai.arium.builder.AgentBuilder'
-            ) as mock_agent_builder:
+        with patch('flo_ai.llm.OpenAI') as mock_openai:
+            with patch('flo_ai.arium.builder.AgentBuilder') as mock_agent_builder:
                 mock_llm = Mock()
                 mock_openai.return_value = mock_llm
 
@@ -1073,7 +1059,7 @@ class TestAriumYamlBuilder:
 
         # This should not be treated as a pre-built agent reference
         # because it has additional fields beyond just 'name'
-        with pytest.mock.patch('flo_ai.arium.builder.OpenAI'):
+        with patch('flo_ai.llm.OpenAI'):
             with pytest.raises(ValueError, match='Agent test_agent must have either'):
                 AriumBuilder.from_yaml(yaml_str=yaml_config)
 

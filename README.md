@@ -81,6 +81,7 @@ Flo AI is a Python framework that makes building production-ready AI agents and 
   - [Memory and Context Sharing](#memory-and-context-sharing)
   - [📊 Use Cases for Arium](#-use-cases-for-arium)
   - [Builder Pattern Benefits](#builder-pattern-benefits)
+  - [📄 YAML-Based Arium Workflows](#-yaml-based-arium-workflows)
 - [📖 Documentation](#-documentation)
 - [🌟 Why Flo AI?](#-why-flo-ai)
 - [🎯 Use Cases](#-use-cases)
@@ -1110,6 +1111,293 @@ result: List[Any] = await (
 - ✅ Requires start and end nodes
 - ✅ Validates routing functions
 - ✅ Checks for unreachable nodes
+
+### 📄 YAML-Based Arium Workflows
+
+One of Flo AI's most powerful features is the ability to define entire multi-agent workflows using YAML configuration. This approach makes workflows reproducible, versionable, and easy to modify without changing code.
+
+#### Simple YAML Workflow
+
+```yaml
+metadata:
+  name: "content-analysis-workflow"
+  version: "1.0.0"
+  description: "Multi-agent content analysis and summarization pipeline"
+
+arium:
+  # Define agents inline
+  agents:
+    - name: "analyzer"
+      role: "Content Analyst"
+      job: "Analyze the input content and extract key insights, themes, and important information."
+      model:
+        provider: "openai"
+        name: "gpt-4o-mini"
+      settings:
+        temperature: 0.2
+        max_retries: 3
+        reasoning_pattern: "COT"
+    
+    - name: "summarizer"
+      role: "Content Summarizer"
+      job: "Create a concise, actionable summary based on the analysis provided."
+      model:
+        provider: "anthropic"
+        name: "claude-3-5-sonnet-20240620"
+      settings:
+        temperature: 0.1
+        reasoning_pattern: "DIRECT"
+
+  # Define the workflow
+  workflow:
+    start: "analyzer"
+    edges:
+      - from: "analyzer"
+        to: ["summarizer"]
+    end: ["summarizer"]
+```
+
+```python
+import asyncio
+from typing import Any, List
+from flo_ai.arium import AriumBuilder
+
+async def run_yaml_workflow() -> List[Any]:
+    yaml_config = """..."""  # Your YAML configuration
+    
+    # Create workflow from YAML
+    result: List[Any] = await (
+        AriumBuilder()
+        .from_yaml(yaml_config)
+        .build_and_run(["Analyze this quarterly business report..."])
+    )
+    
+    return result
+
+asyncio.run(run_yaml_workflow())
+```
+
+#### Advanced YAML Workflow with Tools and Routing
+
+```yaml
+metadata:
+  name: "research-workflow"
+  version: "2.0.0"
+  description: "Intelligent research workflow with conditional routing"
+
+# Define reusable tools
+tools:
+  - name: "web_search"
+    description: "Search the web for current information"
+    parameters:
+      query:
+        type: "string"
+        description: "Search query"
+  
+  - name: "calculator"
+    description: "Perform mathematical calculations"
+    parameters:
+      expression:
+        type: "string"
+        description: "Mathematical expression to calculate"
+
+arium:
+  # Reference external agent configurations
+  agents:
+    - name: "classifier"
+      role: "Content Classifier"
+      job: "Classify input as 'research', 'calculation', or 'analysis' task."
+      model:
+        provider: "openai"
+        name: "gpt-4o-mini"
+      tools: ["web_search"]  # Reference tools defined above
+    
+    - name: "researcher"
+      role: "Research Specialist"
+      job: "Conduct thorough research on <research_topic> with <research_depth> analysis."
+      model:
+        provider: "anthropic"
+        name: "claude-3-5-sonnet-20240620"
+      tools: ["web_search"]
+      settings:
+        temperature: 0.3
+        reasoning_pattern: "REACT"
+    
+    - name: "analyst"
+      role: "Data Analyst"
+      job: "Analyze numerical data and provide insights for <target_audience>."
+      model:
+        provider: "openai"
+        name: "gpt-4o"
+      tools: ["calculator", "web_search"]
+      settings:
+        reasoning_pattern: "COT"
+    
+    - name: "synthesizer"
+      role: "Information Synthesizer"
+      job: "Combine research and analysis into final recommendations."
+      model:
+        provider: "gemini"
+        name: "gemini-2.5-flash"
+
+  # Complex workflow with conditional routing
+  workflow:
+    start: "classifier"
+    edges:
+      # Conditional routing based on classification
+      - from: "classifier"
+        to: ["researcher", "analyst"]
+        router: "classification_router"
+      
+      # Both specialists feed into synthesizer
+      - from: "researcher"
+        to: ["synthesizer"]
+      
+      - from: "analyst"
+        to: ["synthesizer"]
+    
+    end: ["synthesizer"]
+
+# Define router functions
+routers:
+  classification_router:
+    description: "Route based on task classification"
+    code: |
+      def route(memory: BaseMemory) -> str:
+          content = str(memory.get()[-1]).lower()
+          if 'research' in content or 'investigate' in content:
+              return 'researcher'
+          elif 'calculate' in content or 'analyze data' in content:
+              return 'analyst'
+          return 'researcher'  # default
+```
+
+#### YAML Workflow with Variables
+
+```yaml
+metadata:
+  name: "personalized-workflow"
+  version: "1.0.0"
+  description: "Workflow that adapts based on input variables"
+
+arium:
+  agents:
+    - name: "specialist"
+      role: "<expert_role>"
+      job: "You are a <expert_role> specializing in <domain>. Provide <output_type> for <target_audience>."
+      model:
+        provider: "<preferred_llm_provider>"
+        name: "<model_name>"
+      settings:
+        temperature: 0.3
+        reasoning_pattern: "<reasoning_style>"
+    
+    - name: "reviewer"
+      role: "Quality Reviewer"
+      job: "Review the <output_type> for <quality_criteria> and provide feedback."
+      model:
+        provider: "openai"
+        name: "gpt-4o"
+
+  workflow:
+    start: "specialist"
+    edges:
+      - from: "specialist"
+        to: ["reviewer"]
+    end: ["reviewer"]
+```
+
+```python
+import asyncio
+from typing import Any, Dict, List
+from flo_ai.arium import AriumBuilder
+
+async def run_personalized_workflow() -> List[Any]:
+    yaml_config = """..."""  # Your YAML configuration with variables
+    
+    # Define variables for the workflow
+    variables: Dict[str, str] = {
+        'expert_role': 'Data Scientist',
+        'domain': 'machine learning and predictive analytics',
+        'output_type': 'technical analysis report',
+        'target_audience': 'engineering team',
+        'preferred_llm_provider': 'anthropic',
+        'model_name': 'claude-3-5-sonnet-20240620',
+        'reasoning_style': 'COT',
+        'quality_criteria': 'technical accuracy and clarity'
+    }
+    
+    result: List[Any] = await (
+        AriumBuilder()
+        .from_yaml(yaml_config)
+        .build_and_run(
+            ["Analyze our customer churn prediction model performance"],
+            variables=variables
+        )
+    )
+    
+    return result
+```
+
+#### Using Pre-built Agents in YAML Workflows
+
+```yaml
+metadata:
+  name: "hybrid-workflow"
+  version: "1.0.0"
+  description: "Mix of inline agents and pre-built agent references"
+
+# Import existing agent configurations
+imports:
+  - "agents/content_analyzer.yaml"
+  - "agents/technical_reviewer.yaml"
+
+arium:
+  # Mix of imported and inline agents
+  agents:
+    # Reference imported agent
+    - import: "content_analyzer"
+      name: "analyzer"  # Override name if needed
+    
+    # Define new agent inline
+    - name: "formatter"
+      role: "Content Formatter"
+      job: "Format the analysis into a professional report structure."
+      model:
+        provider: "openai"
+        name: "gpt-4o-mini"
+    
+    # Reference another imported agent
+    - import: "technical_reviewer"
+      name: "reviewer"
+
+  workflow:
+    start: "analyzer"
+    edges:
+      - from: "analyzer"
+        to: ["formatter"]
+      - from: "formatter"
+        to: ["reviewer"]
+    end: ["reviewer"]
+```
+
+#### YAML Workflow Best Practices
+
+1. **Modular Design**: Define reusable agents and tools separately
+2. **Clear Naming**: Use descriptive names for agents, tools, and workflows
+3. **Variable Usage**: Leverage variables for environment-specific configurations
+4. **Version Control**: Track workflow versions in metadata
+5. **Documentation**: Include descriptions for complex workflows
+6. **Router Functions**: Keep routing logic simple and well-documented
+
+#### Benefits of YAML Workflows
+
+- **🔄 Reproducible**: Version-controlled workflow definitions
+- **📝 Maintainable**: Easy to modify without code changes
+- **🧪 Testable**: Different configurations for testing vs. production
+- **👥 Collaborative**: Non-developers can modify workflow logic
+- **🚀 Deployable**: Easy CI/CD integration with YAML configurations
+- **🔍 Auditable**: Clear workflow definitions for compliance
 
 > 📖 **For detailed Arium documentation and advanced patterns, see [flo_ai/flo_ai/arium/README.md](flo_ai/flo_ai/arium/README.md)**
 

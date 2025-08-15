@@ -493,15 +493,15 @@ class AriumBuilder:
 
         # Extract output schema if present
         output_schema = agent_config.get('output_schema')
-        if output_schema:
-            # Handle parser configuration if present
-            if 'parser' in agent_config:
-                from flo_ai.formatter.yaml_format_parser import FloYamlParser
 
-                # Convert agent_config to the format expected by FloYamlParser
-                parser_config = {'agent': {'parser': agent_config['parser']}}
-                parser = FloYamlParser.create(yaml_dict=parser_config)
-                output_schema = parser.get_format()
+        # Handle parser configuration if present
+        if 'parser' in agent_config:
+            from flo_ai.formatter.yaml_format_parser import FloYamlParser
+
+            # Convert agent_config to the format expected by FloYamlParser
+            parser_config = {'agent': {'parser': agent_config['parser']}}
+            parser = FloYamlParser.create(yaml_dict=parser_config)
+            output_schema = parser.get_format()
 
         # Create and return the agent
         agent = Agent(
