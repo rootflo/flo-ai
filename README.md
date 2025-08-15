@@ -418,8 +418,6 @@ asyncio.run(multi_agent_variables())
 Variables work seamlessly with YAML-based agent configuration:
 
 ```yaml
-apiVersion: flo/alpha-v1
-kind: FloAgent
 metadata:
   name: personalized-assistant
   version: 1.0.0
