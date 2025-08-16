@@ -15,8 +15,4 @@ class VertexAI(GeminiLLM):
         **kwargs,
     ):
         super().__init__(model, api_key, temperature, **kwargs)
-        self.client = (
-            genai.Client(project=project, location=location, vertexai=True)
-            if self.api_key
-            else genai.Client()
-        )
+        self.client = genai.Client(project=project, location=location, vertexai=True)
