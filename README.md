@@ -1205,24 +1205,8 @@ metadata:
   version: "2.0.0"
   description: "Intelligent research workflow with conditional routing"
 
-# Define reusable tools
-tools:
-  - name: "web_search"
-    description: "Search the web for current information"
-    parameters:
-      query:
-        type: "string"
-        description: "Search query"
-  
-  - name: "calculator"
-    description: "Perform mathematical calculations"
-    parameters:
-      expression:
-        type: "string"
-        description: "Mathematical expression to calculate"
-
 arium:
-  # Reference external agent configurations
+  # Define agents with tool references
   agents:
     - name: "classifier"
       role: "Content Classifier"
@@ -1230,7 +1214,7 @@ arium:
       model:
         provider: "openai"
         name: "gpt-4o-mini"
-      tools: ["web_search"]  # Reference tools defined above
+      tools: ["web_search"]  # Reference tools provided in Python
     
     - name: "researcher"
       role: "Research Specialist"
@@ -1267,7 +1251,7 @@ arium:
       # Conditional routing based on classification
       - from: "classifier"
         to: ["researcher", "analyst"]
-        router: "classification_router"
+        router: "classification_router"  # Router function provided in Python
       
       # Both specialists feed into synthesizer
       - from: "researcher"
@@ -1277,19 +1261,83 @@ arium:
         to: ["synthesizer"]
     
     end: ["synthesizer"]
+```
 
-# Define router functions
-routers:
-  classification_router:
-    description: "Route based on task classification"
-    code: |
-      def route(memory: BaseMemory) -> str:
-          content = str(memory.get()[-1]).lower()
-          if 'research' in content or 'investigate' in content:
-              return 'researcher'
-          elif 'calculate' in content or 'analyze data' in content:
-              return 'analyst'
-          return 'researcher'  # default
+```python
+import asyncio
+from typing import Any, Dict, List, Literal
+from flo_ai.arium import AriumBuilder
+from flo_ai.tool.base_tool import Tool
+from flo_ai.arium.memory import BaseMemory
+
+# Define tools in Python (cannot be defined in YAML)
+async def web_search(query: str) -> str:
+    # Your search implementation
+    return f"Search results for: {query}"
+
+async def calculate(expression: str) -> str:
+    # Your calculation implementation
+    try:
+        result = eval(expression)  # Note: Use safely in production
+        return f"Calculation result: {result}"
+    except:
+        return "Invalid expression"
+
+# Create tool objects
+tools: Dict[str, Tool] = {
+    "web_search": Tool(
+        name="web_search",
+        description="Search the web for current information",
+        function=web_search,
+        parameters={
+            "query": {
+                "type": "string",
+                "description": "Search query"
+            }
+        }
+    ),
+    "calculator": Tool(
+        name="calculator",
+        description="Perform mathematical calculations",
+        function=calculate,
+        parameters={
+            "expression": {
+                "type": "string",
+                "description": "Mathematical expression to calculate"
+            }
+        }
+    )
+}
+
+# Define router functions in Python (cannot be defined in YAML)
+def classification_router(memory: BaseMemory) -> Literal["researcher", "analyst"]:
+    """Route based on task classification"""
+    content = str(memory.get()[-1]).lower()
+    if 'research' in content or 'investigate' in content:
+        return 'researcher'
+    elif 'calculate' in content or 'analyze data' in content:
+        return 'analyst'
+    return 'researcher'  # default
+
+routers: Dict[str, callable] = {
+    "classification_router": classification_router
+}
+
+async def run_workflow() -> List[Any]:
+    yaml_config = """..."""  # Your YAML configuration from above
+    
+    # Create workflow with tools and routers provided as Python objects
+    result: List[Any] = await (
+        AriumBuilder()
+        .from_yaml(
+            yaml_str=yaml_config,
+            tools=tools,      # Tools must be provided as Python objects
+            routers=routers   # Routers must be provided as Python functions
+        )
+        .build_and_run(["Research the latest trends in renewable energy"])
+    )
+    
+    return result
 ```
 
 #### YAML Workflow with Variables
@@ -1403,19 +1451,38 @@ arium:
 
 #### YAML Workflow Best Practices
 
-1. **Modular Design**: Define reusable agents and tools separately
-2. **Clear Naming**: Use descriptive names for agents, tools, and workflows
+1. **Modular Design**: Define reusable agents in YAML, create tools in Python separately
+2. **Clear Naming**: Use descriptive names for agents and workflows
 3. **Variable Usage**: Leverage variables for environment-specific configurations
 4. **Version Control**: Track workflow versions in metadata
 5. **Documentation**: Include descriptions for complex workflows
-6. **Router Functions**: Keep routing logic simple and well-documented
+6. **Router Functions**: Keep routing logic simple and provide as Python functions
+7. **Tool Management**: Create tools as Python objects and pass them to the builder
+
+#### What Can Be Defined in YAML vs Python
+
+**✅ YAML Configuration Supports:**
+- Agent definitions (name, role, job, model settings)
+- Workflow structure (start, edges, end nodes)
+- Agent-to-agent connections
+- Tool and router references (by name)
+- Variables and settings
+- Model configurations
+
+**❌ YAML Configuration Does NOT Support:**
+- Tool function implementations (must be Python objects)
+- Router function code (must be Python functions)
+- Custom logic execution
+- Direct function definitions
+
+**💡 Best Practice**: Use YAML for workflow structure and agent configuration, Python for executable logic (tools and routers).
 
 #### Benefits of YAML Workflows
 
 - **🔄 Reproducible**: Version-controlled workflow definitions
-- **📝 Maintainable**: Easy to modify without code changes
+- **📝 Maintainable**: Easy to modify workflow structure without code changes
 - **🧪 Testable**: Different configurations for testing vs. production
-- **👥 Collaborative**: Non-developers can modify workflow logic
+- **👥 Collaborative**: Non-developers can modify workflow structure
 - **🚀 Deployable**: Easy CI/CD integration with YAML configurations
 - **🔍 Auditable**: Clear workflow definitions for compliance
 
