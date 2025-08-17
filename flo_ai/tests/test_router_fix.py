@@ -6,12 +6,14 @@ Quick test to verify the router type annotation fix works.
 import inspect
 from typing import get_origin, get_args, Literal
 from flo_ai.arium import create_llm_router
+from flo_ai.llm import OpenAI
 
 
 def test_router_type_annotation():
     """Test that our router functions have proper type annotations"""
 
-    # Create a router
+    # Create a router with dummy LLM
+    llm = OpenAI(model='gpt-4o-mini', api_key='dummy-key')
     router = create_llm_router(
         'smart',
         routing_options={
@@ -19,6 +21,7 @@ def test_router_type_annotation():
             'analyst': 'Analysis tasks',
             'writer': 'Writing tasks',
         },
+        llm=llm,
     )
 
     # Check the function signature
@@ -45,9 +48,11 @@ def test_router_type_annotation():
 def test_validation_logic():
     """Test the exact validation logic from base.py"""
 
+    llm = OpenAI(model='gpt-4o-mini', api_key='dummy-key')
     router = create_llm_router(
         'smart',
         routing_options={'researcher': 'Research tasks', 'analyst': 'Analysis tasks'},
+        llm=llm,
     )
 
     try:

@@ -99,7 +99,8 @@ class TestSmartRouter:
         """Test routing prompt generation"""
         routing_options = {'researcher': 'Research tasks', 'analyst': 'Analysis tasks'}
 
-        router = SmartRouter(routing_options)
+        mock_llm = MockLLM('researcher')
+        router = SmartRouter(routing_options, llm=mock_llm)
         prompt = router.get_routing_prompt(mock_memory, routing_options)
 
         assert 'researcher' in prompt
@@ -121,7 +122,8 @@ class TestTaskClassifierRouter:
             }
         }
 
-        router = TaskClassifierRouter(task_categories)
+        mock_llm = MockLLM('math')
+        router = TaskClassifierRouter(task_categories, llm=mock_llm)
 
         assert router.task_categories == task_categories
         assert router.get_routing_options() == {'math': 'Math tasks'}
@@ -157,7 +159,10 @@ class TestConversationAnalysisRouter:
         """Test ConversationAnalysisRouter initialization"""
         routing_logic = {'planner': 'Plan tasks', 'executor': 'Execute tasks'}
 
-        router = ConversationAnalysisRouter(routing_logic, analysis_depth=2)
+        mock_llm = MockLLM('planner')
+        router = ConversationAnalysisRouter(
+            routing_logic, analysis_depth=2, llm=mock_llm
+        )
 
         assert router.routing_logic == routing_logic
         assert router.analysis_depth == 2
@@ -182,7 +187,10 @@ class TestFactoryFunction:
         """Test creating SmartRouter via factory"""
         routing_options = {'researcher': 'Research tasks', 'analyst': 'Analysis tasks'}
 
-        router_fn = create_llm_router('smart', routing_options=routing_options)
+        mock_llm = MockLLM('researcher')
+        router_fn = create_llm_router(
+            'smart', routing_options=routing_options, llm=mock_llm
+        )
 
         assert callable(router_fn)
         assert hasattr(router_fn, '__annotations__')
@@ -197,8 +205,9 @@ class TestFactoryFunction:
             }
         }
 
+        mock_llm = MockLLM('math')
         router_fn = create_llm_router(
-            'task_classifier', task_categories=task_categories
+            'task_classifier', task_categories=task_categories, llm=mock_llm
         )
 
         assert callable(router_fn)
@@ -207,8 +216,9 @@ class TestFactoryFunction:
         """Test creating ConversationAnalysisRouter via factory"""
         routing_logic = {'planner': 'Plan tasks', 'executor': 'Execute tasks'}
 
+        mock_llm = MockLLM('planner')
         router_fn = create_llm_router(
-            'conversation_analysis', routing_logic=routing_logic
+            'conversation_analysis', routing_logic=routing_logic, llm=mock_llm
         )
 
         assert callable(router_fn)
@@ -226,7 +236,9 @@ class TestDecorator:
         """Test that decorator creates working router"""
         routing_options = {'researcher': 'Research tasks', 'analyst': 'Analysis tasks'}
 
-        @llm_router(routing_options)
+        mock_llm = MockLLM('researcher')
+
+        @llm_router(routing_options, llm=mock_llm)
         def test_router(memory) -> Literal['researcher', 'analyst']:
             pass
 
@@ -274,15 +286,22 @@ class TestErrorHandling:
         }
 
         # Test "first" strategy
-        router_first = SmartRouter(routing_options, fallback_strategy='first')
+        mock_llm = MockLLM('invalid_response')  # Will trigger fallback
+        router_first = SmartRouter(
+            routing_options, fallback_strategy='first', llm=mock_llm
+        )
         assert router_first.get_fallback_route(routing_options) == 'researcher'
 
         # Test "last" strategy
-        router_last = SmartRouter(routing_options, fallback_strategy='last')
+        router_last = SmartRouter(
+            routing_options, fallback_strategy='last', llm=mock_llm
+        )
         assert router_last.get_fallback_route(routing_options) == 'writer'
 
         # Test "random" strategy
-        router_random = SmartRouter(routing_options, fallback_strategy='random')
+        router_random = SmartRouter(
+            routing_options, fallback_strategy='random', llm=mock_llm
+        )
         fallback = router_random.get_fallback_route(routing_options)
         assert fallback in routing_options.keys()
 
