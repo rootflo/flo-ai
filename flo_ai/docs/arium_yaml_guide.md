@@ -43,6 +43,21 @@ arium:
     - name: tool1
     - name: tool2
     
+  # LLM Router definitions (NEW!)
+  routers:
+    - name: content_router
+      type: smart  # smart, task_classifier, conversation_analysis
+      routing_options:
+        technical_writer: "Handle technical documentation tasks"
+        creative_writer: "Handle creative writing tasks"
+        editor: "Handle editing and review tasks"
+      model:
+        provider: openai
+        name: gpt-4o-mini
+      settings:
+        temperature: 0.3
+        fallback_strategy: first
+
   workflow:
     start: content_analyst
     edges:
@@ -50,7 +65,7 @@ arium:
         to: [summarizer]
       - from: summarizer
         to: [validator, tool1]
-        router: quality_router  # optional
+        router: content_router  # References router defined above
       - from: validator
         to: [end]
       - from: tool1
@@ -90,6 +105,67 @@ builder = AriumBuilder.from_yaml(yaml_str=config, memory=custom_memory)
 - ✅ **Runtime Flexibility**: Same workflow can use different memory implementations
 - ✅ **Better Separation**: Memory is an execution concern, not a workflow definition concern
 - ✅ **Easier Testing**: Mock different memory types without changing YAML
+
+#### LLM Router Configuration
+
+LLM routers can be defined directly in YAML, eliminating the need to create router functions programmatically:
+
+```yaml
+routers:
+  - name: my_smart_router
+    type: smart
+    routing_options:
+      technical_writer: "Handle technical documentation and tutorials"
+      creative_writer: "Handle creative writing and storytelling"
+      marketing_writer: "Handle marketing copy and sales content"
+    model:
+      provider: openai
+      name: gpt-4o-mini
+    settings:
+      temperature: 0.3
+      fallback_strategy: first
+
+  - name: task_classifier
+    type: task_classifier
+    task_categories:
+      math_solver:
+        description: "Mathematical calculations and problem solving"
+        keywords: ["calculate", "solve", "equation", "math"]
+        examples: ["Calculate 2+2", "Solve x^2 + 5x + 6 = 0"]
+      code_helper:
+        description: "Programming and code assistance"
+        keywords: ["code", "program", "debug", "function"]
+        examples: ["Write a Python function", "Debug this code"]
+    model:
+      provider: openai
+      name: gpt-4o-mini
+    settings:
+      temperature: 0.2
+
+  - name: conversation_router
+    type: conversation_analysis
+    routing_logic:
+      reviewer: "Route to reviewer for quality check"
+      finalizer: "Route to finalizer for completion"
+    model:
+      provider: openai
+      name: gpt-4o-mini
+    settings:
+      temperature: 0.1
+      analysis_depth: 2
+```
+
+**Router Types:**
+- **`smart`**: General-purpose routing based on content analysis
+- **`task_classifier`**: Routes based on task categorization with keywords and examples
+- **`conversation_analysis`**: Routes based on conversation context analysis
+
+**Key benefits of YAML LLM routers:**
+- ✅ **Declarative Configuration**: No code needed to create routers
+- ✅ **Easy Modification**: Change routing logic without code changes
+- ✅ **Version Control**: Track router changes in YAML files
+- ✅ **Automatic Creation**: Routers are built automatically from configuration
+- ✅ **Model Flexibility**: Each router can use different LLM models/settings
 
 #### Agent Configuration
 

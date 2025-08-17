@@ -47,6 +47,7 @@ Flo AI is a Python framework that makes building production-ready AI agents and 
 - 🔌 **Truly Composable**: Build complex AI systems by combining smaller, reusable components
 - 🏗️ **Production-Ready**: Built-in best practices and optimizations for production deployments
 - 📝 **YAML-First**: Define your entire agent architecture in simple YAML
+- 🧠 **LLM-Powered Routing**: Intelligent routing decisions made by LLMs, no code required
 - 🔧 **Flexible**: Use pre-built components or create your own
 - 🤝 **Team-Oriented**: Create and manage teams of AI agents working together
 - 🔄 **Langchain Compatible**: Works with all your favorite Langchain tools
@@ -85,6 +86,7 @@ Flo AI is a Python framework that makes building production-ready AI agents and 
   - [📊 Use Cases for Arium](#-use-cases-for-arium)
   - [Builder Pattern Benefits](#builder-pattern-benefits)
   - [📄 YAML-Based Arium Workflows](#-yaml-based-arium-workflows)
+    - [🧠 LLM-Powered Routers in YAML (NEW!)](#-llm-powered-routers-in-yaml-new)
 - [📖 Documentation](#-documentation)
 - [🌟 Why Flo AI?](#-why-flo-ai)
 - [🎯 Use Cases](#-use-cases)
@@ -838,7 +840,8 @@ Arium is Flo AI's powerful workflow orchestration engine that allows you to crea
 
 - **🔗 Multi-Agent Workflows**: Orchestrate multiple agents working together
 - **🎯 Flexible Routing**: Route between agents based on context and conditions
-- **🧠 Shared Memory**: Agents share conversation history and context
+- **🧠 LLM Routers**: Intelligent routing powered by LLMs, define routing logic in YAML
+- **💾 Shared Memory**: Agents share conversation history and context
 - **📊 Visual Workflows**: Generate flow diagrams of your agent interactions
 - **⚡ Builder Pattern**: Fluent API for easy workflow construction
 - **🔄 Reusable Workflows**: Build once, run multiple times with different inputs
@@ -1339,6 +1342,111 @@ async def run_workflow() -> List[Any]:
         .build_and_run(["Research the latest trends in renewable energy"])
     )
     
+    return result
+```
+
+#### 🧠 LLM-Powered Routers in YAML (NEW!)
+
+One of the most powerful new features is the ability to define **intelligent LLM routers directly in YAML**. No more writing router functions - just describe your routing logic and let the LLM handle the decisions!
+
+```yaml
+metadata:
+  name: "intelligent-content-workflow"
+  version: "1.0.0"
+  description: "Content creation with intelligent LLM-based routing"
+
+arium:
+  agents:
+    - name: "content_creator"
+      role: "Content Creator"
+      job: "Create initial content based on the request"
+      model:
+        provider: "openai"
+        name: "gpt-4o-mini"
+    
+    - name: "technical_writer"
+      role: "Technical Writer"
+      job: "Refine content for technical accuracy and clarity"
+      model:
+        provider: "openai"
+        name: "gpt-4o-mini"
+        
+    - name: "creative_writer"
+      role: "Creative Writer"
+      job: "Enhance content with creativity and storytelling"
+      model:
+        provider: "openai"
+        name: "gpt-4o-mini"
+        
+    - name: "marketing_writer"
+      role: "Marketing Writer"
+      job: "Optimize content for engagement and conversion"
+      model:
+        provider: "openai"
+        name: "gpt-4o-mini"
+
+  # ✨ LLM Router definitions - No code required!
+  routers:
+    - name: "content_type_router"
+      type: "smart"  # Uses LLM to make intelligent routing decisions
+      routing_options:
+        technical_writer: "Technical content, documentation, tutorials, how-to guides"
+        creative_writer: "Creative writing, storytelling, fiction, brand narratives"
+        marketing_writer: "Marketing copy, sales content, landing pages, ad campaigns"
+      model:
+        provider: "openai"
+        name: "gpt-4o-mini"
+      settings:
+        temperature: 0.3
+        fallback_strategy: "first"
+        
+    - name: "task_classifier"
+      type: "task_classifier"  # Keyword-based classification
+      task_categories:
+        math_solver:
+          description: "Mathematical calculations and problem solving"
+          keywords: ["calculate", "solve", "equation", "math", "formula"]
+          examples: ["Calculate 2+2", "Solve x^2 + 5x + 6 = 0"]
+        code_helper:
+          description: "Programming and code assistance"
+          keywords: ["code", "program", "debug", "function", "algorithm"]
+          examples: ["Write a Python function", "Debug this code"]
+      model:
+        provider: "openai"
+        name: "gpt-4o-mini"
+
+  workflow:
+    start: "content_creator"
+    edges:
+      - from: "content_creator"
+        to: ["technical_writer", "creative_writer", "marketing_writer"]
+        router: "content_type_router"  # LLM automatically routes based on content type!
+    end: ["technical_writer", "creative_writer", "marketing_writer"]
+```
+
+**🎯 LLM Router Types:**
+
+1. **Smart Router** (`type: smart`): General-purpose routing based on content analysis
+2. **Task Classifier** (`type: task_classifier`): Routes based on keywords and examples  
+3. **Conversation Analysis** (`type: conversation_analysis`): Context-aware routing
+
+**✨ Key Benefits:**
+- 🚫 **No Code Required**: Define routing logic purely in YAML
+- 🎯 **Intelligent Decisions**: LLMs understand context and make smart routing choices
+- 📝 **Easy Configuration**: Simple, declarative syntax
+- 🔄 **Version Control**: Track routing changes in YAML files
+- 🎛️ **Model Flexibility**: Each router can use different LLM models
+
+```python
+# Using LLM routers is incredibly simple!
+async def run_intelligent_workflow():
+    # No routers dictionary needed - they're defined in YAML!
+    result = await (
+        AriumBuilder()
+        .from_yaml(yaml_str=intelligent_workflow_yaml)
+        .build_and_run(["Write a technical tutorial on Docker containers"])
+    )
+    # The LLM will automatically route to technical_writer! ✨
     return result
 ```
 

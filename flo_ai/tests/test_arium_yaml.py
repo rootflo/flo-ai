@@ -330,7 +330,7 @@ class TestAriumYamlBuilder:
         with patch('flo_ai.arium.builder.AgentBuilder'):
             with pytest.raises(
                 ValueError,
-                match='Router missing_router not found in provided routers dictionary',
+                match='Router missing_router not found',
             ):
                 AriumBuilder.from_yaml(yaml_str=yaml_config, routers={})
 
