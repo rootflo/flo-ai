@@ -36,10 +36,10 @@ def test_router_type_annotation():
     if origin is Literal:
         literal_values = list(get_args(return_annotation))
         print(f'Literal values: {literal_values}')
-        return True
+        assert True, 'Router function has correct Literal type annotation'
     else:
         print('❌ Not a Literal type!')
-        return False
+        assert False, 'Router function should have Literal type annotation'
 
 
 def test_validation_logic():
@@ -68,14 +68,14 @@ def test_validation_logic():
             # Extract the literal values
             literal_values = list(get_args(return_annotation))
             print(f'✅ Validation passed! Literal values: {literal_values}')
-            return True
+            assert True, 'Validation logic works correctly'
         else:
             print(f'❌ Validation failed! Origin is {origin}, not Literal')
-            return False
+            assert False, f'Validation failed! Origin is {origin}, not Literal'
 
     except Exception as e:
         print(f'❌ Exception during validation: {e}')
-        return False
+        assert False, f'Exception during validation: {e}'
 
 
 if __name__ == '__main__':

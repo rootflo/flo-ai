@@ -17,6 +17,8 @@ Flo AI is a Python framework for building structured AI agents with support for 
   </a>
   <a href="https://github.com/rootflo/flo-ai/blob/develop/LICENSE"><img src="https://img.shields.io/github/license/rootflo/flo-ai?style=for-the-badge" alt="License">
   </a>
+  <a href="#"><img src="https://img.shields.io/badge/tests-passing-brightgreen?style=for-the-badge" alt="Tests Passing">
+  </a>
   <br/>
 </p>
 

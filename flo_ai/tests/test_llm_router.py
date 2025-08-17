@@ -32,6 +32,18 @@ class MockLLM(BaseLLM):
     def get_message_content(self, response):
         return response.get('response', 'researcher')
 
+    def format_tool_for_llm(self, tool):
+        """Mock implementation for tool formatting"""
+        return {'name': tool.name, 'description': 'mock tool'}
+
+    def format_tools_for_llm(self, tools):
+        """Mock implementation for tools formatting"""
+        return [self.format_tool_for_llm(tool) for tool in tools]
+
+    def format_image_in_message(self, image):
+        """Mock implementation for image formatting"""
+        return 'mock_image_content'
+
 
 @pytest.fixture
 def mock_memory():
