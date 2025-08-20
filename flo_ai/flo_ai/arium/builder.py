@@ -7,6 +7,7 @@ from flo_ai.llm.base_llm import ImageMessage
 import yaml
 from flo_ai.builder.agent_builder import AgentBuilder
 from flo_ai.llm import BaseLLM
+from flo_ai.arium.llm_router import create_llm_router
 
 
 class AriumBuilder:
@@ -226,12 +227,27 @@ class AriumBuilder:
                 - name: tool1
                 - name: tool2
 
+              # LLM Router definitions (NEW)
+              routers:
+                - name: content_router
+                  type: smart  # smart, task_classifier, conversation_analysis
+                  routing_options:
+                    technical_writer: "Handle technical documentation tasks"
+                    creative_writer: "Handle creative writing tasks"
+                    editor: "Handle editing and review tasks"
+                  model:
+                    provider: openai
+                    name: gpt-4o-mini
+                  settings:
+                    temperature: 0.3
+                    fallback_strategy: first
+
               workflow:
                 start: content_analyst
                 edges:
                   - from: content_analyst
                     to: [validator, summarizer]
-                    router: my_router  # optional
+                    router: content_router  # References router defined above
                   - from: validator
                     to: [processor]
                   - from: summarizer
@@ -340,6 +356,81 @@ class AriumBuilder:
                     f'Available tools: {list(tools.keys()) if tools else []}'
                 )
 
+        # Process LLM routers (if defined in YAML)
+        routers_config = arium_config.get('routers', [])
+        yaml_routers = {}  # Store routers created from YAML config
+
+        for router_config in routers_config:
+            router_name = router_config['name']
+            router_type = router_config.get('type', 'smart')
+
+            # Create LLM instance for router
+            router_llm = None
+            if 'model' in router_config:
+                router_llm = cls._create_llm_from_config(
+                    router_config['model'], base_llm
+                )
+            else:
+                router_llm = base_llm  # Use base LLM if no specific model configured
+
+            # Extract router-specific settings
+            settings = router_config.get('settings', {})
+
+            # Create router based on type
+            if router_type == 'smart':
+                routing_options = router_config.get('routing_options', {})
+                if not routing_options:
+                    raise ValueError(
+                        f'Smart router {router_name} must specify routing_options'
+                    )
+
+                router_fn = create_llm_router(
+                    router_type='smart',
+                    routing_options=routing_options,
+                    llm=router_llm,
+                    **settings,
+                )
+
+            elif router_type == 'task_classifier':
+                task_categories = router_config.get('task_categories', {})
+                if not task_categories:
+                    raise ValueError(
+                        f'Task classifier router {router_name} must specify task_categories'
+                    )
+
+                router_fn = create_llm_router(
+                    router_type='task_classifier',
+                    task_categories=task_categories,
+                    llm=router_llm,
+                    **settings,
+                )
+
+            elif router_type == 'conversation_analysis':
+                routing_logic = router_config.get('routing_logic', {})
+                if not routing_logic:
+                    raise ValueError(
+                        f'Conversation analysis router {router_name} must specify routing_logic'
+                    )
+
+                router_fn = create_llm_router(
+                    router_type='conversation_analysis',
+                    routing_logic=routing_logic,
+                    llm=router_llm,
+                    **settings,
+                )
+            else:
+                raise ValueError(
+                    f'Unknown router type: {router_type}. Supported types: smart, task_classifier, conversation_analysis'
+                )
+
+            yaml_routers[router_name] = router_fn
+
+        # Merge YAML routers with provided routers
+        all_routers = {}
+        if routers:
+            all_routers.update(routers)
+        all_routers.update(yaml_routers)
+
         # Process workflow
         workflow_config = arium_config.get('workflow', {})
 
@@ -386,12 +477,12 @@ class AriumBuilder:
             # Find router function
             router_fn = None
             if router_name:
-                if routers and router_name in routers:
-                    router_fn = routers[router_name]
+                if all_routers and router_name in all_routers:
+                    router_fn = all_routers[router_name]
                 else:
                     raise ValueError(
-                        f'Router {router_name} not found in provided routers dictionary. '
-                        f'Available routers: {list(routers.keys()) if routers else []}'
+                        f'Router {router_name} not found. '
+                        f'Available routers: {list(all_routers.keys()) if all_routers else []}'
                     )
 
             # Add edge (only if there are actual to_nodes, not just 'end')
@@ -412,6 +503,41 @@ class AriumBuilder:
         return builder
 
     @staticmethod
+    def _create_llm_from_config(
+        model_config: Dict[str, Any], base_llm: Optional[BaseLLM] = None
+    ) -> BaseLLM:
+        """Create an LLM instance from model configuration.
+
+        Args:
+            model_config: Dictionary containing model configuration
+            base_llm: Base LLM to use as fallback
+
+        Returns:
+            BaseLLM: Configured LLM instance
+        """
+        from flo_ai.llm import OpenAI, Anthropic, Gemini, OllamaLLM
+
+        provider = model_config.get('provider', 'openai').lower()
+        model_name = model_config.get('name')
+        base_url = model_config.get('base_url')
+
+        if not model_name:
+            raise ValueError('Model name must be specified in model configuration')
+
+        if provider == 'openai':
+            llm = OpenAI(model=model_name, base_url=base_url)
+        elif provider == 'anthropic':
+            llm = Anthropic(model=model_name, base_url=base_url)
+        elif provider == 'gemini':
+            llm = Gemini(model=model_name, base_url=base_url)
+        elif provider == 'ollama':
+            llm = OllamaLLM(model=model_name, base_url=base_url)
+        else:
+            raise ValueError(f'Unsupported model provider: {provider}')
+
+        return llm
+
+    @staticmethod
     def _create_agent_from_direct_config(
         agent_config: Dict[str, Any],
         base_llm: Optional[BaseLLM] = None,
@@ -428,7 +554,7 @@ class AriumBuilder:
             Agent: Configured agent instance
         """
         from flo_ai.models.base_agent import ReasoningPattern
-        from flo_ai.llm import OpenAI, Anthropic, Gemini, OllamaLLM
+        # from flo_ai.llm import OpenAI, Anthropic, Gemini, OllamaLLM
 
         # Extract basic configuration
         name = agent_config['name']
@@ -437,24 +563,7 @@ class AriumBuilder:
 
         # Configure LLM
         if 'model' in agent_config and base_llm is None:
-            model_config = agent_config['model']
-            provider = model_config.get('provider', 'openai').lower()
-            model_name = model_config.get('name')
-            base_url = model_config.get('base_url')
-
-            if not model_name:
-                raise ValueError(f'Model name must be specified for agent {name}')
-
-            if provider == 'openai':
-                llm = OpenAI(model=model_name, base_url=base_url)
-            elif provider == 'anthropic':
-                llm = Anthropic(model=model_name, base_url=base_url)
-            elif provider == 'gemini':
-                llm = Gemini(model=model_name, base_url=base_url)
-            elif provider == 'ollama':
-                llm = OllamaLLM(model=model_name, base_url=base_url)
-            else:
-                raise ValueError(f'Unsupported model provider: {provider}')
+            llm = AriumBuilder._create_llm_from_config(agent_config['model'])
         elif base_llm:
             llm = base_llm
         else:
@@ -493,15 +602,15 @@ class AriumBuilder:
 
         # Extract output schema if present
         output_schema = agent_config.get('output_schema')
-        if output_schema:
-            # Handle parser configuration if present
-            if 'parser' in agent_config:
-                from flo_ai.formatter.yaml_format_parser import FloYamlParser
 
-                # Convert agent_config to the format expected by FloYamlParser
-                parser_config = {'agent': {'parser': agent_config['parser']}}
-                parser = FloYamlParser.create(yaml_dict=parser_config)
-                output_schema = parser.get_format()
+        # Handle parser configuration if present
+        if 'parser' in agent_config:
+            from flo_ai.formatter.yaml_format_parser import FloYamlParser
+
+            # Convert agent_config to the format expected by FloYamlParser
+            parser_config = {'agent': {'parser': agent_config['parser']}}
+            parser = FloYamlParser.create(yaml_dict=parser_config)
+            output_schema = parser.get_format()
 
         # Create and return the agent
         agent = Agent(
