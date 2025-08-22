@@ -13,9 +13,10 @@ export interface ExportData {
 export function generateAriumYAML(data: ExportData): string {
   const { nodes, edges, workflowName, workflowDescription, workflowVersion } = data;
 
-  // Extract agents and tools
+  // Extract agents, tools, and routers
   const agents: Agent[] = [];
   const tools: string[] = [];
+  const routers: any[] = [];
   
   nodes.forEach((node) => {
     if (node.type === 'agent') {
@@ -24,6 +25,9 @@ export function generateAriumYAML(data: ExportData): string {
     } else if (node.type === 'tool') {
       const toolData = node.data as any;
       tools.push(toolData.tool.name);
+    } else if (node.type === 'router') {
+      const routerData = node.data as any;
+      routers.push(routerData.router);
     }
   });
 
@@ -60,7 +64,7 @@ export function generateAriumYAML(data: ExportData): string {
     return connections && connections.outgoing.length === 0;
   });
 
-  // Build workflow edges
+  // Build workflow edges - now routers are nodes, not edge properties
   const workflowEdges: Array<{
     from: string;
     to: string[];
@@ -76,16 +80,32 @@ export function generateAriumYAML(data: ExportData): string {
     edgesBySource.get(edge.source)!.push(edge);
   });
 
-  // Create workflow edges
+  // Create workflow edges - check if target is a router
   edgesBySource.forEach((sourceEdges, sourceId) => {
     const targets = sourceEdges.map((edge) => edge.target);
-    const router = sourceEdges[0]?.data?.router;
-
-    workflowEdges.push({
-      from: sourceId,
-      to: targets,
-      router: router || undefined,
+    
+    // Check if any target is a router node
+    const routerTarget = targets.find(targetId => {
+      const targetNode = nodes.find(n => n.id === targetId);
+      return targetNode?.type === 'router';
     });
+
+    if (routerTarget) {
+      // If connecting to a router, use the router's name
+      const routerNode = nodes.find(n => n.id === routerTarget);
+      const routerData = routerNode?.data as any;
+      workflowEdges.push({
+        from: sourceId,
+        to: targets.filter(t => t !== routerTarget), // Exclude router from direct targets
+        router: routerData?.router?.name,
+      });
+    } else {
+      // Direct connection without router
+      workflowEdges.push({
+        from: sourceId,
+        to: targets,
+      });
+    }
   });
 
   // Convert agents to YAML format
@@ -144,8 +164,42 @@ export function generateAriumYAML(data: ExportData): string {
     return yamlAgent;
   });
 
+  // Convert routers to YAML format
+  const yamlRouters = routers.map((router) => {
+    const yamlRouter: any = {
+      name: router.name,
+      type: router.type || 'smart',
+    };
+
+    if (router.routing_options && Object.keys(router.routing_options).length > 0) {
+      yamlRouter.routing_options = router.routing_options;
+    }
+
+    if (router.model) {
+      yamlRouter.model = {
+        provider: router.model.provider,
+        name: router.model.name,
+      };
+    }
+
+    if (router.settings) {
+      yamlRouter.settings = {};
+      if (router.settings.temperature !== undefined) {
+        yamlRouter.settings.temperature = router.settings.temperature;
+      }
+      if (router.settings.fallback_strategy !== undefined) {
+        yamlRouter.settings.fallback_strategy = router.settings.fallback_strategy;
+      }
+      if (router.settings.analysis_depth !== undefined) {
+        yamlRouter.settings.analysis_depth = router.settings.analysis_depth;
+      }
+    }
+
+    return yamlRouter;
+  });
+
   // Build the final YAML structure
-  const yamlStructure: AriumWorkflow = {
+  const yamlStructure: any = {
     metadata: {
       name: workflowName || 'Flo AI Workflow',
       version: workflowVersion || '1.0.0',
@@ -155,6 +209,7 @@ export function generateAriumYAML(data: ExportData): string {
     arium: {
       agents: yamlAgents,
       tools: tools.length > 0 ? tools.map(name => ({ name })) : undefined,
+      routers: yamlRouters.length > 0 ? yamlRouters : undefined,
       workflow: {
         start: startNodes.length > 0 ? startNodes[0].id : agents[0]?.id || '',
         edges: workflowEdges.filter(edge => edge.to.length > 0),

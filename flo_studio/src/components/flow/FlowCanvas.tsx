@@ -14,12 +14,14 @@ import 'reactflow/dist/style.css';
 import { useDesignerStore } from '@/store/designerStore';
 import AgentNode from './AgentNode';
 import ToolNode from './ToolNode';
+import RouterNode from './RouterNode';
 import CustomEdge from './CustomEdge';
 import { FileText } from 'lucide-react';
 
 const nodeTypes: NodeTypes = {
   agent: AgentNode,
   tool: ToolNode,
+  router: RouterNode,
 };
 
 const edgeTypes: EdgeTypes = {

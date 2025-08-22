@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Bot, Wrench, Search, Plus } from 'lucide-react';
+import { Bot, Wrench, Search, Plus, Route } from 'lucide-react';
 import { useDesignerStore } from '@/store/designerStore';
-import { Agent, Tool } from '@/types/agent';
+import { Agent, Tool, Router } from '@/types/agent';
 
 const Sidebar: React.FC = () => {
-  const { config, addAgent, addTool, openAgentEditor } = useDesignerStore();
+  const { config, addAgent, addTool, addRouter, openAgentEditor, openRouterEditor } = useDesignerStore();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredTools = config.availableTools.filter((tool) =>
@@ -16,6 +16,10 @@ const Sidebar: React.FC = () => {
 
   const handleAddAgent = () => {
     openAgentEditor();
+  };
+
+  const handleAddRouter = () => {
+    openRouterEditor();
   };
 
   const handleAddTool = (tool: Tool) => {
@@ -71,6 +75,57 @@ const Sidebar: React.FC = () => {
     }
   };
 
+  const createQuickRouter = (template: string) => {
+    const routerTemplates = {
+      smart: {
+        name: 'Smart Router',
+        description: 'Intelligent routing based on content analysis using LLM',
+        type: 'smart' as const,
+        model: { provider: 'openai' as const, name: 'gpt-4o-mini' },
+        settings: { temperature: 0.3, fallback_strategy: 'first' as const },
+        routing_options: {
+          'technical_agent': 'Handle technical questions and documentation',
+          'business_agent': 'Handle business questions and strategy',
+          'general_agent': 'Handle general questions and conversations',
+        },
+      },
+      classifier: {
+        name: 'Task Classifier',
+        description: 'Classify tasks based on keywords and examples',
+        type: 'task_classifier' as const,
+        model: { provider: 'openai' as const, name: 'gpt-4o-mini' },
+        settings: { temperature: 0.2, fallback_strategy: 'first' as const },
+      },
+      conversation: {
+        name: 'Conversation Router',
+        description: 'Route based on conversation flow analysis',
+        type: 'conversation_analysis' as const,
+        model: { provider: 'openai' as const, name: 'gpt-4o-mini' },
+        settings: { temperature: 0.1, fallback_strategy: 'first' as const, analysis_depth: 3 },
+        routing_logic: {
+          'planner': 'Route here when planning is needed',
+          'executor': 'Route here when execution is needed',
+          'reviewer': 'Route here when review is needed',
+        },
+      },
+    };
+
+    const template_config = routerTemplates[template as keyof typeof routerTemplates];
+    if (template_config) {
+      const router: Router = {
+        id: `router_${Date.now()}`,
+        ...template_config,
+      };
+
+      const position = {
+        x: Math.random() * 400 + 100,
+        y: Math.random() * 400 + 100,
+      };
+
+      addRouter(router, position);
+    }
+  };
+
   return (
     <div className="w-80 bg-white border-r border-gray-200 overflow-y-auto">
       <div className="p-4 space-y-6">
@@ -80,14 +135,24 @@ const Sidebar: React.FC = () => {
           <div className="text-sm text-gray-600 mb-4">
             Welcome to Flo AI Studio! Create agents and connect them to build powerful AI workflows.
           </div>
-          <Button
-            onClick={handleAddAgent}
-            className="w-full mb-4"
-            variant="outline"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Create Custom Agent
-          </Button>
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <Button
+              onClick={handleAddAgent}
+              variant="outline"
+              size="sm"
+            >
+              <Bot className="w-4 h-4 mr-1" />
+              Agent
+            </Button>
+            <Button
+              onClick={handleAddRouter}
+              variant="outline"
+              size="sm"
+            >
+              <Route className="w-4 h-4 mr-1" />
+              Router
+            </Button>
+          </div>
         </div>
 
         {/* Quick Templates */}
@@ -107,6 +172,30 @@ const Sidebar: React.FC = () => {
               >
                 <div className="flex items-center mb-1">
                   <Bot className="w-4 h-4 text-blue-600 mr-2" />
+                  <span className="font-medium text-sm">{template.name}</span>
+                </div>
+                <p className="text-xs text-gray-600">{template.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Router Templates */}
+        <div>
+          <h3 className="font-medium text-sm text-gray-700 mb-3">Router Templates</h3>
+          <div className="space-y-2">
+            {[
+              { key: 'smart', name: 'Smart Router', desc: 'LLM-powered intelligent routing' },
+              { key: 'classifier', name: 'Task Classifier', desc: 'Route based on task categories' },
+              { key: 'conversation', name: 'Conversation Router', desc: 'Route based on conversation flow' },
+            ].map((template) => (
+              <div
+                key={template.key}
+                className="p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => createQuickRouter(template.key)}
+              >
+                <div className="flex items-center mb-1">
+                  <Route className="w-4 h-4 text-purple-600 mr-2" />
                   <span className="font-medium text-sm">{template.name}</span>
                 </div>
                 <p className="text-xs text-gray-600">{template.desc}</p>

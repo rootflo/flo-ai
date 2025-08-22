@@ -51,9 +51,24 @@ export interface Tool {
 }
 
 export interface Router {
+  id?: string;
   name: string;
   description: string;
+  type?: 'smart' | 'task_classifier' | 'conversation_analysis' | 'custom';
   code?: string;
+  routing_options?: Record<string, string>;
+  model?: LLMConfig;
+  settings?: {
+    temperature?: number;
+    fallback_strategy?: 'first' | 'last' | 'random';
+    analysis_depth?: number;
+  };
+  task_categories?: Record<string, {
+    description: string;
+    keywords: string[];
+    examples: string[];
+  }>;
+  routing_logic?: Record<string, string>;
 }
 
 export interface WorkflowEdge {

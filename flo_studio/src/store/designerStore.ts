@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { Node, Edge, addEdge, Connection, applyNodeChanges, applyEdgeChanges, NodeChange, EdgeChange } from 'reactflow';
 import { Agent, Tool, Router, DesignerConfig } from '@/types/agent';
-import { CustomNode, CustomEdge, AgentNodeData, ToolNodeData } from '@/types/reactflow';
+import { CustomNode, CustomEdge, AgentNodeData, ToolNodeData, RouterNodeData } from '@/types/reactflow';
 
 interface DesignerState {
   // Configuration
@@ -17,6 +17,7 @@ interface DesignerState {
   isAgentEditorOpen: boolean;
   isEdgeEditorOpen: boolean;
   isConfigEditorOpen: boolean;
+  isRouterEditorOpen: boolean;
   
   // Workflow metadata
   workflowName: string;
@@ -29,7 +30,9 @@ interface DesignerState {
   // Node actions
   addAgent: (agent: Agent, position: { x: number; y: number }) => void;
   addTool: (tool: Tool, position: { x: number; y: number }) => void;
+  addRouter: (router: Router, position: { x: number; y: number }) => void;
   updateAgent: (agentId: string, updates: Partial<Agent>) => void;
+  updateRouter: (routerId: string, updates: Partial<Router>) => void;
   deleteNode: (nodeId: string) => void;
   setSelectedNode: (node?: CustomNode) => void;
   
@@ -46,6 +49,8 @@ interface DesignerState {
   // UI actions
   openAgentEditor: (node?: CustomNode) => void;
   closeAgentEditor: () => void;
+  openRouterEditor: (node?: CustomNode) => void;
+  closeRouterEditor: () => void;
   openEdgeEditor: (edge: CustomEdge) => void;
   closeEdgeEditor: () => void;
   openConfigEditor: () => void;
@@ -135,6 +140,7 @@ export const useDesignerStore = create<DesignerState>((set, get) => ({
   isAgentEditorOpen: false,
   isEdgeEditorOpen: false,
   isConfigEditorOpen: false,
+  isRouterEditorOpen: false,
   workflowName: 'New Workflow',
   workflowDescription: '',
   workflowVersion: '1.0.0',
@@ -167,6 +173,18 @@ export const useDesignerStore = create<DesignerState>((set, get) => ({
     }));
   },
 
+  addRouter: (router, position) => {
+    const newNode: CustomNode = {
+      id: router.id || `router_${router.name}_${Date.now()}`,
+      type: 'router',
+      position,
+      data: { router } as RouterNodeData,
+    };
+    set((state) => ({
+      nodes: [...state.nodes, newNode],
+    }));
+  },
+
   updateAgent: (agentId, updates) => {
     set((state) => ({
       nodes: state.nodes.map((node) => {
@@ -177,6 +195,24 @@ export const useDesignerStore = create<DesignerState>((set, get) => ({
             data: {
               ...agentData,
               agent: { ...agentData.agent, ...updates },
+            },
+          };
+        }
+        return node;
+      }),
+    }));
+  },
+
+  updateRouter: (routerId, updates) => {
+    set((state) => ({
+      nodes: state.nodes.map((node) => {
+        if (node.id === routerId && node.type === 'router') {
+          const routerData = node.data as RouterNodeData;
+          return {
+            ...node,
+            data: {
+              ...routerData,
+              router: { ...routerData.router, ...updates },
             },
           };
         }
@@ -247,6 +283,15 @@ export const useDesignerStore = create<DesignerState>((set, get) => ({
   },
 
   closeAgentEditor: () => set({ isAgentEditorOpen: false }),
+
+  openRouterEditor: (node) => {
+    set({ 
+      isRouterEditorOpen: true,
+      selectedNode: node,
+    });
+  },
+
+  closeRouterEditor: () => set({ isRouterEditorOpen: false }),
 
   openEdgeEditor: (edge) => {
     set({ 

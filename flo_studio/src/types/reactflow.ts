@@ -1,5 +1,5 @@
 import { Node, Edge } from 'reactflow';
-import { Agent, Tool } from './agent';
+import { Agent, Tool, Router } from './agent';
 
 export interface AgentNodeData {
   agent: Agent;
@@ -12,7 +12,12 @@ export interface ToolNodeData {
   isEnd?: boolean;
 }
 
-export type CustomNode = Node<AgentNodeData | ToolNodeData>;
+export interface RouterNodeData {
+  router: Router;
+  isEnd?: boolean;
+}
+
+export type CustomNode = Node<AgentNodeData | ToolNodeData | RouterNodeData>;
 
 export interface CustomEdgeData {
   router?: string;
@@ -21,7 +26,7 @@ export interface CustomEdgeData {
 
 export type CustomEdge = Edge<CustomEdgeData>;
 
-export type NodeType = 'agent' | 'tool';
+export type NodeType = 'agent' | 'tool' | 'router';
 
 export interface FlowState {
   nodes: CustomNode[];

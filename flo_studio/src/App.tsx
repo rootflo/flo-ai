@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { ReactFlowProvider } from 'reactflow';
 import { useDesignerStore } from '@/store/designerStore';
 import { Button } from '@/components/ui/button';
-import { Plus, Settings, FileText } from 'lucide-react';
+import { Plus, Settings, FileText, Route } from 'lucide-react';
 import FlowCanvas from '@/components/flow/FlowCanvas';
 import Sidebar from '@/components/sidebar/Sidebar';
 import AgentEditor from '@/components/editors/AgentEditor';
+import RouterEditor from '@/components/editors/RouterEditor';
 import EdgeEditor from '@/components/editors/EdgeEditor';
 import YamlPreviewDrawer from '@/components/drawer/YamlPreviewDrawer';
 import './App.css';
@@ -28,8 +29,9 @@ const ConfigEditorModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
 };
 
 const ToolbarComponent: React.FC = () => {
-  const { openAgentEditor } = useDesignerStore();
+  const { openAgentEditor, openRouterEditor, nodes } = useDesignerStore();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [isYamlOpen, setIsYamlOpen] = useState(false);
 
   return (
     <>
@@ -43,10 +45,20 @@ const ToolbarComponent: React.FC = () => {
             <Plus className="w-4 h-4 mr-1" />
             Agent
           </Button>
+          <Button variant="outline" size="sm" onClick={openRouterEditor}>
+            <Route className="w-4 h-4 mr-1" />
+            Router
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setIsConfigOpen(true)}>
             <Settings className="w-4 h-4 mr-1" />
             Config
           </Button>
+          {nodes.length > 0 && (
+            <Button variant="outline" size="sm" onClick={() => setIsYamlOpen(true)}>
+              <FileText className="w-4 h-4 mr-1" />
+              Export
+            </Button>
+          )}
         </div>
       </div>
       <ConfigEditorModal isOpen={isConfigOpen} onClose={() => setIsConfigOpen(false)} />
@@ -69,6 +81,7 @@ function App() {
       
       {/* Modals */}
       <AgentEditor />
+      <RouterEditor />
       <EdgeEditor />
       
       {/* YAML Preview Drawer */}
