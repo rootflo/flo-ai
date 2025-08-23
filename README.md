@@ -88,6 +88,7 @@ Flo AI is a Python framework that makes building production-ready AI agents and 
   - [📄 YAML-Based Arium Workflows](#-yaml-based-arium-workflows)
     - [🧠 LLM-Powered Routers in YAML (NEW!)](#-llm-powered-routers-in-yaml-new)
     - [🔄 ReflectionRouter: Structured Reflection Workflows (NEW!)](#-reflectionrouter-structured-reflection-workflows-new)
+    - [🔄 PlanExecuteRouter: Cursor-Style Plan-and-Execute Workflows (NEW!)](#-planexecuterouter-cursor-style-plan-and-execute-workflows-new)
 - [📖 Documentation](#-documentation)
 - [🌟 Why Flo AI?](#-why-flo-ai)
 - [🎯 Use Cases](#-use-cases)
@@ -1431,6 +1432,7 @@ arium:
 2. **Task Classifier** (`type: task_classifier`): Routes based on keywords and examples  
 3. **Conversation Analysis** (`type: conversation_analysis`): Context-aware routing
 4. **Reflection Router** (`type: reflection`): Structured A→B→A→C patterns for reflection workflows
+5. **PlanExecute Router** (`type: plan_execute`): Cursor-style plan-and-execute workflows with step tracking
 
 **✨ Key Benefits:**
 - 🚫 **No Code Required**: Define routing logic purely in YAML
@@ -1701,6 +1703,310 @@ result = await AriumBuilder().from_yaml(yaml_str=yaml_config).build_and_run(["Yo
 ```
 
 The ReflectionRouter makes implementing sophisticated feedback loops and iterative improvement workflows incredibly simple, whether you need a 2-agent or 3-agent pattern! 🚀
+
+##### 🔄 PlanExecuteRouter: Cursor-Style Plan-and-Execute Workflows (NEW!)
+
+The **PlanExecuteRouter** implements sophisticated plan-and-execute patterns similar to how Cursor works. It automatically breaks down complex tasks into detailed execution plans and coordinates step-by-step execution with intelligent progress tracking.
+
+**📋 Key Features:**
+- 🎯 **Automatic Task Breakdown**: Creates detailed execution plans from high-level tasks
+- 📊 **Step Tracking**: Real-time progress monitoring with visual indicators (○ ⏳ ✅ ❌)
+- 🔄 **Phase Coordination**: Intelligent routing between planning, execution, and review phases
+- 🛡️ **Dependency Management**: Handles step dependencies and execution order automatically
+- 💾 **Plan Persistence**: Uses PlanAwareMemory for stateful plan storage and updates
+- 🔧 **Error Recovery**: Built-in retry logic for failed steps
+
+**🎯 Perfect for Cursor-Style Workflows:**
+- 💻 **Software Development**: Requirements → Design → Implementation → Testing → Review
+- 📝 **Content Creation**: Planning → Writing → Editing → Review → Publishing
+- 🔬 **Research Projects**: Plan → Investigate → Analyze → Synthesize → Report
+- 📊 **Business Processes**: Any multi-step workflow with dependencies
+
+**📄 YAML Configuration:**
+
+```yaml
+# Complete Plan-Execute Workflow
+metadata:
+  name: "development-plan-execute"
+  version: "1.0.0"
+  description: "Cursor-style development workflow"
+
+arium:
+  agents:
+    - name: planner
+      role: Project Planner
+      job: >
+        Break down complex development tasks into detailed, sequential execution plans.
+        Create clear steps with dependencies and agent assignments.
+      model:
+        provider: openai
+        name: gpt-4o-mini
+      settings:
+        temperature: 0.3
+        
+    - name: developer
+      role: Software Developer
+      job: >
+        Implement features step by step according to execution plans.
+        Provide detailed implementation and update step status.
+      model:
+        provider: openai
+        name: gpt-4o-mini
+      settings:
+        temperature: 0.5
+        
+    - name: tester
+      role: QA Engineer
+      job: >
+        Test implementations thoroughly and validate functionality.
+        Create comprehensive test scenarios and report results.
+      model:
+        provider: openai
+        name: gpt-4o-mini
+      settings:
+        temperature: 0.2
+        
+    - name: reviewer
+      role: Senior Reviewer
+      job: >
+        Provide final quality assessment and approval.
+        Review completed work for best practices and requirements.
+      model:
+        provider: openai
+        name: gpt-4o-mini
+
+  # PlanExecuteRouter configuration
+  routers:
+    - name: dev_plan_router
+      type: plan_execute                          # Router type for plan-execute workflows
+      agents:                                     # Available agents and their capabilities
+        planner: "Creates detailed execution plans by breaking down tasks"
+        developer: "Implements features and code according to plan specifications"
+        tester: "Tests implementations and validates functionality"
+        reviewer: "Reviews and approves completed work"
+      model:                                      # Optional: LLM for routing decisions
+        provider: openai
+        name: gpt-4o-mini
+      settings:                                   # Optional configuration
+        temperature: 0.2                         # Router decision temperature
+        planner_agent: planner                   # Agent responsible for creating plans
+        executor_agent: developer                # Default agent for executing steps
+        reviewer_agent: reviewer                 # Optional agent for final review
+        max_retries: 3                          # Maximum retries for failed steps
+
+  workflow:
+    start: planner
+    edges:
+      # All agents can route to all others based on plan state
+      - from: planner
+        to: [developer, tester, reviewer, planner]
+        router: dev_plan_router
+      - from: developer
+        to: [developer, tester, reviewer, planner]
+        router: dev_plan_router
+      - from: tester
+        to: [developer, tester, reviewer, planner]
+        router: dev_plan_router
+      - from: reviewer
+        to: [end]
+    end: [reviewer]
+```
+
+**🏗️ Programmatic Usage:**
+
+```python
+import asyncio
+from flo_ai.arium import AriumBuilder
+from flo_ai.arium.memory import PlanAwareMemory
+from flo_ai.models.agent import Agent
+from flo_ai.llm import OpenAI
+from flo_ai.arium.llm_router import create_plan_execute_router
+
+async def cursor_style_workflow():
+    llm = OpenAI(model='gpt-4o-mini', api_key='your-api-key')
+    
+    # Create specialized agents
+    planner = Agent(
+        name='planner',
+        system_prompt='Create detailed execution plans by breaking down tasks into sequential steps.',
+        llm=llm
+    )
+    
+    developer = Agent(
+        name='developer', 
+        system_prompt='Implement features step by step according to execution plans.',
+        llm=llm
+    )
+    
+    tester = Agent(
+        name='tester',
+        system_prompt='Test implementations and validate functionality thoroughly.',
+        llm=llm
+    )
+    
+    reviewer = Agent(
+        name='reviewer',
+        system_prompt='Review completed work and provide final approval.',
+        llm=llm
+    )
+    
+    # Create plan-execute router
+    plan_router = create_plan_execute_router(
+        planner_agent='planner',
+        executor_agent='developer',
+        reviewer_agent='reviewer',
+        additional_agents={'tester': 'Tests implementations and validates quality'},
+        llm=llm
+    )
+    
+    # Use PlanAwareMemory for plan state persistence
+    memory = PlanAwareMemory()
+    
+    # Build and run workflow
+    result = await (
+        AriumBuilder()
+        .with_memory(memory)
+        .add_agents([planner, developer, tester, reviewer])
+        .start_with(planner)
+        .add_edge(planner, [developer, tester, reviewer, planner], plan_router)
+        .add_edge(developer, [developer, tester, reviewer, planner], plan_router)
+        .add_edge(tester, [developer, tester, reviewer, planner], plan_router)
+        .add_edge(reviewer, [developer, tester, reviewer, planner], plan_router)
+        .end_with(reviewer)
+        .build_and_run(["Create a REST API for user authentication with JWT tokens"])
+    )
+    
+    return result
+
+# Alternative: Factory function
+from flo_ai.arium.llm_router import create_plan_execute_router
+
+plan_router = create_plan_execute_router(
+    planner_agent='planner',
+    executor_agent='developer', 
+    reviewer_agent='reviewer',
+    llm=llm
+)
+```
+
+**💡 How PlanExecuteRouter Works:**
+
+The router intelligently coordinates workflow phases:
+
+1. **Planning Phase**: 
+   - Detects when no execution plan exists
+   - Routes to planner agent to create detailed plan
+   - Plan stored as ExecutionPlan object in PlanAwareMemory
+
+2. **Execution Phase**:
+   - Analyzes plan state and step dependencies
+   - Routes to appropriate agents for next ready steps
+   - Updates step status (pending → in-progress → completed)
+   - Handles parallel execution of independent steps
+
+3. **Review Phase**:
+   - Detects when all steps are completed
+   - Routes to reviewer agent for final validation
+   - Manages error recovery for failed steps
+
+**📊 Plan Progress Visualization:**
+
+```
+📋 EXECUTION PLAN: User Authentication API
+📊 CURRENT PROGRESS:
+✅ design_schema: Design user database schema → developer
+✅ implement_registration: Create registration endpoint → developer  
+⏳ implement_login: Add login with JWT → developer (depends: design_schema, implement_registration)
+○ add_middleware: Authentication middleware → developer (depends: implement_login)
+○ write_tests: Comprehensive testing → tester (depends: add_middleware)
+○ final_review: Security and code review → reviewer (depends: write_tests)
+
+🎯 NEXT ACTION: Execute step 'implement_login'
+🎯 SUGGESTED AGENT: developer
+```
+
+**🔧 Advanced Configuration Options:**
+
+```yaml
+routers:
+  - name: advanced_plan_router
+    type: plan_execute
+    agents:
+      planner: "Creates execution plans"
+      frontend_dev: "Frontend implementation"  
+      backend_dev: "Backend implementation"
+      devops: "Deployment and infrastructure"
+      qa_tester: "Quality assurance testing"
+      security_reviewer: "Security review"
+      product_owner: "Product validation"
+    model:
+      provider: openai
+      name: gpt-4o
+    settings:
+      temperature: 0.1                          # Lower for more deterministic routing
+      planner_agent: planner                    # Plan creation agent
+      executor_agent: backend_dev               # Default execution agent
+      reviewer_agent: product_owner             # Final review agent
+      max_retries: 5                           # Retry attempts for failed steps
+      allow_parallel_execution: true           # Enable parallel step execution
+      plan_validation: strict                  # Validate plan completeness
+```
+
+**⚡ Quick Start Example:**
+
+```python
+# Minimal plan-execute workflow
+yaml_config = """
+arium:
+  agents:
+    - name: planner
+      job: "Create execution plans"
+      model: {provider: openai, name: gpt-4o-mini}
+    - name: executor
+      job: "Execute plan steps"
+      model: {provider: openai, name: gpt-4o-mini}
+    - name: reviewer
+      job: "Review final results"
+      model: {provider: openai, name: gpt-4o-mini}
+
+  routers:
+    - name: simple_plan_router
+      type: plan_execute
+      agents:
+        planner: "Creates plans"
+        executor: "Executes steps"
+        reviewer: "Reviews results"
+      settings:
+        planner_agent: planner
+        executor_agent: executor
+        reviewer_agent: reviewer
+
+  workflow:
+    start: planner
+    edges:
+      - from: planner
+        to: [executor, reviewer, planner]
+        router: simple_plan_router
+      - from: executor
+        to: [executor, reviewer, planner]
+        router: simple_plan_router
+      - from: reviewer
+        to: [end]
+    end: [reviewer]
+"""
+
+result = await AriumBuilder().from_yaml(yaml_str=yaml_config).build_and_run(["Your complex task"])
+```
+
+**🎯 Use Cases and Examples:**
+
+- 📱 **App Development**: "Build a todo app with React and Node.js"
+- 🛒 **E-commerce**: "Create a shopping cart system with payment processing"
+- 📊 **Data Pipeline**: "Build ETL pipeline for customer analytics"
+- 🔐 **Security**: "Implement OAuth2 authentication system"
+- 📈 **Analytics**: "Create real-time dashboard with user metrics"
+
+The PlanExecuteRouter brings Cursor-style intelligent task automation to Flo AI, making it incredibly easy to build sophisticated multi-step workflows that adapt and execute complex tasks automatically! 🚀
 
 #### YAML Workflow with Variables
 
