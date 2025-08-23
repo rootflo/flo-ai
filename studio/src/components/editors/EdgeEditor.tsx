@@ -31,6 +31,8 @@ const EdgeEditor: React.FC = () => {
     router: 'none',
     label: '',
     description: '',
+    animated: false,
+    style: 'default' as 'default' | 'step' | 'smoothstep' | 'straight',
   });
 
   useEffect(() => {
@@ -38,7 +40,9 @@ const EdgeEditor: React.FC = () => {
       setFormData({
         router: selectedEdge.data?.router || 'none',
         label: selectedEdge.data?.label || '',
-        description: '',
+        description: selectedEdge.data?.description || '',
+        animated: selectedEdge.animated || false,
+        style: (selectedEdge.type as 'default' | 'step' | 'smoothstep' | 'straight') || 'default',
       });
     }
   }, [selectedEdge]);
@@ -53,7 +57,10 @@ const EdgeEditor: React.FC = () => {
           ...selectedEdge.data,
           router: formData.router === 'none' ? undefined : formData.router,
           label: formData.router === 'none' ? (formData.label || undefined) : formData.router,
+          description: formData.description || undefined,
         },
+        animated: formData.animated,
+        type: formData.style === 'default' ? 'custom' : formData.style,
       });
     }
     closeEdgeEditor();
@@ -109,6 +116,50 @@ const EdgeEditor: React.FC = () => {
               )}
             </div>
           )}
+
+          {formData.router === 'none' && (
+            <div>
+              <Label>Connection Label (Optional)</Label>
+              <input
+                type="text"
+                value={formData.label}
+                onChange={(e) => setFormData(prev => ({ ...prev, label: e.target.value }))}
+                placeholder="e.g., 'Next', 'Success', 'Error'"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              />
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Connection Style</Label>
+              <Select
+                value={formData.style}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, style: value as any }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select style" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Default (Bezier)</SelectItem>
+                  <SelectItem value="step">Step</SelectItem>
+                  <SelectItem value="smoothstep">Smooth Step</SelectItem>
+                  <SelectItem value="straight">Straight</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center space-x-2 pt-6">
+              <input
+                type="checkbox"
+                id="animated"
+                checked={formData.animated}
+                onChange={(e) => setFormData(prev => ({ ...prev, animated: e.target.checked }))}
+                className="rounded"
+              />
+              <Label htmlFor="animated" className="text-sm">Animated connection</Label>
+            </div>
+          </div>
 
           <div>
             <Label>Connection Notes (Optional)</Label>

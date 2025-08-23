@@ -22,6 +22,7 @@ export type CustomNode = Node<AgentNodeData | ToolNodeData | RouterNodeData>;
 export interface CustomEdgeData {
   router?: string;
   label?: string;
+  description?: string;
 }
 
 export type CustomEdge = Edge<CustomEdgeData>;

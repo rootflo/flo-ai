@@ -1,5 +1,5 @@
 import { dump } from 'js-yaml';
-import { Agent, AriumWorkflow } from '@/types/agent';
+import { Agent } from '@/types/agent';
 import { CustomNode, CustomEdge } from '@/types/reactflow';
 
 export interface ExportData {
@@ -10,9 +10,23 @@ export interface ExportData {
   workflowVersion: string;
 }
 
+// Utility function to convert names to snake_case
+function toSnakeCase(str: string): string {
+  return str
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_')           // Replace spaces with underscores
+    .replace(/[^a-z0-9_]/g, '')     // Remove special characters except underscores
+    .replace(/_+/g, '_')            // Replace multiple underscores with single
+    .replace(/^_|_$/g, '');         // Remove leading/trailing underscores
+}
+
 export function generateAriumYAML(data: ExportData): string {
   const { nodes, edges, workflowName, workflowDescription, workflowVersion } = data;
 
+  // Create mapping from node IDs to snake_case names
+  const nodeIdToName = new Map<string, string>();
+  
   // Extract agents, tools, and routers
   const agents: Agent[] = [];
   const tools: string[] = [];
@@ -21,13 +35,27 @@ export function generateAriumYAML(data: ExportData): string {
   nodes.forEach((node) => {
     if (node.type === 'agent') {
       const agentData = node.data as any;
-      agents.push(agentData.agent);
+      const agent = agentData.agent;
+      const snakeCaseName = toSnakeCase(agent.name);
+      nodeIdToName.set(node.id, snakeCaseName);
+      agents.push({
+        ...agent,
+        name: snakeCaseName, // Use snake_case name for YAML
+      });
     } else if (node.type === 'tool') {
       const toolData = node.data as any;
-      tools.push(toolData.tool.name);
+      const toolName = toSnakeCase(toolData.tool.name);
+      nodeIdToName.set(node.id, toolName);
+      tools.push(toolName);
     } else if (node.type === 'router') {
       const routerData = node.data as any;
-      routers.push(routerData.router);
+      const router = routerData.router;
+      const snakeCaseName = toSnakeCase(router.name);
+      nodeIdToName.set(node.id, snakeCaseName);
+      routers.push({
+        ...router,
+        name: snakeCaseName, // Use snake_case name for YAML
+      });
     }
   });
 
@@ -64,7 +92,7 @@ export function generateAriumYAML(data: ExportData): string {
     return connections && connections.outgoing.length === 0;
   });
 
-  // Build workflow edges - now routers are nodes, not edge properties
+  // Build workflow edges using snake_case names
   const workflowEdges: Array<{
     from: string;
     to: string[];
@@ -80,9 +108,15 @@ export function generateAriumYAML(data: ExportData): string {
     edgesBySource.get(edge.source)!.push(edge);
   });
 
-  // Create workflow edges - check if target is a router
+  // Create workflow edges using names instead of IDs
   edgesBySource.forEach((sourceEdges, sourceId) => {
+    const sourceName = nodeIdToName.get(sourceId);
+    if (!sourceName) return; // Skip if source node not found
+    
     const targets = sourceEdges.map((edge) => edge.target);
+    const targetNames = targets
+      .map(targetId => nodeIdToName.get(targetId))
+      .filter(name => name !== undefined) as string[];
     
     // Check if any target is a router node
     const routerTarget = targets.find(targetId => {
@@ -91,21 +125,37 @@ export function generateAriumYAML(data: ExportData): string {
     });
 
     if (routerTarget) {
-      // If connecting to a router, use the router's name
-      const routerNode = nodes.find(n => n.id === routerTarget);
-      const routerData = routerNode?.data as any;
-      workflowEdges.push({
-        from: sourceId,
-        to: targets.filter(t => t !== routerTarget), // Exclude router from direct targets
-        router: routerData?.router?.name,
-      });
+      // If connecting to a router, find what the router connects to
+      const routerName = nodeIdToName.get(routerTarget);
+      const routerEdges = edgesBySource.get(routerTarget) || [];
+      const routerTargetNames = routerEdges
+        .map(edge => nodeIdToName.get(edge.target))
+        .filter(name => name !== undefined) as string[];
+      
+      if (routerTargetNames.length > 0) {
+        workflowEdges.push({
+          from: sourceName,
+          to: routerTargetNames, // Use router's targets as destinations
+          router: routerName,    // Specify router for decision making
+        });
+      }
     } else {
       // Direct connection without router
-      workflowEdges.push({
-        from: sourceId,
-        to: targets,
-      });
+      if (targetNames.length > 0) {
+        workflowEdges.push({
+          from: sourceName,
+          to: targetNames,
+        });
+      }
     }
+  });
+
+  // Remove router-only edges (edges that start from routers)
+  const filteredWorkflowEdges = workflowEdges.filter(edge => {
+    const isRouterSource = nodes.some(node => 
+      nodeIdToName.get(node.id) === edge.from && node.type === 'router'
+    );
+    return !isRouterSource;
   });
 
   // Convert agents to YAML format
@@ -172,7 +222,20 @@ export function generateAriumYAML(data: ExportData): string {
     };
 
     if (router.routing_options && Object.keys(router.routing_options).length > 0) {
-      yamlRouter.routing_options = router.routing_options;
+      // Convert routing option keys to snake_case
+      yamlRouter.routing_options = {};
+      Object.entries(router.routing_options).forEach(([key, value]) => {
+        const snakeCaseKey = toSnakeCase(key);
+        yamlRouter.routing_options[snakeCaseKey] = value;
+      });
+    }
+
+    if (router.task_categories && Object.keys(router.task_categories).length > 0) {
+      yamlRouter.task_categories = router.task_categories;
+    }
+
+    if (router.flow_pattern && router.flow_pattern.length > 0) {
+      yamlRouter.flow_pattern = router.flow_pattern;
     }
 
     if (router.model) {
@@ -193,6 +256,9 @@ export function generateAriumYAML(data: ExportData): string {
       if (router.settings.analysis_depth !== undefined) {
         yamlRouter.settings.analysis_depth = router.settings.analysis_depth;
       }
+      if (router.settings.allow_early_exit !== undefined) {
+        yamlRouter.settings.allow_early_exit = router.settings.allow_early_exit;
+      }
     }
 
     return yamlRouter;
@@ -211,15 +277,15 @@ export function generateAriumYAML(data: ExportData): string {
       tools: tools.length > 0 ? tools.map(name => ({ name })) : undefined,
       routers: yamlRouters.length > 0 ? yamlRouters : undefined,
       workflow: {
-        start: startNodes.length > 0 ? startNodes[0].id : agents[0]?.id || '',
-        edges: workflowEdges.filter(edge => edge.to.length > 0),
-        end: endNodes.map((node) => node.id),
+        start: startNodes.length > 0 ? (nodeIdToName.get(startNodes[0].id) || startNodes[0].id) : (agents[0]?.name || ''),
+        edges: filteredWorkflowEdges.filter(edge => edge.to.length > 0),
+        end: endNodes.map((node) => nodeIdToName.get(node.id) || node.id),
       },
     },
   };
 
   // Remove undefined fields
-  const cleanYamlStructure = JSON.parse(JSON.stringify(yamlStructure, (key, value) => {
+  const cleanYamlStructure = JSON.parse(JSON.stringify(yamlStructure, (_, value) => {
     return value === undefined ? null : value;
   }));
 

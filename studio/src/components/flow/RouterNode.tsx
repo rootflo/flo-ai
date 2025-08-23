@@ -1,6 +1,6 @@
 import React from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { Route, Settings, Zap, GitBranch } from 'lucide-react';
+import { Route, Settings, Zap, GitBranch, RotateCcw, Workflow } from 'lucide-react';
 import { RouterNodeData } from '@/types/reactflow';
 import { useDesignerStore } from '@/store/designerStore';
 import { cn } from '@/lib/utils';
@@ -30,6 +30,10 @@ const RouterNode: React.FC<NodeProps<RouterNodeData>> = ({ data, selected, id })
         return <GitBranch className="w-5 h-5 text-purple-600" />;
       case 'conversation_analysis':
         return <Route className="w-5 h-5 text-purple-600" />;
+      case 'reflection':
+        return <RotateCcw className="w-5 h-5 text-purple-600" />;
+      case 'plan_execute':
+        return <Workflow className="w-5 h-5 text-purple-600" />;
       default:
         return <Route className="w-5 h-5 text-purple-600" />;
     }
@@ -43,6 +47,10 @@ const RouterNode: React.FC<NodeProps<RouterNodeData>> = ({ data, selected, id })
         return 'Task Classifier';
       case 'conversation_analysis':
         return 'Conversation Router';
+      case 'reflection':
+        return 'Reflection Router';
+      case 'plan_execute':
+        return 'Plan Execute Router';
       default:
         return 'Custom Router';
     }

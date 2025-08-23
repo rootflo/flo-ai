@@ -62,6 +62,7 @@ interface DesignerState {
   // Utility actions
   clearWorkflow: () => void;
   loadWorkflow: (workflow: any) => void;
+  importFromYAML: (yamlContent: string) => Promise<void>;
 }
 
 const defaultConfig: DesignerConfig = {
@@ -331,5 +332,25 @@ export const useDesignerStore = create<DesignerState>((set, get) => ({
   loadWorkflow: (workflow) => {
     // TODO: Implement workflow loading from YAML
     console.log('Loading workflow:', workflow);
+  },
+
+  importFromYAML: async (yamlContent) => {
+    try {
+      const { parseAriumYAML } = await import('@/utils/yamlImport');
+      const result = parseAriumYAML(yamlContent);
+      
+      set({
+        nodes: result.nodes,
+        edges: result.edges,
+        workflowName: result.workflowName,
+        workflowDescription: result.workflowDescription,
+        workflowVersion: result.workflowVersion,
+        selectedNode: undefined,
+        selectedEdge: undefined,
+      });
+    } catch (error) {
+      console.error('Failed to import YAML:', error);
+      throw error;
+    }
   },
 }));

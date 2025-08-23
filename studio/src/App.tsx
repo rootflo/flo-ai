@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { ReactFlowProvider } from 'reactflow';
 import { useDesignerStore } from '@/store/designerStore';
 import { Button } from '@/components/ui/button';
-import { Plus, Settings, FileText, Route } from 'lucide-react';
+import { Plus, Settings, Route, Upload, CheckCircle } from 'lucide-react';
 import FlowCanvas from '@/components/flow/FlowCanvas';
 import Sidebar from '@/components/sidebar/Sidebar';
 import AgentEditor from '@/components/editors/AgentEditor';
 import RouterEditor from '@/components/editors/RouterEditor';
 import EdgeEditor from '@/components/editors/EdgeEditor';
 import YamlPreviewDrawer from '@/components/drawer/YamlPreviewDrawer';
+import ImportDialog from '@/components/dialogs/ImportDialog';
+import ValidationPanel from '@/components/panels/ValidationPanel';
 import './App.css';
 
 // Simplified Config Editor Modal
@@ -28,10 +30,13 @@ const ConfigEditorModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
   );
 };
 
-const ToolbarComponent: React.FC = () => {
-  const { openAgentEditor, openRouterEditor, nodes } = useDesignerStore();
+const ToolbarComponent: React.FC<{
+  showValidation: boolean;
+  setShowValidation: (show: boolean) => void;
+}> = ({ showValidation, setShowValidation }) => {
+  const { openAgentEditor, openRouterEditor } = useDesignerStore();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [isYamlOpen, setIsYamlOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   return (
     <>
@@ -41,35 +46,46 @@ const ToolbarComponent: React.FC = () => {
           <div className="text-sm text-gray-600">Visual Workflow Designer</div>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={openAgentEditor}>
+          <Button variant="outline" size="sm" onClick={() => openAgentEditor()}>
             <Plus className="w-4 h-4 mr-1" />
             Agent
           </Button>
-          <Button variant="outline" size="sm" onClick={openRouterEditor}>
+          <Button variant="outline" size="sm" onClick={() => openRouterEditor()}>
             <Route className="w-4 h-4 mr-1" />
             Router
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)}>
+            <Upload className="w-4 h-4 mr-1" />
+            Import
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setShowValidation(!showValidation)}
+            className={showValidation ? "bg-green-50 border-green-200" : ""}
+          >
+            <CheckCircle className="w-4 h-4 mr-1" />
+            Validate
           </Button>
           <Button variant="outline" size="sm" onClick={() => setIsConfigOpen(true)}>
             <Settings className="w-4 h-4 mr-1" />
             Config
           </Button>
-          {nodes.length > 0 && (
-            <Button variant="outline" size="sm" onClick={() => setIsYamlOpen(true)}>
-              <FileText className="w-4 h-4 mr-1" />
-              Export
-            </Button>
-          )}
+
         </div>
       </div>
       <ConfigEditorModal isOpen={isConfigOpen} onClose={() => setIsConfigOpen(false)} />
+      <ImportDialog isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />
     </>
   );
 };
 
 function App() {
+  const [showValidation, setShowValidation] = useState(true);
+
   return (
     <div className="h-screen flex flex-col bg-gray-100">
-      <ToolbarComponent />
+      <ToolbarComponent showValidation={showValidation} setShowValidation={setShowValidation} />
       <div className="flex-1 flex overflow-hidden">
         <Sidebar />
         <div className="flex-1 relative">
@@ -77,6 +93,7 @@ function App() {
             <FlowCanvas />
           </ReactFlowProvider>
         </div>
+        {showValidation && <ValidationPanel />}
       </div>
       
       {/* Modals */}

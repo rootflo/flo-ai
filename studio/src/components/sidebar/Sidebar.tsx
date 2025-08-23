@@ -108,6 +108,21 @@ const Sidebar: React.FC = () => {
           'reviewer': 'Route here when review is needed',
         },
       },
+      reflection: {
+        name: 'Reflection Router',
+        description: 'A→B→A pattern for reflection workflows',
+        type: 'reflection' as const,
+        model: { provider: 'openai' as const, name: 'gpt-4o-mini' },
+        settings: { temperature: 0.2, fallback_strategy: 'first' as const, allow_early_exit: false },
+        flow_pattern: ['main_agent', 'critic', 'main_agent'],
+      },
+      plan_execute: {
+        name: 'Plan Execute Router',
+        description: 'Cursor-style plan-and-execute workflows',
+        type: 'plan_execute' as const,
+        model: { provider: 'openai' as const, name: 'gpt-4o-mini' },
+        settings: { temperature: 0.1, fallback_strategy: 'first' as const },
+      },
     };
 
     const template_config = routerTemplates[template as keyof typeof routerTemplates];
@@ -188,6 +203,8 @@ const Sidebar: React.FC = () => {
               { key: 'smart', name: 'Smart Router', desc: 'LLM-powered intelligent routing' },
               { key: 'classifier', name: 'Task Classifier', desc: 'Route based on task categories' },
               { key: 'conversation', name: 'Conversation Router', desc: 'Route based on conversation flow' },
+              { key: 'reflection', name: 'Reflection Router', desc: 'A→B→A reflection patterns' },
+              { key: 'plan_execute', name: 'Plan Execute Router', desc: 'Cursor-style plan-and-execute workflows' },
             ].map((template) => (
               <div
                 key={template.key}
