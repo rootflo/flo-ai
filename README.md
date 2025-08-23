@@ -87,6 +87,7 @@ Flo AI is a Python framework that makes building production-ready AI agents and 
   - [Builder Pattern Benefits](#builder-pattern-benefits)
   - [📄 YAML-Based Arium Workflows](#-yaml-based-arium-workflows)
     - [🧠 LLM-Powered Routers in YAML (NEW!)](#-llm-powered-routers-in-yaml-new)
+    - [🔄 ReflectionRouter: Structured Reflection Workflows (NEW!)](#-reflectionrouter-structured-reflection-workflows-new)
 - [📖 Documentation](#-documentation)
 - [🌟 Why Flo AI?](#-why-flo-ai)
 - [🎯 Use Cases](#-use-cases)
@@ -1429,6 +1430,7 @@ arium:
 1. **Smart Router** (`type: smart`): General-purpose routing based on content analysis
 2. **Task Classifier** (`type: task_classifier`): Routes based on keywords and examples  
 3. **Conversation Analysis** (`type: conversation_analysis`): Context-aware routing
+4. **Reflection Router** (`type: reflection`): Structured A→B→A→C patterns for reflection workflows
 
 **✨ Key Benefits:**
 - 🚫 **No Code Required**: Define routing logic purely in YAML
@@ -1449,6 +1451,256 @@ async def run_intelligent_workflow():
     # The LLM will automatically route to technical_writer! ✨
     return result
 ```
+
+##### 🔄 ReflectionRouter: Structured Reflection Workflows (NEW!)
+
+The **ReflectionRouter** is designed specifically for reflection-based workflows that follow A→B→A→C patterns, commonly used for main→critic→main→final agent sequences. This pattern is perfect for iterative improvement workflows where a critic agent provides feedback before final processing.
+
+**📋 Key Features:**
+- 🎯 **Pattern Tracking**: Automatically tracks progress through defined reflection sequences
+- 🔄 **Self-Reference Support**: Allows routing back to the same agent (A→B→A patterns)
+- 📊 **Visual Progress**: Shows current position with ○ pending, ✓ completed indicators
+- 🛡️ **Loop Prevention**: Built-in safety mechanisms to prevent infinite loops
+- 🎛️ **Flexible Patterns**: Supports both 2-agent (A→B→A) and 3-agent (A→B→A→C) flows
+
+**🎯 Supported Patterns:**
+
+1. **A → B → A** (2 agents): Main → Critic → Main → End
+2. **A → B → A → C** (3 agents): Main → Critic → Main → Final
+
+```yaml
+# Simple A → B → A reflection pattern
+metadata:
+  name: "content-reflection-workflow"
+  version: "1.0.0"
+  description: "Content creation with critic feedback loop"
+
+arium:
+  agents:
+    - name: "writer"
+      role: "Content Writer"
+      job: "Create and improve content based on feedback from critics."
+      model:
+        provider: "openai"
+        name: "gpt-4o-mini"
+      settings:
+        temperature: 0.7
+        
+    - name: "critic"
+      role: "Content Critic"
+      job: "Review content and provide constructive feedback for improvement."
+      model:
+        provider: "openai"
+        name: "gpt-4o-mini"
+      settings:
+        temperature: 0.3
+
+  # ✨ ReflectionRouter definition
+  routers:
+    - name: "reflection_router"
+      type: "reflection"  # Specialized for reflection patterns
+      flow_pattern: [writer, critic, writer]  # A → B → A pattern
+      model:
+        provider: "openai"
+        name: "gpt-4o-mini"
+      settings:
+        temperature: 0.2
+        allow_early_exit: false  # Strict adherence to pattern
+
+  workflow:
+    start: "writer"
+    edges:
+      - from: "writer"
+        to: [critic, writer]  # Can go to critic or self-reference
+        router: "reflection_router"
+      - from: "critic"
+        to: [writer]  # Always returns to writer
+        router: "reflection_router"
+    end: [writer]  # Writer produces final output
+```
+
+```yaml
+# Advanced A → B → A → C reflection pattern
+metadata:
+  name: "advanced-reflection-workflow"
+  version: "1.0.0"
+  description: "Full reflection cycle with dedicated final agent"
+
+arium:
+  agents:
+    - name: "researcher"
+      role: "Research Agent"
+      job: "Conduct research and gather information on topics."
+      model:
+        provider: "openai"
+        name: "gpt-4o-mini"
+        
+    - name: "reviewer"
+      role: "Research Reviewer"
+      job: "Review research quality and suggest improvements."
+      model:
+        provider: "anthropic"
+        name: "claude-3-5-sonnet-20240620"
+        
+    - name: "synthesizer"
+      role: "Information Synthesizer"
+      job: "Create final synthesis and conclusions from research."
+      model:
+        provider: "openai"
+        name: "gpt-4o"
+
+  routers:
+    - name: "research_reflection_router"
+      type: "reflection"
+      flow_pattern: [researcher, reviewer, researcher, synthesizer]  # A → B → A → C
+      settings:
+        allow_early_exit: true  # Allow smart early completion
+
+  workflow:
+    start: "researcher"
+    edges:
+      - from: "researcher"
+        to: [reviewer, researcher, synthesizer]  # All possible destinations
+        router: "research_reflection_router"
+      - from: "reviewer"
+        to: [researcher, reviewer, synthesizer]
+        router: "research_reflection_router"
+      - from: "synthesizer"
+        to: [end]
+    end: [synthesizer]
+```
+
+**🔧 ReflectionRouter Configuration Options:**
+
+```yaml
+routers:
+  - name: "my_reflection_router"
+    type: "reflection"
+    flow_pattern: [main_agent, critic, main_agent, final_agent]  # Define your pattern
+    model:                                    # Optional: LLM for routing decisions
+      provider: "openai"
+      name: "gpt-4o-mini"
+    settings:                                 # Optional settings
+      temperature: 0.2                       # Router temperature (lower = more deterministic)
+      allow_early_exit: false                # Allow early completion if LLM determines pattern is done
+      fallback_strategy: "first"             # first, last, random - fallback when LLM fails
+```
+
+**🏗️ Programmatic Usage:**
+
+```python
+import asyncio
+from flo_ai.arium import AriumBuilder
+from flo_ai.models.agent import Agent
+from flo_ai.llm import OpenAI
+from flo_ai.arium.llm_router import create_main_critic_reflection_router
+
+async def reflection_workflow_example():
+    llm = OpenAI(model='gpt-4o-mini', api_key='your-api-key')
+    
+    # Create agents
+    main_agent = Agent(
+        name='main_agent',
+        system_prompt='Create solutions and improve them based on feedback.',
+        llm=llm
+    )
+    
+    critic = Agent(
+        name='critic', 
+        system_prompt='Provide constructive feedback for improvement.',
+        llm=llm
+    )
+    
+    final_agent = Agent(
+        name='final_agent',
+        system_prompt='Polish and finalize the work.',
+        llm=llm
+    )
+    
+    # Create reflection router - A → B → A → C pattern
+    reflection_router = create_main_critic_reflection_router(
+        main_agent='main_agent',
+        critic_agent='critic',
+        final_agent='final_agent',
+        allow_early_exit=False,  # Strict pattern adherence
+        llm=llm
+    )
+    
+    # Build workflow
+    result = await (
+        AriumBuilder()
+        .add_agents([main_agent, critic, final_agent])
+        .start_with(main_agent)
+        .add_edge(main_agent, [critic, final_agent], reflection_router)
+        .add_edge(critic, [main_agent, final_agent], reflection_router)
+        .end_with(final_agent)
+        .build_and_run(["Create a comprehensive project proposal"])
+    )
+    
+    return result
+
+# Alternative: Direct factory usage
+from flo_ai.arium.llm_router import create_llm_router
+
+reflection_router = create_llm_router(
+    'reflection',
+    flow_pattern=['writer', 'editor', 'writer'],  # A → B → A
+    allow_early_exit=False,
+    llm=llm
+)
+```
+
+**💡 ReflectionRouter Intelligence:**
+
+The ReflectionRouter automatically:
+- **Tracks Progress**: Knows which step in the pattern should execute next
+- **Prevents Loops**: Uses execution context to avoid infinite cycles  
+- **Provides Guidance**: Shows LLM the suggested next step and current progress
+- **Handles Self-Reference**: Properly validates flows that return to the same agent
+- **Visual Feedback**: Displays pattern progress: `○ writer → ✓ critic → ○ writer`
+
+**🎯 Perfect Use Cases:**
+- 📝 **Content Creation**: Writer → Editor → Writer → Publisher
+- 🔬 **Research Workflows**: Researcher → Reviewer → Researcher → Synthesizer  
+- 💼 **Business Analysis**: Analyst → Critic → Analyst → Decision Maker
+- 🎨 **Creative Processes**: Creator → Critic → Creator → Finalizer
+- 🧪 **Iterative Refinement**: Any process requiring feedback and improvement cycles
+
+**⚡ Quick Start Example:**
+
+```python
+# Minimal A → B → A pattern
+yaml_config = """
+arium:
+  agents:
+    - name: main_agent
+      job: "Main work agent"
+      model: {provider: openai, name: gpt-4o-mini}
+    - name: critic
+      job: "Feedback agent" 
+      model: {provider: openai, name: gpt-4o-mini}
+
+  routers:
+    - name: reflection_router
+      type: reflection
+      flow_pattern: [main_agent, critic, main_agent]
+
+  workflow:
+    start: main_agent
+    edges:
+      - from: main_agent
+        to: [critic, main_agent]
+        router: reflection_router
+      - from: critic
+        to: [main_agent]
+        router: reflection_router
+    end: [main_agent]
+"""
+
+result = await AriumBuilder().from_yaml(yaml_str=yaml_config).build_and_run(["Your task"])
+```
+
+The ReflectionRouter makes implementing sophisticated feedback loops and iterative improvement workflows incredibly simple, whether you need a 2-agent or 3-agent pattern! 🚀
 
 #### YAML Workflow with Variables
 

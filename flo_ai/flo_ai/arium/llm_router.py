@@ -6,7 +6,7 @@ to make dynamic routing decisions based on conversation context and history.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Optional, Callable, Any, Union, get_args
+from typing import Dict, Optional, Callable, Any, Union, get_args, List
 from functools import wraps
 from flo_ai.arium.memory import BaseMemory
 from flo_ai.llm.base_llm import BaseLLM
@@ -40,6 +40,9 @@ class BaseLLMRouter(ABC):
         self.temperature = temperature
         self.max_retries = max_retries
         self.fallback_strategy = fallback_strategy
+        self.supports_self_reference = (
+            False  # Most routers don't support self-reference by default
+        )
 
     @abstractmethod
     def get_routing_options(self) -> Dict[str, str]:
@@ -324,6 +327,182 @@ Category:"""
         return prompt
 
 
+class ReflectionRouter(BaseLLMRouter):
+    """
+    A router designed for reflection patterns like A -> B -> A -> C.
+    Commonly used for main -> critic -> main -> final workflows where B is a reflection/critique step.
+    Uses execution context to determine flow state and make intelligent routing decisions.
+    """
+
+    def __init__(
+        self,
+        flow_pattern: List[str],
+        llm: Optional[BaseLLM] = None,
+        allow_early_exit: bool = False,
+        **kwargs,
+    ):
+        """
+        Initialize the reflection router.
+
+        Args:
+            flow_pattern: List of node names defining the reflection pattern (e.g., ["main", "critic", "main", "final"])
+            llm: LLM instance for routing decisions
+            allow_early_exit: Whether to allow LLM to exit pattern early if appropriate
+            **kwargs: Additional arguments for BaseLLMRouter
+        """
+        super().__init__(llm=llm, **kwargs)
+        self.flow_pattern = flow_pattern
+        self.allow_early_exit = allow_early_exit
+        self.supports_self_reference = (
+            True  # ReflectionRouter can return to the same node
+        )
+
+    def get_routing_options(self) -> Dict[str, str]:
+        """Get available routing options based on flow pattern"""
+        unique_nodes = list(
+            dict.fromkeys(self.flow_pattern)
+        )  # Preserve order, remove duplicates
+
+        # Generate descriptions based on reflection pattern
+        options = {}
+        for node in unique_nodes:
+            # Count occurrences and positions in pattern
+            positions = [i for i, x in enumerate(self.flow_pattern) if x == node]
+            if len(positions) > 1:
+                options[node] = (
+                    f"Step {positions} in the reflection pattern: {' -> '.join(self.flow_pattern)}"
+                )
+            else:
+                options[node] = (
+                    f"Step {positions[0] + 1} in the reflection pattern: {' -> '.join(self.flow_pattern)}"
+                )
+
+        return options
+
+    def _get_next_step_in_pattern(self, execution_context: dict) -> Optional[str]:
+        """Determine the next step in the reflection pattern based on execution context"""
+        if not execution_context:
+            return self.flow_pattern[0] if self.flow_pattern else None
+
+        visit_counts = execution_context.get('node_visit_count', {})
+        current_node = execution_context.get('current_node', '')
+
+        # Find the current position in the pattern
+        try:
+            # Find where we are in the reflection pattern
+            current_step = -1
+            for i, node in enumerate(self.flow_pattern):
+                node_visits = visit_counts.get(node, 0)
+
+                # For nodes that appear multiple times, we need to track which occurrence
+                if node == current_node:
+                    # Count how many times this node should have been visited at this step
+                    expected_visits = len(
+                        [x for x in self.flow_pattern[: i + 1] if x == node]
+                    )
+                    if node_visits >= expected_visits:
+                        current_step = i
+
+            # Determine next step
+            next_step_index = current_step + 1
+            if next_step_index < len(self.flow_pattern):
+                return self.flow_pattern[next_step_index]
+            else:
+                # Pattern completed
+                return None
+
+        except Exception:
+            # Fallback to first step
+            return self.flow_pattern[0] if self.flow_pattern else None
+
+    def get_routing_prompt(
+        self,
+        memory: BaseMemory,
+        options: Dict[str, str],
+        execution_context: dict = None,
+    ) -> str:
+        conversation = memory.get()
+
+        # Format conversation history
+        if isinstance(conversation, list):
+            conversation_text = '\n'.join(
+                [str(msg) for msg in conversation[-3:]]
+            )  # Last 3 messages for flow context
+        else:
+            conversation_text = str(conversation)
+
+        # Determine suggested next step based on reflection pattern
+        suggested_next = self._get_next_step_in_pattern(execution_context)
+
+        # Format options
+        options_text = '\n'.join(
+            [f'- {name}: {desc}' for name, desc in options.items()]
+        )
+
+        # Add execution context info
+        context_info = ''
+        if execution_context:
+            visit_counts = execution_context.get('node_visit_count', {})
+            current_node = execution_context.get('current_node', 'unknown')
+            iteration = execution_context.get('iteration_count', 0)
+
+            # Show reflection pattern progress
+            pattern_progress = []
+            for i, node in enumerate(self.flow_pattern):
+                visits = visit_counts.get(node, 0)
+                expected_visits = len(
+                    [x for x in self.flow_pattern[: i + 1] if x == node]
+                )
+                status = '✓' if visits >= expected_visits else '○'
+                pattern_progress.append(f'{status} {node}')
+
+            context_info = f"""
+📋 REFLECTION PATTERN: {' → '.join(self.flow_pattern)}
+📍 CURRENT PROGRESS: {' → '.join(pattern_progress)}
+🎯 SUGGESTED NEXT: {suggested_next or 'Pattern Complete'}
+💡 CURRENT NODE: {current_node} (iteration {iteration})
+"""
+
+        # Create prompt based on whether early exit is allowed
+        if self.allow_early_exit:
+            prompt = f"""You are a reflection coordinator managing this workflow pattern: {' → '.join(self.flow_pattern)}
+
+{context_info}
+Available options:
+{options_text}
+
+Recent conversation:
+{conversation_text}
+
+Instructions:
+1. Follow the reflection pattern: {' → '.join(self.flow_pattern)}
+2. The suggested next step is: {suggested_next or 'Pattern Complete'}
+3. You may exit early if the reflection cycle is complete
+4. Consider conversation context and reflection progress
+5. Respond with ONLY the agent name (no explanations)
+
+Next agent:"""
+        else:
+            prompt = f"""You are a reflection coordinator managing this strict reflection pattern: {' → '.join(self.flow_pattern)}
+
+{context_info}
+Available options:
+{options_text}
+
+Recent conversation:
+{conversation_text}
+
+Instructions:
+1. STRICTLY follow the reflection pattern: {' → '.join(self.flow_pattern)}
+2. The next step should be: {suggested_next or 'Pattern Complete'}
+3. Do not deviate from the pattern unless absolutely necessary
+4. Respond with ONLY the agent name (no explanations)
+
+Next agent:"""
+
+        return prompt
+
+
 class ConversationAnalysisRouter(BaseLLMRouter):
     """
     A router that analyzes conversation flow and context to make routing decisions.
@@ -424,7 +603,7 @@ def create_llm_router(router_type: str, **config) -> Callable[[BaseMemory], str]
     Factory function to create LLM-powered routers with different configurations.
 
     Args:
-        router_type: Type of router ("smart", "task_classifier", "conversation_analysis")
+        router_type: Type of router ("smart", "task_classifier", "conversation_analysis", "reflection")
         **config: Configuration specific to the router type
 
     Returns:
@@ -457,6 +636,13 @@ def create_llm_router(router_type: str, **config) -> Callable[[BaseMemory], str]
                 }
             }
         )
+
+        # Reflection router for A -> B -> A -> C patterns
+        router = create_llm_router(
+            "reflection",
+            flow_pattern=["main_agent", "critic", "main_agent", "final_agent"],
+            allow_early_exit=False
+        )
     """
 
     if router_type == 'smart':
@@ -480,6 +666,12 @@ def create_llm_router(router_type: str, **config) -> Callable[[BaseMemory], str]
             )
 
         router_instance = ConversationAnalysisRouter(**config)
+
+    elif router_type == 'reflection':
+        if 'flow_pattern' not in config:
+            raise ValueError("ReflectionRouter requires 'flow_pattern' parameter")
+
+        router_instance = ReflectionRouter(**config)
 
     else:
         raise ValueError(f'Unknown router type: {router_type}')
@@ -505,6 +697,11 @@ def create_llm_router(router_type: str, **config) -> Callable[[BaseMemory], str]
 
     # Add proper type annotations for validation
     router_function.__annotations__ = {'memory': BaseMemory, 'return': literal_type}
+
+    # Transfer router instance attributes to the function for validation
+    router_function.supports_self_reference = getattr(
+        router_instance, 'supports_self_reference', False
+    )
 
     return router_function
 
@@ -656,5 +853,54 @@ def create_research_analysis_router(
                 ],
             },
         },
+        llm=llm,
+    )
+
+
+def create_main_critic_reflection_router(
+    main_agent: str = 'main_agent',
+    critic_agent: str = 'critic',
+    final_agent: str = 'final_agent',
+    allow_early_exit: bool = False,
+    llm: Optional[BaseLLM] = None,
+) -> Callable[[BaseMemory], str]:
+    """
+    Create a router for the A -> B -> A -> C reflection pattern (main -> critic -> main -> final).
+
+    Args:
+        main_agent: Name of the main agent (appears twice in pattern)
+        critic_agent: Name of the critic agent for reflection
+        final_agent: Name of the final agent
+        allow_early_exit: Whether to allow LLM to exit reflection early if appropriate
+        llm: LLM instance for routing decisions
+
+    Returns:
+        Router function for main/critic/final reflection workflows
+    """
+    return create_llm_router(
+        'reflection',
+        flow_pattern=[main_agent, critic_agent, main_agent, final_agent],
+        allow_early_exit=allow_early_exit,
+        llm=llm,
+    )
+
+
+# Backward compatibility alias
+def create_main_critic_flow_router(
+    main_agent: str = 'main_agent',
+    critic_agent: str = 'critic',
+    final_agent: str = 'final_agent',
+    allow_early_exit: bool = False,
+    llm: Optional[BaseLLM] = None,
+) -> Callable[[BaseMemory], str]:
+    """
+    DEPRECATED: Use create_main_critic_reflection_router instead.
+    Create a router for the A -> B -> A -> C reflection pattern (main -> critic -> main -> final).
+    """
+    return create_main_critic_reflection_router(
+        main_agent=main_agent,
+        critic_agent=critic_agent,
+        final_agent=final_agent,
+        allow_early_exit=allow_early_exit,
         llm=llm,
     )
