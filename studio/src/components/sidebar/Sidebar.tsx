@@ -13,7 +13,9 @@ const Sidebar: React.FC = () => {
     addRouter, 
     openAgentEditor, 
     openRouterEditor, 
-    onConnect
+    onConnect,
+    setStartNode,
+    addEndNode
   } = useDesignerStore();
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -262,6 +264,10 @@ const Sidebar: React.FC = () => {
         targetHandle: null,
       });
 
+      // Set initial start and end nodes for plan-execute workflow
+      setStartNode(`planner_${timestamp}`);
+      addEndNode(`reviewer_${timestamp}`);
+      
       // The router connections will be converted to proper YAML workflow edges
       // with router fields by the YAML export logic
     }, 100);
@@ -353,6 +359,10 @@ const Sidebar: React.FC = () => {
         targetHandle: null,
       });
 
+      // Set initial start and end nodes for reflection workflow
+      setStartNode(`main_agent_${timestamp}`);
+      addEndNode(`finalizer_${timestamp}`);
+      
       // The router connections will be converted to proper YAML workflow edges
       // with router fields by the YAML export logic
     }, 100);

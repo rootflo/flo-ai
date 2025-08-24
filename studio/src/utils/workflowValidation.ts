@@ -16,7 +16,7 @@ export interface ValidationResult {
   suggestions: ValidationIssue[];
 }
 
-export function validateWorkflow(nodes: CustomNode[], edges: CustomEdge[]): ValidationResult {
+export function validateWorkflow(nodes: CustomNode[], edges: CustomEdge[], startNodeId?: string, endNodeIds?: string[]): ValidationResult {
   const issues: ValidationIssue[] = [];
   const warnings: ValidationIssue[] = [];
   const suggestions: ValidationIssue[] = [];
@@ -164,6 +164,63 @@ export function validateWorkflow(nodes: CustomNode[], edges: CustomEdge[]): Vali
         });
       }
     }
+  }
+
+  // Validate start/end node configuration
+  if (startNodeId) {
+    const startNode = nodes.find(n => n.id === startNodeId);
+    if (!startNode) {
+      issues.push({
+        id: 'invalid_start_node',
+        type: 'error',
+        message: 'Start node no longer exists in the workflow',
+        category: 'structure',
+      });
+    } else if (startNode.type === 'router') {
+      issues.push({
+        id: 'router_start_node',
+        type: 'error',
+        message: 'Start node cannot be a router - must be an agent or tool',
+        nodeId: startNodeId,
+        category: 'structure',
+      });
+    }
+  } else {
+    warnings.push({
+      id: 'no_start_node_set',
+      type: 'warning',
+      message: 'No start node defined. Click "Set Start" on an agent to define the workflow entry point.',
+      category: 'structure',
+    });
+  }
+
+  if (endNodeIds && endNodeIds.length > 0) {
+    endNodeIds.forEach((endNodeId) => {
+      const endNode = nodes.find(n => n.id === endNodeId);
+      if (!endNode) {
+        issues.push({
+          id: `invalid_end_node_${endNodeId}`,
+          type: 'error',
+          message: 'End node no longer exists in the workflow',
+          category: 'structure',
+        });
+      } else if (endNode.type === 'router') {
+        issues.push({
+          id: `router_end_node_${endNodeId}`,
+          type: 'error',
+          message: 'End node cannot be a router - must be an agent or tool',
+          nodeId: endNodeId,
+          category: 'structure',
+        });
+      }
+    });
+  } else {
+    suggestions.push({
+      id: 'no_end_nodes_set',
+      type: 'info',
+      message: 'No end nodes defined. Click "Set End" on agents to define workflow completion points.',
+      category: 'structure',
+    });
   }
 
   // Validate workflow structure
