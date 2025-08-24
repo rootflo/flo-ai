@@ -112,14 +112,46 @@ export function validateWorkflow(nodes: CustomNode[], edges: CustomEdge[]): Vali
       }
 
       // Validate router-specific configurations
-      if (router.type === 'reflection' && (!router.flow_pattern || router.flow_pattern.length < 2)) {
-        issues.push({
-          id: `reflection_no_pattern_${node.id}`,
-          type: 'error',
-          message: 'Reflection router must have a flow pattern with at least 2 agents',
-          nodeId: node.id,
-          category: 'configuration',
-        });
+      if (router.type === 'reflection') {
+        if (!router.flow_pattern || router.flow_pattern.length < 3) {
+          issues.push({
+            id: `reflection_no_pattern_${node.id}`,
+            type: 'error',
+            message: 'Reflection router must have a flow pattern with at least 3 agents (main→critic→main→finalizer)',
+            nodeId: node.id,
+            category: 'configuration',
+          });
+        }
+
+        // Check if the workflow has the necessary agents for reflection pattern
+        const hasMainAgent = nodes.some(n => n.type === 'agent' && (n.data as any).agent.name.toLowerCase().includes('main'));
+        const hasCriticAgent = nodes.some(n => n.type === 'agent' && (n.data as any).agent.name.toLowerCase().includes('critic'));
+        
+        if (!hasMainAgent || !hasCriticAgent) {
+          warnings.push({
+            id: `reflection_missing_agents_${node.id}`,
+            type: 'warning',
+            message: 'Reflection router works best with "Main Agent" and "Critic Agent" types. Use the quick workflow templates.',
+            nodeId: node.id,
+            category: 'best_practice',
+          });
+        }
+      }
+
+      if (router.type === 'plan_execute') {
+        // Check if the workflow has the necessary agents for plan-execute pattern
+        const hasPlannerAgent = nodes.some(n => n.type === 'agent' && (n.data as any).agent.name.toLowerCase().includes('planner'));
+        const hasExecutorAgent = nodes.some(n => n.type === 'agent' && (n.data as any).agent.name.toLowerCase().includes('executor'));
+        
+        if (!hasPlannerAgent || !hasExecutorAgent) {
+          warnings.push({
+            id: `plan_execute_missing_agents_${node.id}`,
+            type: 'warning',
+            message: 'Plan-execute router works best with "Planner Agent" and "Executor Agent" types. Use the quick workflow templates.',
+            nodeId: node.id,
+            category: 'best_practice',
+          });
+        }
       }
 
       if (router.type === 'task_classifier' && (!router.task_categories || Object.keys(router.task_categories).length === 0)) {

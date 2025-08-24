@@ -80,16 +80,16 @@ export function generateAriumYAML(data: ExportData): string {
     }
   });
 
-  // Find start nodes (nodes with no incoming connections)
+  // Find start nodes (agent nodes with no incoming connections, exclude routers)
   const startNodes = nodes.filter((node) => {
     const connections = nodeConnections.get(node.id);
-    return connections && connections.incoming.length === 0;
+    return connections && connections.incoming.length === 0 && node.type !== 'router';
   });
 
-  // Find end nodes (nodes with no outgoing connections)
+  // Find end nodes (agent nodes with no outgoing connections, exclude routers)
   const endNodes = nodes.filter((node) => {
     const connections = nodeConnections.get(node.id);
-    return connections && connections.outgoing.length === 0;
+    return connections && connections.outgoing.length === 0 && node.type !== 'router';
   });
 
   // Build workflow edges using snake_case names
@@ -113,39 +113,65 @@ export function generateAriumYAML(data: ExportData): string {
     const sourceName = nodeIdToName.get(sourceId);
     if (!sourceName) return; // Skip if source node not found
     
-    const targets = sourceEdges.map((edge) => edge.target);
-    const targetNames = targets
-      .map(targetId => nodeIdToName.get(targetId))
-      .filter(name => name !== undefined) as string[];
+    const sourceNode = nodes.find(n => n.id === sourceId);
     
-    // Check if any target is a router node
-    const routerTarget = targets.find(targetId => {
-      const targetNode = nodes.find(n => n.id === targetId);
-      return targetNode?.type === 'router';
-    });
-
-    if (routerTarget) {
-      // If connecting to a router, find what the router connects to
-      const routerName = nodeIdToName.get(routerTarget);
-      const routerEdges = edgesBySource.get(routerTarget) || [];
-      const routerTargetNames = routerEdges
-        .map(edge => nodeIdToName.get(edge.target))
-        .filter(name => name !== undefined) as string[];
+    // Handle agent nodes that connect to routers
+    if (sourceNode?.type === 'agent') {
+      // Check if this agent connects to a router
+      const routerTargets = sourceEdges
+        .map(edge => edge.target)
+        .map(targetId => nodes.find(n => n.id === targetId))
+        .filter(node => node?.type === 'router');
       
-      if (routerTargetNames.length > 0) {
-        workflowEdges.push({
-          from: sourceName,
-          to: routerTargetNames, // Use router's targets as destinations
-          router: routerName,    // Specify router for decision making
+      if (routerTargets.length > 0) {
+        // This agent connects through a router
+        const routerNode = routerTargets[0];
+        const routerName = nodeIdToName.get(routerNode!.id);
+        
+        // Find what the router connects to
+        const routerEdges = edgesBySource.get(routerNode!.id) || [];
+        const routerTargetNames = routerEdges
+          .map(edge => nodeIdToName.get(edge.target))
+          .filter(name => name !== undefined) as string[];
+        
+        // Create workflow edge with router
+        if (routerTargetNames.length > 0) {
+          workflowEdges.push({
+            from: sourceName,
+            to: routerTargetNames,
+            router: routerName,
+          });
+        }
+      } else {
+        // Direct agent-to-agent connections
+        const targets = sourceEdges.map((edge) => edge.target);
+        const targetNames = targets
+          .map(targetId => nodeIdToName.get(targetId))
+          .filter(name => name !== undefined) as string[];
+        
+        // Skip router nodes as targets
+        const agentTargetNames = targetNames.filter(name => {
+          const targetNode = nodes.find(n => nodeIdToName.get(n.id) === name);
+          return targetNode?.type !== 'router';
         });
-      }
-    } else {
-      // Direct connection without router
-      if (targetNames.length > 0) {
-        workflowEdges.push({
-          from: sourceName,
-          to: targetNames,
-        });
+        
+        if (agentTargetNames.length > 0) {
+          const workflowEdge: any = {
+            from: sourceName,
+            to: agentTargetNames,
+          };
+          
+          // Check if edges have router data
+          const routerNames = sourceEdges
+            .map(edge => edge.data?.router)
+            .filter(router => router !== undefined);
+          
+          if (routerNames.length > 0) {
+            workflowEdge.router = routerNames[0];
+          }
+          
+          workflowEdges.push(workflowEdge);
+        }
       }
     }
   });
