@@ -12,9 +12,11 @@ class OllamaLLM(BaseLLM):
         api_key: str = None,
         temperature: float = 0.7,
         base_url: str = 'http://localhost:11434',
+        max_tokens: int = None,
         **kwargs,
     ):
         super().__init__(model, api_key, temperature, **kwargs)
+        self.max_tokens = max_tokens
         self.base_url = base_url.rstrip('/')
 
     async def generate(
@@ -45,6 +47,7 @@ class OllamaLLM(BaseLLM):
             'prompt': prompt,
             'temperature': self.temperature,
             'stream': False,
+            'num_predict': self.max_tokens,
             **self.kwargs,
         }
 

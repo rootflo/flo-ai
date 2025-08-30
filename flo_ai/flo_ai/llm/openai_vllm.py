@@ -9,8 +9,10 @@ class OpenAIVLLM(OpenAI):
         model: str,
         api_key: str = None,
         temperature: float = 0.7,
+        max_tokens: int = None,
         **kwargs,
     ):
+        self.max_tokens = max_tokens
         super().__init__(
             model=model,
             api_key=api_key,
@@ -52,6 +54,7 @@ class OpenAIVLLM(OpenAI):
             'model': self.model,
             'messages': messages,
             'temperature': self.temperature,
+            'max_tokens': self.max_tokens,
             **kwargs,
             **self.kwargs,
         }

@@ -13,9 +13,11 @@ class Gemini(BaseLLM):
         temperature: float = 0.7,
         api_key: Optional[str] = None,
         base_url: str = None,
+        max_tokens: int = None,
         **kwargs,
     ):
         super().__init__(model, api_key, temperature, **kwargs)
+        self.max_tokens = max_tokens
         self.client = (
             genai.Client(api_key=self.api_key) if self.api_key else genai.Client()
         )
@@ -52,6 +54,7 @@ class Gemini(BaseLLM):
             generation_config = genai.types.GenerateContentConfig(
                 temperature=self.temperature,
                 system_instruction=system_prompt,
+                max_output_tokens=self.max_tokens,
                 **self.kwargs,
             )
 

@@ -53,6 +53,7 @@ class OpenAI(BaseLLM):
         openai_kwargs = {
             'model': self.model,
             'messages': messages,
+            'temperature': self.temperature,
             **kwargs,
             **self.kwargs,
         }
