@@ -1,0 +1,70 @@
+[
+  {
+    "name": "execute_redshift_query",
+    "description": "Execute a SQL query on Redshift database and return results (Provider: Amazon Redshift, Category: Database - Redshift)"
+  },
+  {
+    "name": "execute_batch_redshift_queries",
+    "description": "Execute multiple SQL queries in a batch on Redshift database (Provider: Amazon Redshift, Category: Database - Redshift)"
+  },
+  {
+    "name": "get_redshift_table_schema",
+    "description": "Get schema information for a Redshift table (Provider: Amazon Redshift, Category: Database - Redshift)"
+  },
+  {
+    "name": "list_redshift_tables",
+    "description": "List all tables in a Redshift schema (Provider: Amazon Redshift, Category: Database - Redshift)"
+  },
+  {
+    "name": "get_redshift_table_info",
+    "description": "Get comprehensive information about a Redshift table including row count and size (Provider: Amazon Redshift, Category: Database - Redshift)"
+  },
+  {
+    "name": "test_redshift_connection",
+    "description": "Test the Redshift connection and return connection status (Provider: Amazon Redshift, Category: Database - Redshift)"
+  },
+  {
+    "name": "get_redshift_connection_info",
+    "description": "Get Redshift connection configuration information (Provider: Amazon Redshift, Category: Database - Redshift)"
+  },
+  {
+    "name": "execute_bigquery_query",
+    "description": "Execute a SQL query on BigQuery and return results (Provider: Google BigQuery, Category: Database - BigQuery)"
+  },
+  {
+    "name": "execute_batch_bigquery_queries",
+    "description": "Execute multiple SQL queries in a batch on BigQuery (Provider: Google BigQuery, Category: Database - BigQuery)"
+  },
+  {
+    "name": "get_bigquery_table_schema",
+    "description": "Get schema information for a BigQuery table (Provider: Google BigQuery, Category: Database - BigQuery)"
+  },
+  {
+    "name": "list_bigquery_datasets",
+    "description": "List all datasets in a BigQuery project (Provider: Google BigQuery, Category: Database - BigQuery)"
+  },
+  {
+    "name": "list_bigquery_tables",
+    "description": "List all tables in a BigQuery dataset (Provider: Google BigQuery, Category: Database - BigQuery)"
+  },
+  {
+    "name": "get_bigquery_table_info",
+    "description": "Get comprehensive information about a BigQuery table including row count and size (Provider: Google BigQuery, Category: Database - BigQuery)"
+  },
+  {
+    "name": "test_bigquery_connection",
+    "description": "Test the BigQuery connection and return connection status (Provider: Google BigQuery, Category: Database - BigQuery)"
+  },
+  {
+    "name": "get_bigquery_project_info",
+    "description": "Get BigQuery project information and connection configuration (Provider: Google BigQuery, Category: Database - BigQuery)"
+  },
+  {
+    "name": "create_bigquery_dataset",
+    "description": "Create a new BigQuery dataset (Provider: Google BigQuery, Category: Database - BigQuery)"
+  },
+  {
+    "name": "delete_bigquery_dataset",
+    "description": "Delete a BigQuery dataset (Provider: Google BigQuery, Category: Database - BigQuery)"
+  }
+]

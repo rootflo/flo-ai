@@ -1,0 +1,130 @@
+{
+  "metadata": {
+    "name": "Flo AI Tools - Studio Format",
+    "version": "1.0.0",
+    "description": "Tools exported in Flo AI Studio compatible format",
+    "total_tools": 17,
+    "source": "Dynamically extracted from flo_ai_tools/__init__.py"
+  },
+  "tools": [
+    {
+      "name": "execute_redshift_query",
+      "description": "Execute a SQL query on Redshift database and return results (Provider: Amazon Redshift, Category: Database - Redshift)",
+      "friendly_name": "Execute Redshift Query",
+      "category": "Database - Redshift",
+      "provider": "Amazon Redshift"
+    },
+    {
+      "name": "execute_batch_redshift_queries",
+      "description": "Execute multiple SQL queries in a batch on Redshift database (Provider: Amazon Redshift, Category: Database - Redshift)",
+      "friendly_name": "Execute Batch Redshift Queries",
+      "category": "Database - Redshift",
+      "provider": "Amazon Redshift"
+    },
+    {
+      "name": "get_redshift_table_schema",
+      "description": "Get schema information for a Redshift table (Provider: Amazon Redshift, Category: Database - Redshift)",
+      "friendly_name": "Get Redshift Table Schema",
+      "category": "Database - Redshift",
+      "provider": "Amazon Redshift"
+    },
+    {
+      "name": "list_redshift_tables",
+      "description": "List all tables in a Redshift schema (Provider: Amazon Redshift, Category: Database - Redshift)",
+      "friendly_name": "List Redshift Tables",
+      "category": "Database - Redshift",
+      "provider": "Amazon Redshift"
+    },
+    {
+      "name": "get_redshift_table_info",
+      "description": "Get comprehensive information about a Redshift table including row count and size (Provider: Amazon Redshift, Category: Database - Redshift)",
+      "friendly_name": "Get Redshift Table Info",
+      "category": "Database - Redshift",
+      "provider": "Amazon Redshift"
+    },
+    {
+      "name": "test_redshift_connection",
+      "description": "Test the Redshift connection and return connection status (Provider: Amazon Redshift, Category: Database - Redshift)",
+      "friendly_name": "Test Redshift Connection",
+      "category": "Database - Redshift",
+      "provider": "Amazon Redshift"
+    },
+    {
+      "name": "get_redshift_connection_info",
+      "description": "Get Redshift connection configuration information (Provider: Amazon Redshift, Category: Database - Redshift)",
+      "friendly_name": "Get Redshift Connection Info",
+      "category": "Database - Redshift",
+      "provider": "Amazon Redshift"
+    },
+    {
+      "name": "execute_bigquery_query",
+      "description": "Execute a SQL query on BigQuery and return results (Provider: Google BigQuery, Category: Database - BigQuery)",
+      "friendly_name": "Execute Bigquery Query",
+      "category": "Database - BigQuery",
+      "provider": "Google BigQuery"
+    },
+    {
+      "name": "execute_batch_bigquery_queries",
+      "description": "Execute multiple SQL queries in a batch on BigQuery (Provider: Google BigQuery, Category: Database - BigQuery)",
+      "friendly_name": "Execute Batch Bigquery Queries",
+      "category": "Database - BigQuery",
+      "provider": "Google BigQuery"
+    },
+    {
+      "name": "get_bigquery_table_schema",
+      "description": "Get schema information for a BigQuery table (Provider: Google BigQuery, Category: Database - BigQuery)",
+      "friendly_name": "Get Bigquery Table Schema",
+      "category": "Database - BigQuery",
+      "provider": "Google BigQuery"
+    },
+    {
+      "name": "list_bigquery_datasets",
+      "description": "List all datasets in a BigQuery project (Provider: Google BigQuery, Category: Database - BigQuery)",
+      "friendly_name": "List Bigquery Datasets",
+      "category": "Database - BigQuery",
+      "provider": "Google BigQuery"
+    },
+    {
+      "name": "list_bigquery_tables",
+      "description": "List all tables in a BigQuery dataset (Provider: Google BigQuery, Category: Database - BigQuery)",
+      "friendly_name": "List Bigquery Tables",
+      "category": "Database - BigQuery",
+      "provider": "Google BigQuery"
+    },
+    {
+      "name": "get_bigquery_table_info",
+      "description": "Get comprehensive information about a BigQuery table including row count and size (Provider: Google BigQuery, Category: Database - BigQuery)",
+      "friendly_name": "Get Bigquery Table Info",
+      "category": "Database - BigQuery",
+      "provider": "Google BigQuery"
+    },
+    {
+      "name": "test_bigquery_connection",
+      "description": "Test the BigQuery connection and return connection status (Provider: Google BigQuery, Category: Database - BigQuery)",
+      "friendly_name": "Test Bigquery Connection",
+      "category": "Database - BigQuery",
+      "provider": "Google BigQuery"
+    },
+    {
+      "name": "get_bigquery_project_info",
+      "description": "Get BigQuery project information and connection configuration (Provider: Google BigQuery, Category: Database - BigQuery)",
+      "friendly_name": "Get Bigquery Project Info",
+      "category": "Database - BigQuery",
+      "provider": "Google BigQuery"
+    },
+    {
+      "name": "create_bigquery_dataset",
+      "description": "Create a new BigQuery dataset (Provider: Google BigQuery, Category: Database - BigQuery)",
+      "friendly_name": "Create Bigquery Dataset",
+      "category": "Database - BigQuery",
+      "provider": "Google BigQuery"
+    },
+    {
+      "name": "delete_bigquery_dataset",
+      "description": "Delete a BigQuery dataset (Provider: Google BigQuery, Category: Database - BigQuery)",
+      "friendly_name": "Delete Bigquery Dataset",
+      "category": "Database - BigQuery",
+      "provider": "Google BigQuery"
+    }
+  ]
+}
