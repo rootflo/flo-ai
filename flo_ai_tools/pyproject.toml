@@ -10,8 +10,9 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
+python = ">=3.10,<4.0"
 redshift-connector = "^2.1.5"
+flo-ai = { path = "../flo_ai", develop = true }
 
 [tool.poetry.group.dev.dependencies]
 boto3 = "1.36.1"
