@@ -230,7 +230,7 @@ class AriumBuilder:
               # LLM Router definitions (NEW)
               routers:
                 - name: content_router
-                  type: smart  # smart, task_classifier, conversation_analysis
+                  type: smart  # smart, task_classifier, conversation_analysis, reflection, plan_execute
                   routing_options:
                     technical_writer: "Handle technical documentation tasks"
                     creative_writer: "Handle creative writing tasks"
@@ -241,6 +241,26 @@ class AriumBuilder:
                   settings:
                     temperature: 0.3
                     fallback_strategy: first
+
+                # Reflection router for A -> B -> A -> C patterns
+                - name: main_critic_reflection
+                  type: reflection
+                  flow_pattern: [main_agent, critic, main_agent, final_agent]
+                  settings:
+                    allow_early_exit: false
+
+                # Plan-Execute router for Cursor-style workflows
+                - name: plan_execute_router
+                  type: plan_execute
+                  agents:
+                    planner: "Creates detailed execution plans"
+                    developer: "Implements code and features"
+                    tester: "Tests implementations"
+                    reviewer: "Reviews final results"
+                  settings:
+                    planner_agent: planner
+                    executor_agent: developer
+                    reviewer_agent: reviewer
 
               workflow:
                 start: content_analyst
@@ -321,7 +341,7 @@ class AriumBuilder:
 
             # Method 4: External file reference
             elif 'yaml_file' in agent_config:
-                agent_builder = AgentBuilder.from_yaml(
+                agent_builder: AgentBuilder = AgentBuilder.from_yaml(
                     yaml_file=agent_config['yaml_file'], base_llm=base_llm
                 )
                 agent = agent_builder.build()
@@ -418,9 +438,37 @@ class AriumBuilder:
                     llm=router_llm,
                     **settings,
                 )
+
+            elif router_type == 'reflection':
+                flow_pattern = router_config.get('flow_pattern', [])
+                if not flow_pattern:
+                    raise ValueError(
+                        f'Reflection router {router_name} must specify flow_pattern'
+                    )
+
+                router_fn = create_llm_router(
+                    router_type='reflection',
+                    flow_pattern=flow_pattern,
+                    llm=router_llm,
+                    **settings,
+                )
+
+            elif router_type == 'plan_execute':
+                agents = router_config.get('agents', {})
+                if not agents:
+                    raise ValueError(
+                        f'Plan-Execute router {router_name} must specify agents'
+                    )
+
+                router_fn = create_llm_router(
+                    router_type='plan_execute',
+                    agents=agents,
+                    llm=router_llm,
+                    **settings,
+                )
             else:
                 raise ValueError(
-                    f'Unknown router type: {router_type}. Supported types: smart, task_classifier, conversation_analysis'
+                    f'Unknown router type: {router_type}. Supported types: smart, task_classifier, conversation_analysis, reflection, plan_execute'
                 )
 
             yaml_routers[router_name] = router_fn
@@ -600,10 +648,8 @@ class AriumBuilder:
                         f'Available: {list(available_tools.keys())}'
                     )
 
-        # Extract output schema if present
-        output_schema = agent_config.get('output_schema')
-
         # Handle parser configuration if present
+        output_schema = None
         if 'parser' in agent_config:
             from flo_ai.formatter.yaml_format_parser import FloYamlParser
 
@@ -612,16 +658,17 @@ class AriumBuilder:
             parser = FloYamlParser.create(yaml_dict=parser_config)
             output_schema = parser.get_format()
 
-        # Create and return the agent
-        agent = Agent(
-            name=name,
-            system_prompt=job,
-            llm=llm,
-            tools=agent_tools,
-            max_retries=max_retries,
-            reasoning_pattern=reasoning_pattern,
-            output_schema=output_schema,
-            role=role,
+        agent = (
+            AgentBuilder()
+            .with_name(name)
+            .with_prompt(job)
+            .with_llm(llm)
+            .with_tools(agent_tools)
+            .with_retries(max_retries)
+            .with_reasoning(reasoning_pattern)
+            .with_output_schema(output_schema)
+            .with_role(role)
+            .build()
         )
 
         return agent

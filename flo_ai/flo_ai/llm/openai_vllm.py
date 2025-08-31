@@ -18,6 +18,8 @@ class OpenAIVLLM(OpenAI):
             base_url=base_url,
             **kwargs,
         )
+        # Store base_url attribute
+        self.base_url = base_url
 
     # overriden
     async def generate(
@@ -37,14 +39,14 @@ class OpenAIVLLM(OpenAI):
             if messages and messages[0]['role'] == 'system':
                 messages[0]['content'] = (
                     messages[0]['content']
-                    + '\n\nPlease provide your response in JSON format according to the specified schema.'
+                    + f'\n\nPlease provide your response in JSON format according to the specified schema. \n\n {output_schema}'
                 )
             else:
                 messages.insert(
                     0,
                     {
                         'role': 'system',
-                        'content': 'Please provide your response in JSON format according to the specified schema.',
+                        'content': f'Please provide your response in JSON format according to the specified schema.\n \n {output_schema}',
                     },
                 )
 
