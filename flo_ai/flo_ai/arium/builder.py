@@ -649,6 +649,7 @@ class AriumBuilder:
                     )
 
         # Handle parser configuration if present
+        output_schema = None
         if 'parser' in agent_config:
             from flo_ai.formatter.yaml_format_parser import FloYamlParser
 

@@ -12,11 +12,9 @@ class Anthropic(BaseLLM):
         temperature: float = 0.7,
         api_key: Optional[str] = None,
         base_url: str = None,
-        max_tokens: int = None,
         **kwargs,
     ):
         super().__init__(model, api_key, temperature, **kwargs)
-        self.max_tokens = max_tokens
         self.client = AsyncAnthropic(api_key=self.api_key, base_url=base_url)
 
     async def generate(
@@ -51,7 +49,6 @@ class Anthropic(BaseLLM):
                 'model': self.model,
                 'messages': conversation,
                 'temperature': self.temperature,
-                'max_tokens': self.max_tokens,
                 **self.kwargs,
             }
 

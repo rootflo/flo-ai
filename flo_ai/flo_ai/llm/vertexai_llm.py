@@ -13,11 +13,14 @@ class VertexAI(Gemini):
         base_url: str = None,
         project: str = None,
         location: str = None,
-        max_tokens: int = None,
         **kwargs,
     ):
-        self.max_tokens = max_tokens
         # Initialize only the BaseLLM part to avoid Gemini's client creation
         BaseLLM.__init__(self, model, api_key, temperature, **kwargs)
+
+        # Store project and location attributes
+        self.project = project
+        self.location = location
+
         # Create VertexAI-specific client
         self.client = genai.Client(project=project, location=location, vertexai=True)
