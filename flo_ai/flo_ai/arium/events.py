@@ -9,6 +9,7 @@ from enum import Enum
 from dataclasses import dataclass
 from typing import Optional
 import time
+from flo_ai.utils.logger import logger
 
 
 class AriumEventType(Enum):
@@ -63,13 +64,13 @@ def default_event_callback(event: AriumEvent) -> None:
     timestamp = time.strftime('%H:%M:%S', time.localtime(event.timestamp))
 
     if event.event_type == AriumEventType.WORKFLOW_STARTED:
-        print(f'🚀 [{timestamp}] Workflow started')
+        logger.info(f'🚀 [{timestamp}] Workflow started')
 
     elif event.event_type == AriumEventType.WORKFLOW_COMPLETED:
-        print(f'✅ [{timestamp}] Workflow completed')
+        logger.info(f'✅ [{timestamp}] Workflow completed')
 
     elif event.event_type == AriumEventType.WORKFLOW_FAILED:
-        print(f'❌ [{timestamp}] Workflow failed: {event.error}')
+        logger.error(f'❌ [{timestamp}] Workflow failed: {event.error}')
 
     elif event.event_type == AriumEventType.NODE_STARTED:
         node_desc = (
@@ -77,17 +78,17 @@ def default_event_callback(event: AriumEvent) -> None:
             if event.node_type
             else event.node_name
         )
-        print(f'⚡ [{timestamp}] Started {node_desc}')
+        logger.info(f'⚡ [{timestamp}] Started {node_desc}')
 
     elif event.event_type == AriumEventType.NODE_COMPLETED:
         duration = f' ({event.execution_time:.2f}s)' if event.execution_time else ''
-        print(f'✅ [{timestamp}] Completed {event.node_name}{duration}')
+        logger.info(f'✅ [{timestamp}] Completed {event.node_name}{duration}')
 
     elif event.event_type == AriumEventType.NODE_FAILED:
-        print(f'❌ [{timestamp}] Failed {event.node_name}: {event.error}')
+        logger.error(f'❌ [{timestamp}] Failed {event.node_name}: {event.error}')
 
     elif event.event_type == AriumEventType.ROUTER_DECISION:
-        print(f'🔀 [{timestamp}] Router chose: {event.router_choice}')
+        logger.info(f'🔀 [{timestamp}] Router chose: {event.router_choice}')
 
     elif event.event_type == AriumEventType.EDGE_TRAVERSED:
-        print(f'➡️  [{timestamp}] Moving from {event.node_name} to next node')
+        logger.info(f'➡️  [{timestamp}] Moving from {event.node_name} to next node')
