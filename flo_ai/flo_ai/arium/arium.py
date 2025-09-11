@@ -32,7 +32,7 @@ class Arium(BaseArium):
         inputs: List[str | ImageMessage],
         variables: Optional[Dict[str, Any]] = None,
         event_callback: Optional[Callable[[AriumEvent], None]] = None,
-        filtered_events: Optional[List[AriumEventType]] = None,
+        events_filter: Optional[List[AriumEventType]] = None,
     ):
         """
         Execute the Arium workflow with optional event monitoring.
@@ -41,7 +41,7 @@ class Arium(BaseArium):
             inputs: Input messages for the workflow
             variables: Variable substitutions for templated prompts
             event_callback: Function to call for each event (if None, no events are emitted)
-            filtered_events: List of event types to listen for (defaults to all)
+            events_filter: List of event types to listen for (defaults to all)
 
         Returns:
             List of workflow execution results
@@ -55,14 +55,12 @@ class Arium(BaseArium):
         if not self.nodes:
             raise ValueError('Arium has no nodes')
 
-        # Set default filtered events to all event types if not specified
-        if filtered_events is None:
-            filtered_events = list(AriumEventType)
+        # Set default event filters to all event types if not specified
+        if events_filter is None:
+            events_filter = list(AriumEventType)
 
         # Emit workflow started event
-        self._emit_event(
-            AriumEventType.WORKFLOW_STARTED, event_callback, filtered_events
-        )
+        self._emit_event(AriumEventType.WORKFLOW_STARTED, event_callback, events_filter)
 
         try:
             # Extract and validate variables from inputs and all agents
@@ -74,12 +72,12 @@ class Arium(BaseArium):
 
             # Execute the workflow with event support
             result = await self._execute_graph(
-                resolved_inputs, event_callback, filtered_events
+                resolved_inputs, event_callback, events_filter
             )
 
             # Emit workflow completed event
             self._emit_event(
-                AriumEventType.WORKFLOW_COMPLETED, event_callback, filtered_events
+                AriumEventType.WORKFLOW_COMPLETED, event_callback, events_filter
             )
 
             return result
@@ -89,7 +87,7 @@ class Arium(BaseArium):
             self._emit_event(
                 AriumEventType.WORKFLOW_FAILED,
                 event_callback,
-                filtered_events,
+                events_filter,
                 error=str(e),
             )
             raise
@@ -98,7 +96,7 @@ class Arium(BaseArium):
         self,
         event_type: AriumEventType,
         callback: Optional[Callable[[AriumEvent], None]],
-        filtered_events: Optional[List[AriumEventType]],
+        events_filter: Optional[List[AriumEventType]],
         **kwargs,
     ) -> None:
         """
@@ -107,10 +105,10 @@ class Arium(BaseArium):
         Args:
             event_type: The type of event to emit
             callback: Function to call with the event (if None, no event is emitted)
-            filtered_events: List of event types to listen for
+            events_filter: List of event types to listen for
             **kwargs: Additional event data (node_name, error, etc.)
         """
-        if callback and event_type in filtered_events:
+        if callback and event_type in events_filter:
             event = AriumEvent(event_type=event_type, timestamp=time.time(), **kwargs)
             callback(event)
 
@@ -118,7 +116,7 @@ class Arium(BaseArium):
         self,
         inputs: List[str | ImageMessage],
         event_callback: Optional[Callable[[AriumEvent], None]] = None,
-        filtered_events: Optional[List[AriumEventType]] = None,
+        events_filter: Optional[List[AriumEventType]] = None,
     ):
         [self.memory.add(msg) for msg in inputs]
 
@@ -163,7 +161,7 @@ class Arium(BaseArium):
             )
             # execute current node
             result = await self._execute_node(
-                current_node, event_callback, filtered_events
+                current_node, event_callback, events_filter
             )
 
             # update results to memory
@@ -197,7 +195,7 @@ class Arium(BaseArium):
             self._emit_event(
                 AriumEventType.ROUTER_DECISION,
                 event_callback,
-                filtered_events,
+                events_filter,
                 node_name=current_node.name,
                 router_choice=next_node_name,
             )
@@ -206,7 +204,7 @@ class Arium(BaseArium):
             self._emit_event(
                 AriumEventType.EDGE_TRAVERSED,
                 event_callback,
-                filtered_events,
+                events_filter,
                 node_name=current_node.name,
             )
 
@@ -297,7 +295,7 @@ class Arium(BaseArium):
         self,
         node: Agent | Tool | StartNode | EndNode,
         event_callback: Optional[Callable[[AriumEvent], None]] = None,
-        filtered_events: Optional[List[AriumEventType]] = None,
+        events_filter: Optional[List[AriumEventType]] = None,
     ):
         """
         Execute a single node with optional event emission.
@@ -305,7 +303,7 @@ class Arium(BaseArium):
         Args:
             node: The node to execute
             event_callback: Function to call for events (if None, no events are emitted)
-            filtered_events: List of event types to listen for
+            events_filter: List of event types to listen for
 
         Returns:
             The result of node execution
@@ -326,7 +324,7 @@ class Arium(BaseArium):
         self._emit_event(
             AriumEventType.NODE_STARTED,
             event_callback,
-            filtered_events,
+            events_filter,
             node_name=node.name,
             node_type=node_type,
         )
@@ -354,7 +352,7 @@ class Arium(BaseArium):
             self._emit_event(
                 AriumEventType.NODE_COMPLETED,
                 event_callback,
-                filtered_events,
+                events_filter,
                 node_name=node.name,
                 node_type=node_type,
                 execution_time=execution_time,
@@ -370,7 +368,7 @@ class Arium(BaseArium):
             self._emit_event(
                 AriumEventType.NODE_FAILED,
                 event_callback,
-                filtered_events,
+                events_filter,
                 node_name=node.name,
                 node_type=node_type,
                 execution_time=execution_time,
