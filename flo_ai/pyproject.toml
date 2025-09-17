@@ -24,7 +24,6 @@ google-cloud-aiplatform = "^1.109.0"
 pypdf = "^4.2.0"
 pymupdf4llm = "^0.0.17"
 chardet = "^5.2.0"
-reportlab = "^4.4.3"
 
 [tool.poetry.extras]
 vizualize = ["matplotlib", "networkx"]
@@ -40,6 +39,7 @@ wikipedia = "^1.4.0"
 pytest = "^8.3.3"
 pytest-asyncio = "^0.24.0"
 pre-commit = "^4.0.1"
+reportlab = "^4.4.3"
 streamlit = "^1.42.2"
 
 [build-system]

@@ -3663,7 +3663,7 @@ version = "4.4.3"
 description = "The Reportlab Toolkit"
 optional = false
 python-versions = "<4,>=3.7"
-groups = ["main"]
+groups = ["dev"]
 files = [
     {file = "reportlab-4.4.3-py3-none-any.whl", hash = "sha256:df905dc5ec5ddaae91fc9cb3371af863311271d555236410954961c5ee6ee1b5"},
     {file = "reportlab-4.4.3.tar.gz", hash = "sha256:073b0975dab69536acd3251858e6b0524ed3e087e71f1d0d1895acb50acf9c7b"},
@@ -4534,4 +4534,4 @@ vizualize = ["matplotlib", "networkx"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "b6d9326d0fb76df018e88e09131976c394254d9c7a8c9b13965d3e179af03279"
+content-hash = "9fb94715a0d2fd21db13ad36d2a498d5da444bef6292dcb289d0b6dd7537b82f"
