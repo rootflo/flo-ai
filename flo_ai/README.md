@@ -1,3 +1,62 @@
+# Flo AI Tools
+
+Flo AI provides a comprehensive tools system that allows you to create, configure, and manage tools for AI agents. This includes basic tools, partial tools with pre-filled parameters, and YAML-based configuration.
+
+## Quick Links
+
+- **[Tools Documentation](TOOLS.md)** - Complete guide to the tools system
+- **[@flo_tool Decorator](#flo_tool-decorator)** - Easy tool creation with decorators
+- **[Partial Tools](TOOLS.md#partial-tools)** - Tools with pre-filled parameters
+- **[YAML Configuration](TOOLS.md#yaml-configuration)** - Configure tools via YAML
+
+## Overview
+
+The Flo AI tools system supports:
+
+- **Basic Tools**: Simple functions that can be used by AI agents
+- **Partial Tools**: Tools with pre-filled parameters hidden from the AI
+- **YAML Configuration**: Declarative tool configuration for different environments
+- **Tool Registries**: Centralized tool management
+
+### Quick Example
+
+```python
+from flo_ai.tool.flo_tool import flo_tool
+from flo_ai.builder.agent_builder import AgentBuilder
+from flo_ai.llm import OpenAI
+
+# Create a tool
+@flo_tool(description="Query BigQuery database")
+async def bigquery_query(query: str, datasource_id: str, project_id: str) -> str:
+    return f"Executed: {query} on {project_id}"
+
+# Create agent with pre-filled parameters
+agent = (AgentBuilder()
+    .with_name("Data Analyst")
+    .with_prompt("You are a data analyst.")
+    .with_llm(OpenAI(model="gpt-4"))
+    .add_tool(
+        bigquery_query.tool,
+        datasource_id="ds_production_123",
+        project_id="my-company-prod"
+    )
+    .build())
+
+# AI only needs to provide the query parameter
+```
+
+### Try It Out
+
+Run the quickstart example to see tools in action:
+
+```bash
+python examples/tools_quickstart.py
+```
+
+For complete documentation, see [TOOLS.md](TOOLS.md).
+
+---
+
 # @flo_tool Decorator
 
 The `@flo_tool` decorator is a powerful utility that automatically converts any Python function into a `Tool` object for use with Flo AI agents. It extracts function parameters, type hints, and descriptions to create a fully functional tool with minimal boilerplate code.
