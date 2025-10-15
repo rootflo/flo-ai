@@ -108,7 +108,7 @@ async def test_direct_reasoning():
     llm = OpenAI(model='gpt-3.5-turbo', temperature=0.7)
     agent = ToolAgent(
         name='CalculatorAssistant',
-        system_prompt='You are a helpful calculator assistant. Use the calculator tool directly without explanation.',
+        system_prompt='You are a helpful calculator assistant. Use the calculator tool if needed and answer the question asked.',
         llm=llm,
         tools=[calculator_tool],
         reasoning_pattern=ReasoningPattern.DIRECT,
@@ -120,14 +120,14 @@ async def test_direct_reasoning():
 
 # Run the examples
 if __name__ == '__main__':
-    print('Testing conversational agent...\n')
-    asyncio.run(test_conversational())
+    # print('Testing conversational agent...\n')
+    # asyncio.run(test_conversational())
 
-    print('\nTesting tool agent...\n')
-    asyncio.run(test_tool_agent())
+    # print('\nTesting tool agent...\n')
+    # asyncio.run(test_tool_agent())
 
-    print('\nTesting error handling...\n')
-    asyncio.run(test_error_handling())
+    # print('\nTesting error handling...\n')
+    # asyncio.run(test_error_handling())
 
     print('\nTesting direct reasoning...\n')
     asyncio.run(test_direct_reasoning())

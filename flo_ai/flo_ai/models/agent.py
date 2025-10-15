@@ -206,12 +206,37 @@ class Agent(BaseAgent):
                     # Handle ReACT and CoT patterns
                     function_call = await self.llm.get_function_call(response)
 
-                    # If no function call, we have our final answer
+                    # If no function call, check if this is truly a final answer
                     if not function_call:
                         assistant_message = self.llm.get_message_content(response)
                         if assistant_message:
-                            self.add_to_history('assistant', assistant_message)
-                            return assistant_message
+                            # Check if this is a final answer or just intermediate reasoning
+                            is_final = await self._is_final_answer(
+                                assistant_message, tool_call_count, messages
+                            )
+                            if is_final:
+                                self.add_to_history('assistant', assistant_message)
+                                return assistant_message
+                            else:
+                                # This is intermediate reasoning, add to context and continue
+                                logger.debug(
+                                    f'Detected intermediate reasoning (not final answer): {assistant_message[:100]}...'
+                                )
+                                self.add_to_history('assistant', assistant_message)
+                                messages.append(
+                                    {
+                                        'role': 'assistant',
+                                        'content': assistant_message,
+                                    }
+                                )
+                                # Prompt the agent to take action
+                                messages.append(
+                                    {
+                                        'role': 'user',
+                                        'content': 'Based on your reasoning, please proceed with the necessary tool calls to complete the task.',
+                                    }
+                                )
+                                continue
                         break
 
                     # Execute the tool
@@ -324,15 +349,12 @@ class Agent(BaseAgent):
             Action: Use available tools in the format: tool_name(param1: "value1", param2: "value2")
             Observation: The result of the action
             ... (repeat Thought/Action/Observation if needed)
+            Final Answer: [Your complete answer to the user's question]
 
             Available tools:
             {tools_desc}
 
-            Remember to:
-            1. Think carefully about what needs to be done
-            2. Use tools when needed
-            3. Make observations about tool results
-            4. Conclude with a final answer when the task is complete"""
+            IMPORTANT: When you have enough information to answer the user's question, you MUST prefix your response with "Final Answer:" to indicate completion."""
 
         return react_prompt
 
@@ -359,11 +381,103 @@ class Agent(BaseAgent):
             Available tools:
             {tools_desc}
 
-            Remember to:
-            1. Break down complex problems into smaller steps
-            2. Think through each step logically
-            3. Use tools when needed to gather information
-            4. Provide clear reasoning for your conclusions
-            5. End with a final, well-justified answer"""
+            IMPORTANT: When you have gathered all necessary information and are ready to provide your complete answer, you MUST prefix your response with "Final Answer:" to indicate completion."""
 
         return cot_prompt
+
+    async def _is_final_answer(
+        self, message: str, tool_call_count: int, messages: List[Dict[str, Any]]
+    ) -> bool:
+        """
+        Determine if a message is a final answer or intermediate reasoning.
+        Uses structured token detection (like LangChain's ReAct) with LLM fallback.
+
+        Approach inspired by LangChain/CrewAI:
+        1. Primary: Check for explicit "Final Answer:" token
+        2. Fallback: Use LLM-based classification for robustness
+        """
+        message_stripped = message.strip()
+        message_lower = message_stripped.lower()
+
+        # Primary Detection: Explicit "Final Answer:" token (ReAct pattern)
+        # This is the most reliable method used by LangChain and similar frameworks
+        if message_stripped.startswith('Final Answer:') or message_lower.startswith(
+            'final answer:'
+        ):
+            logger.debug('Explicit "Final Answer:" token detected - this is final')
+            return True
+
+        # Check if "Final Answer:" appears anywhere in the response
+        # (agent might add context before the token)
+        if 'final answer:' in message_lower:
+            logger.debug('"Final Answer:" token found in response - treating as final')
+            return True
+
+        # Secondary Detection: Use LLM-based analysis for cases without explicit tokens
+        # This handles:
+        # - Agents not following the format perfectly
+        # - Direct mode (without ReAct/CoT patterns)
+        # - Edge cases where the agent provides answer without token
+
+        analysis_prompt = f"""You are a classifier that determines if an AI agent's response is a FINAL ANSWER or INTERMEDIATE REASONING.
+
+Agent's Response:
+"{message_stripped}"
+
+Context:
+- Tool calls executed so far: {tool_call_count}
+- Total conversation turns: {len(messages)}
+
+Classification Criteria:
+
+FINAL ANSWER - The response is final if it:
+✓ Directly answers the user's original question with concrete information
+✓ Provides specific data, results, or conclusions
+✓ Does not suggest or request additional actions
+✓ Reads like a complete, standalone answer
+✓ Contains synthesis of information already gathered
+
+INTERMEDIATE REASONING - The response is intermediate if it:
+✗ Describes plans or intentions for what to do next
+✗ Expresses need to gather more information
+✗ Contains thinking/reasoning WITHOUT providing the actual answer
+✗ Poses questions or expresses uncertainty about next steps
+✗ Mentions specific tools it wants to use
+
+Examples of INTERMEDIATE:
+- "I need to query the database schema first"
+- "Let me check the table structure"
+- "First, I should examine..."
+
+Examples of FINAL:
+- "Based on the query results, the table contains 1,245 records..."
+- "The analysis shows that revenue increased by 23%..."
+- "After examining the data, the answer is..."
+
+Respond with EXACTLY one word: "FINAL" or "INTERMEDIATE"
+"""
+
+        try:
+            analysis_messages = [
+                {
+                    'role': 'system',
+                    'content': 'You are a precise classification system. Respond with only FINAL or INTERMEDIATE.',
+                },
+                {'role': 'user', 'content': analysis_prompt},
+            ]
+            analysis_response = await self.llm.generate(analysis_messages)
+            analysis = self.llm.get_message_content(analysis_response).strip().upper()
+
+            is_final = 'FINAL' in analysis
+            logger.debug(
+                f'LLM classifier: "{analysis}" -> is_final={is_final} (message preview: "{message_stripped[:80]}...")'
+            )
+            return is_final
+
+        except Exception as e:
+            logger.warning(
+                f'LLM classification failed: {e}. Defaulting to final=False to allow continuation.'
+            )
+            # Conservative default: treat as intermediate to avoid premature exit
+            # This is safer as it allows the agent to continue rather than stopping too early
+            return False
