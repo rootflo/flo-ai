@@ -615,7 +615,7 @@ class AriumBuilder:
         all_routers.update(yaml_routers)
 
         # Process AriumNodes (nested Arium workflows)
-        arium_nodes_config = arium_config.get('arium_nodes', [])
+        arium_nodes_config = arium_config.get('ariums', [])
         arium_nodes_dict = {}
 
         for arium_node_config in arium_nodes_config:
@@ -644,10 +644,10 @@ class AriumBuilder:
                         'agents': arium_node_config.get('agents', []),
                         'tools': arium_node_config.get('tools', []),
                         'routers': arium_node_config.get('routers', []),
-                        'arium_nodes': arium_node_config.get(
-                            'arium_nodes', []
+                        'ariums': arium_node_config.get(
+                            'ariums', []
                         ),  # Support nesting!
-                        'foreach_nodes': arium_node_config.get('foreach_nodes', []),
+                        'iterators': arium_node_config.get('iterators', []),
                         'workflow': arium_node_config['workflow'],
                     }
                 }
@@ -672,7 +672,7 @@ class AriumBuilder:
             # Don't add to builder yet - will add during workflow processing if actually used
 
         # Process ForEachNodes (store configs, resolve later)
-        foreach_nodes_config = arium_config.get('foreach_nodes', [])
+        foreach_nodes_config = arium_config.get('iterators', [])
         foreach_nodes_dict = {}
 
         for foreach_config in foreach_nodes_config:
