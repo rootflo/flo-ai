@@ -22,6 +22,7 @@ class Agent(BaseAgent):
         llm: BaseLLM,
         tools: Optional[List[Tool]] = None,
         max_retries: int = 3,
+        max_tool_calls: int = 5,
         reasoning_pattern: ReasoningPattern = ReasoningPattern.DIRECT,
         output_schema: Optional[Dict[str, Any]] = None,
         role: Optional[str] = None,
@@ -40,6 +41,7 @@ class Agent(BaseAgent):
             agent_type=agent_type,
             llm=llm,
             max_retries=max_retries,
+            max_tool_calls=max_tool_calls,
         )
         self.tools = tools or []
         self.tools_dict = {tool.name: tool for tool in self.tools}
@@ -192,10 +194,8 @@ class Agent(BaseAgent):
                 ] + self.conversation_history
 
                 # Keep executing tools until we get a final answer
-                max_tool_calls = 5  # Limit the number of tool calls per query
                 tool_call_count = 0
-
-                while tool_call_count < max_tool_calls:
+                while tool_call_count < self.max_tool_calls:
                     formatted_tools = self.llm.format_tools_for_llm(self.tools)
                     response = await self.llm.generate(
                         messages,
