@@ -354,6 +354,12 @@ class Agent(BaseAgent):
             Available tools:
             {tools_desc}
 
+            Remember to:
+            1. Think carefully about what needs to be done
+            2. Use tools when needed
+            3. Make observations about tool results
+            4. Conclude with a final answer when the task is complete
+
             IMPORTANT: When you have enough information to answer the user's question, you MUST prefix your response with "Final Answer:" to indicate completion."""
 
         return react_prompt
@@ -380,6 +386,13 @@ class Agent(BaseAgent):
 
             Available tools:
             {tools_desc}
+
+            Remember to:
+            1. Break down complex problems into smaller steps
+            2. Think through each step logically
+            3. Use tools when needed to gather information
+            4. Provide clear reasoning for your conclusions
+            5. End with a final, well-justified answer
 
             IMPORTANT: When you have gathered all necessary information and are ready to provide your complete answer, you MUST prefix your response with "Final Answer:" to indicate completion."""
 
