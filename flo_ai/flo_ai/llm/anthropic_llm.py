@@ -76,7 +76,7 @@ class Anthropic(BaseLLM):
 
         except Exception as e:
             raise Exception(f'Error in Claude API call: {str(e)}')
-    
+
     async def stream(
         self,
         messages: List[Dict[str, str]],
@@ -121,11 +121,10 @@ class Anthropic(BaseLLM):
                         and hasattr(event, 'delta')
                         and getattr(event.delta, 'type', None) == 'text_delta'
                         and hasattr(event.delta, 'text')
-                    ):  
+                    ):
                         yield {'content': event.delta.text}
         except Exception as e:
             raise Exception(f'Error in Claude streaming API call: {str(e)}')
-        
 
     def get_message_content(self, response: Any) -> str:
         """Extract message content from response"""

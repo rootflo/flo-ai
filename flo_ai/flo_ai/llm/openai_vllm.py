@@ -18,6 +18,7 @@ class OpenAIVLLM(OpenAI):
             base_url=base_url,
             **kwargs,
         )
+
         # Store base_url attribute
         self.base_url = base_url
 

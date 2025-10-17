@@ -104,7 +104,7 @@ class Gemini(BaseLLM):
             message_content = msg['content']
 
             if role == 'system':
-                system_prompt += f"{message_content}\n"
+                system_prompt += f'{message_content}\n'
             else:
                 contents.append(message_content)
 
@@ -127,7 +127,7 @@ class Gemini(BaseLLM):
                 contents=contents,
                 config=generation_config,
             )
-            
+
             for chunk in stream:
                 if hasattr(chunk, 'text') and chunk.text:
                     yield {'content': chunk.text}
