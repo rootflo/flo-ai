@@ -506,27 +506,14 @@ class TestGemini:
         mock_chunk2 = Mock()
         mock_chunk2.text = ', world!'
 
-        # Create a proper async iterator class
-        class AsyncIterator:
-            def __init__(self, items):
-                self.items = items
-                self.index = 0
-
-            def __aiter__(self):
-                return self
-
-            async def __anext__(self):
-                if self.index >= len(self.items):
-                    raise StopAsyncIteration
-                item = self.items[self.index]
-                self.index += 1
-                return item
+        # Create a regular iterator (Gemini API returns regular iterator, not async)
+        def regular_iter():
+            yield mock_chunk1
+            yield mock_chunk2
 
         # Mock the client response
         llm.client = Mock()
-        llm.client.models.generate_content_stream = Mock(
-            return_value=AsyncIterator([mock_chunk1, mock_chunk2])
-        )
+        llm.client.models.generate_content_stream = Mock(return_value=regular_iter())
 
         messages = [{'role': 'user', 'content': 'Hello'}]
 
@@ -576,27 +563,13 @@ class TestGemini:
         mock_chunk = Mock()
         mock_chunk.text = 'I will use the function'
 
-        # Create a proper async iterator class
-        class AsyncIterator:
-            def __init__(self, items):
-                self.items = items
-                self.index = 0
-
-            def __aiter__(self):
-                return self
-
-            async def __anext__(self):
-                if self.index >= len(self.items):
-                    raise StopAsyncIteration
-                item = self.items[self.index]
-                self.index += 1
-                return item
+        # Create a regular iterator (Gemini API returns regular iterator, not async)
+        def regular_iter():
+            yield mock_chunk
 
         # Mock the client response
         llm.client = Mock()
-        llm.client.models.generate_content_stream = Mock(
-            return_value=AsyncIterator([mock_chunk])
-        )
+        llm.client.models.generate_content_stream = Mock(return_value=regular_iter())
 
         messages = [{'role': 'user', 'content': 'Use the function'}]
 
