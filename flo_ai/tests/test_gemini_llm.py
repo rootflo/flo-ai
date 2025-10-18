@@ -488,3 +488,148 @@ class TestGemini:
             # This would normally be called in generate method
             # For testing, we'll just verify the config class exists
             assert mock_config is not None
+
+    @pytest.mark.asyncio
+    @patch('flo_ai.llm.gemini_llm.types.GenerateContentConfig')
+    async def test_gemini_stream_basic(self, mock_config_class):
+        """Test basic stream method without functions."""
+        llm = Gemini(model='gemini-2.5-flash')
+
+        # Mock the config
+        mock_config = Mock()
+        mock_config_class.return_value = mock_config
+
+        # Mock streaming chunks
+        mock_chunk1 = Mock()
+        mock_chunk1.text = 'Hello'
+
+        mock_chunk2 = Mock()
+        mock_chunk2.text = ', world!'
+
+        # Create a proper async iterator class
+        class AsyncIterator:
+            def __init__(self, items):
+                self.items = items
+                self.index = 0
+
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                if self.index >= len(self.items):
+                    raise StopAsyncIteration
+                item = self.items[self.index]
+                self.index += 1
+                return item
+
+        # Mock the client response
+        llm.client = Mock()
+        llm.client.models.generate_content_stream = Mock(
+            return_value=AsyncIterator([mock_chunk1, mock_chunk2])
+        )
+
+        messages = [{'role': 'user', 'content': 'Hello'}]
+
+        # Collect streaming results
+        results = []
+        async for chunk in llm.stream(messages):
+            results.append(chunk)
+
+        # Verify the API call
+        llm.client.models.generate_content_stream.assert_called_once()
+        call_args = llm.client.models.generate_content_stream.call_args
+
+        assert call_args[1]['model'] == 'gemini-2.5-flash'
+        assert call_args[1]['contents'] == ['Hello']
+        assert call_args[1]['config'] == mock_config
+
+        # Verify the streaming results
+        assert len(results) == 2
+        assert results[0] == {'content': 'Hello'}
+        assert results[1] == {'content': ', world!'}
+
+    @pytest.mark.asyncio
+    @patch('flo_ai.llm.gemini_llm.types.Tool')
+    @patch('flo_ai.llm.gemini_llm.types.GenerateContentConfig')
+    async def test_gemini_stream_with_functions(
+        self, mock_config_class, mock_tool_class
+    ):
+        """Test stream method with functions (tools)."""
+        llm = Gemini(model='gemini-2.5-flash')
+
+        functions = [
+            {
+                'name': 'test_function',
+                'description': 'A test function',
+                'parameters': {'type': 'object'},
+            }
+        ]
+
+        # Mock the tool and config
+        mock_tool = Mock()
+        mock_tool_class.return_value = mock_tool
+
+        mock_config = Mock()
+        mock_config_class.return_value = mock_config
+
+        # Mock streaming chunks
+        mock_chunk = Mock()
+        mock_chunk.text = 'I will use the function'
+
+        # Create a proper async iterator class
+        class AsyncIterator:
+            def __init__(self, items):
+                self.items = items
+                self.index = 0
+
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                if self.index >= len(self.items):
+                    raise StopAsyncIteration
+                item = self.items[self.index]
+                self.index += 1
+                return item
+
+        # Mock the client response
+        llm.client = Mock()
+        llm.client.models.generate_content_stream = Mock(
+            return_value=AsyncIterator([mock_chunk])
+        )
+
+        messages = [{'role': 'user', 'content': 'Use the function'}]
+
+        # Collect streaming results
+        results = []
+        async for chunk in llm.stream(messages, functions=functions):
+            results.append(chunk)
+
+        # Verify tool was created with function declarations
+        mock_tool_class.assert_called_once_with(function_declarations=functions)
+
+        # Verify tools were added to config
+        mock_config.tools = [mock_tool]
+
+        # Verify the streaming results
+        assert len(results) == 1
+        assert results[0] == {'content': 'I will use the function'}
+
+    @pytest.mark.asyncio
+    async def test_gemini_stream_error_handling(self):
+        """Test error handling in stream method."""
+        llm = Gemini(model='gemini-2.5-flash')
+
+        # Mock client to raise an exception
+        llm.client = Mock()
+        llm.client.models.generate_content_stream = Mock(
+            side_effect=Exception('Streaming API Error')
+        )
+
+        messages = [{'role': 'user', 'content': 'Hello'}]
+
+        with pytest.raises(
+            Exception, match='Error in Gemini streaming API call: Streaming API Error'
+        ):
+            async for chunk in llm.stream(messages):
+                pass

@@ -128,7 +128,7 @@ class Gemini(BaseLLM):
                 config=generation_config,
             )
 
-            for chunk in stream:
+            async for chunk in stream:
                 if hasattr(chunk, 'text') and chunk.text:
                     yield {'content': chunk.text}
         except Exception as e:

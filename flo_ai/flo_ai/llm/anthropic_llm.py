@@ -111,7 +111,6 @@ class Anthropic(BaseLLM):
 
         if functions:
             kwargs['tools'] = functions
-
         # Use Anthropic SDK streaming API and yield text deltas
         try:
             async with self.client.messages.stream(**kwargs) as stream:
