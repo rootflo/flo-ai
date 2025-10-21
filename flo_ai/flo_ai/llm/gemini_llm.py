@@ -1,3 +1,4 @@
+import base64
 from typing import Dict, Any, List, Optional, AsyncIterator
 from google import genai
 from google.genai import types
@@ -218,6 +219,11 @@ class Gemini(BaseLLM):
         elif image.image_bytes:
             return types.Part.from_bytes(
                 data=image.image_bytes,
+                mime_type=image.mime_type,
+            )
+        elif image.image_base64:
+            return types.Part.from_bytes(
+                data=base64.b64decode(image.image_base64),
                 mime_type=image.mime_type,
             )
         raise NotImplementedError(

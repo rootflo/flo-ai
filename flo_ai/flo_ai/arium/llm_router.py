@@ -189,7 +189,7 @@ class SmartRouter(BaseLLMRouter):
         # Format conversation history
         if isinstance(conversation, list):
             conversation_text = '\n'.join(
-                [str(msg) for msg in conversation[-5:]]
+                [str(msg) for msg in conversation[-1:]]
             )  # Last 5 messages
         else:
             conversation_text = str(conversation)
