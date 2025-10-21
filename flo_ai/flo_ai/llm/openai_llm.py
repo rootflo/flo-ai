@@ -4,6 +4,7 @@ from .base_llm import BaseLLM, ImageMessage
 from flo_ai.tool.base_tool import Tool
 from flo_ai.telemetry.instrumentation import (
     trace_llm_call,
+    trace_llm_stream,
     llm_metrics,
     add_span_attributes,
 )
@@ -97,6 +98,7 @@ class OpenAI(BaseLLM):
         # Return the full message object instead of just the content
         return message
 
+    @trace_llm_stream(provider='openai')
     async def stream(
         self,
         messages: List[Dict[str, Any]],

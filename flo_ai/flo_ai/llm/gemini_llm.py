@@ -5,6 +5,7 @@ from .base_llm import BaseLLM, ImageMessage
 from flo_ai.tool.base_tool import Tool
 from flo_ai.telemetry.instrumentation import (
     trace_llm_call,
+    trace_llm_stream,
     llm_metrics,
     add_span_attributes,
 )
@@ -125,6 +126,7 @@ class Gemini(BaseLLM):
         except Exception as e:
             raise Exception(f'Error in Gemini API call: {str(e)}')
 
+    @trace_llm_stream(provider='gemini')
     async def stream(
         self,
         messages: List[Dict[str, str]],

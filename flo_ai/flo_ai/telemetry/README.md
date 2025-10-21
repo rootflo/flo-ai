@@ -56,6 +56,7 @@ Once configured, telemetry is automatically captured for:
 - Token usage (prompt, completion, total)
 - Model and provider information
 - Success/error rates
+- **Streaming support**: Chunk count, stream duration, streaming success rates
 
 #### Agent Execution
 - Total execution time
@@ -78,6 +79,9 @@ Once configured, telemetry is automatically captured for:
 - `llm.requests.total` - Number of LLM requests
 - `llm.errors.total` - Number of errors
 - `llm.request.duration` - Request latency histogram
+- `llm.streams.total` - Number of LLM stream requests
+- `llm.stream.chunks.total` - Total number of stream chunks received
+- `llm.stream.duration` - Stream request latency histogram
 
 #### Agent Metrics
 - `agent.executions.total` - Number of agent executions

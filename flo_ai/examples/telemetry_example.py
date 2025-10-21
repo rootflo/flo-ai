@@ -234,7 +234,44 @@ async def example_multiple_providers():
     # Telemetry will show metrics grouped by provider
 
 
-# Example 5: Error Tracking
+# Example 5: Streaming Telemetry
+async def example_streaming_telemetry():
+    """
+    Demonstrates telemetry for streaming LLM calls.
+
+    Telemetry captured:
+    - Stream request duration
+    - Number of chunks received
+    - Stream success/error rates
+    - Streaming-specific metrics
+    """
+    print('\n=== Example 5: Streaming Telemetry ===')
+
+    llm = OpenAI(model='gpt-4o-mini')
+
+    # Test streaming with telemetry
+    messages = [
+        {
+            'role': 'user',
+            'content': 'Tell me a short story about a robot learning to paint.',
+        }
+    ]
+
+    print('Streaming response with telemetry...')
+    full_response = ''
+    async for chunk in llm.stream(messages):
+        content = chunk.get('content', '')
+        if content:
+            full_response += content
+            print(content, end='', flush=True)
+
+    print(f'\n\nFull response length: {len(full_response)} characters')
+    print('✓ Streaming telemetry captured (check your telemetry backend)')
+
+    return full_response
+
+
+# Example 6: Error Tracking
 async def example_error_tracking():
     """
     Demonstrates how errors are tracked in telemetry.
@@ -288,12 +325,14 @@ async def main():
         await example_agent_with_tools()
         await example_workflow()
         await example_multiple_providers()
+        await example_streaming_telemetry()
         await example_error_tracking()
 
         print('\n✓ All examples completed')
         print('\n=== Telemetry Data ===')
         print('Metrics collected:')
         print('- LLM request counts, latencies, token usage')
+        print('- LLM streaming: chunks received, stream duration, success rates')
         print('- Agent execution times, tool calls, retries')
         print('- Workflow execution times, node traversals')
         print('- Error rates and types')

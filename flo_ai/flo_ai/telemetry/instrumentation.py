@@ -55,6 +55,25 @@ class LLMMetrics:
                 unit='ms',
             )
 
+            # Streaming metrics
+            self.stream_counter = self.meter.create_counter(
+                name='llm.streams.total',
+                description='Total number of LLM stream requests',
+                unit='streams',
+            )
+
+            self.stream_chunks_counter = self.meter.create_counter(
+                name='llm.stream.chunks.total',
+                description='Total number of stream chunks received',
+                unit='chunks',
+            )
+
+            self.stream_duration_histogram = self.meter.create_histogram(
+                name='llm.stream.duration',
+                description='Duration of LLM streaming requests',
+                unit='ms',
+            )
+
     def record_tokens(
         self,
         total_tokens: int = 0,
@@ -101,6 +120,36 @@ class LLMMetrics:
 
         attributes = {'model': model, 'provider': provider}
         self.latency_histogram.record(duration_ms, attributes)
+
+    def record_stream(
+        self, model: str = '', provider: str = '', status: str = 'success'
+    ):
+        """Record LLM stream request"""
+        if not self.meter:
+            return
+
+        attributes = {'model': model, 'provider': provider, 'status': status}
+        self.stream_counter.add(1, attributes)
+
+    def record_stream_chunks(
+        self, chunk_count: int, model: str = '', provider: str = ''
+    ):
+        """Record stream chunks received"""
+        if not self.meter:
+            return
+
+        attributes = {'model': model, 'provider': provider}
+        self.stream_chunks_counter.add(chunk_count, attributes)
+
+    def record_stream_latency(
+        self, duration_ms: float, model: str = '', provider: str = ''
+    ):
+        """Record stream request latency"""
+        if not self.meter:
+            return
+
+        attributes = {'model': model, 'provider': provider}
+        self.stream_duration_histogram.record(duration_ms, attributes)
 
 
 class AgentMetrics:
@@ -425,6 +474,97 @@ def trace_llm_call(provider: str = '', model: str = ''):
             return async_wrapper
         else:
             return sync_wrapper
+
+    return decorator
+
+
+def trace_llm_stream(provider: str = '', model: str = ''):
+    """
+    Decorator to trace LLM streaming API calls
+
+    Args:
+        provider: LLM provider name (e.g., 'openai', 'anthropic', 'gemini')
+        model: Model name
+
+    Example:
+        @trace_llm_stream(provider="openai", model="gpt-4")
+        async def stream(self, messages):
+            ...
+    """
+
+    def decorator(func: Callable):
+        @wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            tracer = get_tracer()
+            if not tracer:
+                async for chunk in func(*args, **kwargs):
+                    yield chunk
+                return
+
+            # Extract self to get instance attributes
+            self_arg = args[0] if args else None
+            actual_model = model or (getattr(self_arg, 'model', '') if self_arg else '')
+            actual_provider = provider or (
+                self_arg.__class__.__name__ if self_arg else ''
+            )
+
+            with tracer.start_as_current_span(
+                f'llm.{actual_provider}.stream',
+                attributes={
+                    'llm.provider': actual_provider,
+                    'llm.model': actual_model,
+                    'llm.temperature': getattr(self_arg, 'temperature', 0.0)
+                    if self_arg
+                    else 0.0,
+                    'llm.operation': 'stream',
+                },
+            ) as span:
+                start_time = time.time()
+                chunk_count = 0
+                try:
+                    # Record stream start
+                    llm_metrics.record_stream(actual_model, actual_provider, 'start')
+
+                    # Track the streaming response
+                    async for chunk in func(*args, **kwargs):
+                        chunk_count += 1
+                        yield chunk
+
+                    # Record success
+                    duration_ms = (time.time() - start_time) * 1000
+                    llm_metrics.record_stream(actual_model, actual_provider, 'success')
+                    llm_metrics.record_stream_chunks(
+                        chunk_count, actual_model, actual_provider
+                    )
+                    llm_metrics.record_stream_latency(
+                        duration_ms, actual_model, actual_provider
+                    )
+
+                    span.set_status(Status(StatusCode.OK))
+                    span.set_attribute('llm.stream.chunks', chunk_count)
+                    span.set_attribute('llm.stream.duration_ms', duration_ms)
+                    span.set_attribute('llm.stream.completed', True)
+
+                except Exception as e:
+                    # Record error
+                    duration_ms = (time.time() - start_time) * 1000
+                    error_type = type(e).__name__
+
+                    llm_metrics.record_stream(actual_model, actual_provider, 'error')
+                    llm_metrics.record_error(actual_model, actual_provider, error_type)
+                    llm_metrics.record_stream_latency(
+                        duration_ms, actual_model, actual_provider
+                    )
+
+                    span.set_status(Status(StatusCode.ERROR, str(e)))
+                    span.set_attribute('error.type', error_type)
+                    span.set_attribute('error.message', str(e))
+                    span.set_attribute('llm.stream.chunks', chunk_count)
+                    span.set_attribute('llm.stream.duration_ms', duration_ms)
+
+                    raise
+
+        return async_wrapper
 
     return decorator
 
