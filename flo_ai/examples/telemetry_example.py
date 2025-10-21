@@ -56,7 +56,7 @@ def setup_telemetry():
 
 
 # Example 1: Basic Agent with LLM Telemetry
-async def example_basic_agent():
+async def example_basic_agent(llm):
     """
     Demonstrates basic agent with automatic LLM telemetry.
 
@@ -67,9 +67,6 @@ async def example_basic_agent():
     - Success/error metrics
     """
     print('\n=== Example 1: Basic Agent with Telemetry ===')
-
-    # Create an LLM (telemetry is automatically tracked)
-    llm = OpenAI(model='gpt-4o-mini')
 
     # Create an agent (telemetry is automatically tracked)
     agent = Agent(
@@ -86,7 +83,7 @@ async def example_basic_agent():
 
 
 # Example 2: Agent with Tools
-async def example_agent_with_tools():
+async def example_agent_with_tools(llm):
     """
     Demonstrates agent with tool calls and telemetry.
 
@@ -125,8 +122,6 @@ async def example_agent_with_tools():
         else:
             raise ValueError(f'Unknown operation: {operation}')
 
-    llm = OpenAI(model='gpt-4o-mini')
-
     agent = Agent(
         name='calculator_agent',
         system_prompt='You are a helpful calculator assistant. Use the calculator tool to perform calculations.',
@@ -144,7 +139,7 @@ async def example_agent_with_tools():
 
 
 # Example 3: Workflow with Arium
-async def example_workflow():
+async def example_workflow(llm):
     """
     Demonstrates workflow telemetry with Arium.
 
@@ -157,8 +152,6 @@ async def example_workflow():
     print('\n=== Example 3: Workflow Telemetry ===')
 
     # Create agents
-    llm = OpenAI(model='gpt-4o-mini')
-
     researcher = Agent(
         name='researcher',
         system_prompt='You are a research assistant. Provide concise, factual information.',
@@ -194,7 +187,7 @@ async def example_workflow():
 
 
 # Example 4: Multiple LLM Providers
-async def example_multiple_providers():
+async def example_multiple_providers(llm):
     """
     Demonstrates telemetry across different LLM providers.
 
@@ -205,37 +198,23 @@ async def example_multiple_providers():
     """
     print('\n=== Example 4: Multiple LLM Providers ===')
 
-    # OpenAI
-    openai_llm = OpenAI(model='gpt-4o-mini')
-    openai_agent = Agent(
-        name='openai_agent',
+    agent = Agent(
+        name='test_agent',
         system_prompt='You are a helpful assistant.',
-        llm=openai_llm,
+        llm=llm,
     )
-
-    # Gemini (if you have API key)
-    # gemini_llm = Gemini(model="gemini-2.5-flash")
-    # gemini_agent = Agent(
-    #     name="gemini_agent",
-    #     system_prompt="You are a helpful assistant.",
-    #     llm=gemini_llm,
-    # )
 
     question = 'What is 2+2?'
 
-    print('Testing OpenAI...')
-    openai_response = await openai_agent.run(question)
-    print(f'OpenAI: {openai_response}')
-
-    # print("Testing Gemini...")
-    # gemini_response = await gemini_agent.run(question)
-    # print(f"Gemini: {gemini_response}")
+    print(f'Testing {llm.__class__.__name__}...')
+    response = await agent.run(question)
+    print(f'Response: {response}')
 
     # Telemetry will show metrics grouped by provider
 
 
 # Example 5: Streaming Telemetry
-async def example_streaming_telemetry():
+async def example_streaming_telemetry(llm):
     """
     Demonstrates telemetry for streaming LLM calls.
 
@@ -246,8 +225,6 @@ async def example_streaming_telemetry():
     - Streaming-specific metrics
     """
     print('\n=== Example 5: Streaming Telemetry ===')
-
-    llm = OpenAI(model='gpt-4o-mini')
 
     # Test streaming with telemetry
     messages = [
@@ -272,7 +249,7 @@ async def example_streaming_telemetry():
 
 
 # Example 6: Error Tracking
-async def example_error_tracking():
+async def example_error_tracking(llm):
     """
     Demonstrates how errors are tracked in telemetry.
 
@@ -281,9 +258,7 @@ async def example_error_tracking():
     - Retry attempts
     - Failed operations with context
     """
-    print('\n=== Example 5: Error Tracking ===')
-
-    llm = OpenAI(model='gpt-4o-mini')
+    print('\n=== Example 6: Error Tracking ===')
 
     # Create a tool that might fail
     @flo_tool(
@@ -313,20 +288,27 @@ async def example_error_tracking():
         print(f'Caught error (tracked in telemetry): {e}')
 
 
-async def main():
-    """Main function to run all examples"""
+async def main(llm=None):
+    """Main function to run all examples
 
+    Args:
+        llm: LLM instance to use for all examples. If None, defaults to OpenAI.
+    """
     # 1. Configure telemetry first
     setup_telemetry()
 
+    # Use provided LLM or default to OpenAI
+    if llm is None:
+        llm = OpenAI(model='gpt-4o-mini')
+
     try:
-        # 2. Run examples
-        await example_basic_agent()
-        await example_agent_with_tools()
-        await example_workflow()
-        await example_multiple_providers()
-        await example_streaming_telemetry()
-        await example_error_tracking()
+        # 2. Run examples with the provided LLM
+        await example_basic_agent(llm)
+        await example_agent_with_tools(llm)
+        await example_workflow(llm)
+        await example_multiple_providers(llm)
+        await example_streaming_telemetry(llm)
+        await example_error_tracking(llm)
 
         print('\n✓ All examples completed')
         print('\n=== Telemetry Data ===')
@@ -374,6 +356,27 @@ if __name__ == '__main__':
     # Set your API keys
     # os.environ["OPENAI_API_KEY"] = "your-key-here"
     # os.environ["GOOGLE_API_KEY"] = "your-key-here"
+    # os.environ["ANTHROPIC_API_KEY"] = "your-key-here"
 
-    # Run the examples
-    asyncio.run(main())
+    # Example 1: Run with default OpenAI
+    # print("=== Running with OpenAI ===")
+    # asyncio.run(main())
+
+    # Example 2: Run with a specific LLM provider
+    # Uncomment the provider you want to test:
+
+    from flo_ai import Gemini
+
+    print('\n=== Running with Gemini ===')
+    gemini_llm = Gemini(model='gemini-2.5-flash')
+    asyncio.run(main(gemini_llm))
+
+    # from flo_ai import Anthropic
+    # print("\n=== Running with Anthropic ===")
+    # anthropic_llm = Anthropic(model="claude-3-5-sonnet-20241022")
+    # asyncio.run(main(anthropic_llm))
+
+    # from flo_ai import OpenAI
+    # print("\n=== Running with different OpenAI model ===")
+    # openai_llm = OpenAI(model="gpt-4o")
+    # asyncio.run(main(openai_llm))
