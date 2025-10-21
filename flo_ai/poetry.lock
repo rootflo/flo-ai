@@ -4296,4 +4296,4 @@ vizualize = ["matplotlib", "networkx"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "8595068e592a21471adf9b6b68b6b095b4c77d95bcd33c0857cafe0c0520c367"
+content-hash = "16ddcd337f56cbd3a241afbbab9c69baaaff08fea81c81e5ff2ba8a13d638156"

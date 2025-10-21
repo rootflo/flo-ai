@@ -24,7 +24,6 @@ google-cloud-aiplatform = "^1.109.0"
 pypdf = "^4.2.0"
 pymupdf4llm = "^0.0.17"
 chardet = ">=3.dev0,<4.dev0"
-pymupdf = "^1.26.5"
 
 [tool.poetry.extras]
 vizualize = ["matplotlib", "networkx"]
