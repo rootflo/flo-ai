@@ -3,6 +3,13 @@ from google import genai
 from google.genai import types
 from .base_llm import BaseLLM, ImageMessage
 from flo_ai.tool.base_tool import Tool
+from flo_ai.telemetry.instrumentation import (
+    trace_llm_call,
+    llm_metrics,
+    add_span_attributes,
+)
+from flo_ai.telemetry import get_tracer
+from opentelemetry import trace
 
 
 class Gemini(BaseLLM):
@@ -19,6 +26,7 @@ class Gemini(BaseLLM):
             genai.Client(api_key=self.api_key) if self.api_key else genai.Client()
         )
 
+    @trace_llm_call(provider='gemini')
     async def generate(
         self,
         messages: List[Dict[str, str]],
@@ -62,6 +70,34 @@ class Gemini(BaseLLM):
                 contents=contents,
                 config=generation_config,
             )
+
+            # Record token usage if available
+            if hasattr(response, 'usage_metadata') and response.usage_metadata:
+                usage = response.usage_metadata
+                prompt_tokens = getattr(usage, 'prompt_token_count', 0)
+                completion_tokens = getattr(usage, 'candidates_token_count', 0)
+                total_tokens = getattr(usage, 'total_token_count', 0)
+
+                llm_metrics.record_tokens(
+                    total_tokens=total_tokens,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                    model=self.model,
+                    provider='gemini',
+                )
+
+                # Add token info to current span
+                tracer = get_tracer()
+                if tracer:
+                    current_span = trace.get_current_span()
+                    add_span_attributes(
+                        current_span,
+                        {
+                            'llm.tokens.prompt': prompt_tokens,
+                            'llm.tokens.completion': completion_tokens,
+                            'llm.tokens.total': total_tokens,
+                        },
+                    )
 
             # Check for function call in the response
             if (

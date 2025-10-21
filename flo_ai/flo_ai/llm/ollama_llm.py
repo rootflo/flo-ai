@@ -3,6 +3,7 @@ import aiohttp
 import json
 from .base_llm import BaseLLM, ImageMessage
 from flo_ai.tool.base_tool import Tool
+from flo_ai.telemetry.instrumentation import trace_llm_call
 
 
 class OllamaLLM(BaseLLM):
@@ -17,6 +18,7 @@ class OllamaLLM(BaseLLM):
         super().__init__(model, api_key, temperature, **kwargs)
         self.base_url = base_url.rstrip('/')
 
+    @trace_llm_call(provider='ollama')
     async def generate(
         self,
         messages: List[Dict[str, str]],
