@@ -108,31 +108,28 @@ class Gemini(BaseLLM):
             else:
                 contents.append(message_content)
 
-        try:
-            # Prepare generation config
-            generation_config = types.GenerateContentConfig(
-                temperature=self.temperature,
-                system_instruction=system_prompt,
-                **self.kwargs,
-            )
+        # Prepare generation config
+        generation_config = types.GenerateContentConfig(
+            temperature=self.temperature,
+            system_instruction=system_prompt,
+            **self.kwargs,
+        )
 
-            # Add tools if functions are provided
-            if functions:
-                tools = types.Tool(function_declarations=functions)
-                generation_config.tools = [tools]
+        # Add tools if functions are provided
+        if functions:
+            tools = types.Tool(function_declarations=functions)
+            generation_config.tools = [tools]
 
-            # Stream the API call
-            stream = self.client.models.generate_content_stream(
-                model=self.model,
-                contents=contents,
-                config=generation_config,
-            )
+        # Stream the API call
+        stream = self.client.models.generate_content_stream(
+            model=self.model,
+            contents=contents,
+            config=generation_config,
+        )
 
-            for chunk in stream:
-                if hasattr(chunk, 'text') and chunk.text:
-                    yield {'content': chunk.text}
-        except Exception as e:
-            raise Exception(f'Error in Gemini streaming API call: {str(e)}')
+        for chunk in stream:
+            if hasattr(chunk, 'text') and chunk.text:
+                yield {'content': chunk.text}
 
     def get_message_content(self, response: Any) -> str:
         """Extract message content from response"""

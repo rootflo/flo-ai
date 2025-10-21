@@ -112,18 +112,15 @@ class Anthropic(BaseLLM):
         if functions:
             kwargs['tools'] = functions
         # Use Anthropic SDK streaming API and yield text deltas
-        try:
-            async with self.client.messages.stream(**kwargs) as stream:
-                async for event in stream:
-                    if (
-                        getattr(event, 'type', None) == 'content_block_delta'
-                        and hasattr(event, 'delta')
-                        and getattr(event.delta, 'type', None) == 'text_delta'
-                        and hasattr(event.delta, 'text')
-                    ):
-                        yield {'content': event.delta.text}
-        except Exception as e:
-            raise Exception(f'Error in Claude streaming API call: {str(e)}')
+        async with self.client.messages.stream(**kwargs) as stream:
+            async for event in stream:
+                if (
+                    getattr(event, 'type', None) == 'content_block_delta'
+                    and hasattr(event, 'delta')
+                    and getattr(event.delta, 'type', None) == 'text_delta'
+                    and hasattr(event.delta, 'text')
+                ):
+                    yield {'content': event.delta.text}
 
     def get_message_content(self, response: Any) -> str:
         """Extract message content from response"""

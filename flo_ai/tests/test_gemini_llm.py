@@ -587,22 +587,3 @@ class TestGemini:
         # Verify the streaming results
         assert len(results) == 1
         assert results[0] == {'content': 'I will use the function'}
-
-    @pytest.mark.asyncio
-    async def test_gemini_stream_error_handling(self):
-        """Test error handling in stream method."""
-        llm = Gemini(model='gemini-2.5-flash')
-
-        # Mock client to raise an exception
-        llm.client = Mock()
-        llm.client.models.generate_content_stream = Mock(
-            side_effect=Exception('Streaming API Error')
-        )
-
-        messages = [{'role': 'user', 'content': 'Hello'}]
-
-        with pytest.raises(
-            Exception, match='Error in Gemini streaming API call: Streaming API Error'
-        ):
-            async for chunk in llm.stream(messages):
-                pass

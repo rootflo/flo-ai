@@ -88,18 +88,14 @@ class OpenAI(BaseLLM):
         # Stream the API call and yield content deltas
         response = await self.client.chat.completions.create(**openai_kwargs)
         async for chunk in response:
-            try:
-                choices = getattr(chunk, 'choices', []) or []
-                for choice in choices:
-                    delta = getattr(choice, 'delta', None)
-                    if delta is None:
-                        continue
-                    content = getattr(delta, 'content', None)
-                    if content:
-                        yield {'content': content}
-            except Exception:
-                # Ignore malformed chunks
-                continue
+            choices = getattr(chunk, 'choices', []) or []
+            for choice in choices:
+                delta = getattr(choice, 'delta', None)
+                if delta is None:
+                    continue
+                content = getattr(delta, 'content', None)
+                if content:
+                    yield {'content': content}
 
     def get_message_content(self, response: Dict[str, Any]) -> str:
         # Handle both string responses and message objects

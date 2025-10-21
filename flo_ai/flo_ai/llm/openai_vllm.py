@@ -87,14 +87,11 @@ class OpenAIVLLM(OpenAI):
             vllm_openai_kwargs['functions'] = functions
         response = await self.client.chat.completions.create(**vllm_openai_kwargs)
         async for chunk in response:
-            try:
-                choices = getattr(chunk, 'choices', []) or []
-                for choice in choices:
-                    delta = getattr(choice, 'delta', None)
-                    if delta is None:
-                        continue
-                    content = getattr(delta, 'content', None)
-                    if content:
-                        yield {'content': content}
-            except Exception:
-                continue
+            choices = getattr(chunk, 'choices', []) or []
+            for choice in choices:
+                delta = getattr(choice, 'delta', None)
+                if delta is None:
+                    continue
+                content = getattr(delta, 'content', None)
+                if content:
+                    yield {'content': content}
