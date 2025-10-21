@@ -1047,11 +1047,11 @@ llm: Ollama = Ollama(
 )
 ```
 
-### streaming-support
+### Streaming Support in LLM
 Streaming helps the llm to generate the output (response) piece-by-piece, or token-by-token,
 as it is being computed, instead of waiting until the entire response is complete before sending it to the user
 
-Steaming Support has been added to all the llm providers. Example of streaming function wiht Gemini is shown below:
+Steaming Support has been added to all the llm providers. Example of streaming function with Gemini is shown below:
 ```python
 from flo_ai.llm import Gemini
 
