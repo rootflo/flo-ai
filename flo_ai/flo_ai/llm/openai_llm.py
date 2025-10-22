@@ -30,10 +30,16 @@ class OpenAI(BaseLLM):
 
     @trace_llm_call(provider='openai')
     async def generate(
-        self, messages: list[dict], output_schema: dict = None, **kwargs
+        self,
+        messages: list[dict],
+        functions: Optional[List[Dict[str, Any]]] = None,
+        output_schema: dict = None,
+        **kwargs,
     ) -> Any:
-        # Convert output_schema to OpenAI format if provided
+        # Handle structured output vs tool calling
+        # Priority: output_schema takes precedence over functions for structured output
         if output_schema:
+            # Convert output_schema to OpenAI format for structured output
             kwargs['response_format'] = {'type': 'json_object'}
             kwargs['functions'] = [
                 {
@@ -57,14 +63,17 @@ class OpenAI(BaseLLM):
                         'content': 'Please provide your response in JSON format according to the specified schema.',
                     },
                 )
+        elif functions:
+            # Use functions for tool calling when output_schema is not provided
+            kwargs['functions'] = functions
 
         # Prepare OpenAI API parameters
         openai_kwargs = {
             'model': self.model,
             'messages': messages,
             'temperature': self.temperature,
-            **kwargs,
             **self.kwargs,
+            **kwargs,
         }
 
         # Make the API call
@@ -112,8 +121,8 @@ class OpenAI(BaseLLM):
             'messages': messages,
             'temperature': self.temperature,
             'stream': True,
-            **kwargs,
             **self.kwargs,
+            **kwargs,
         }
 
         if functions:

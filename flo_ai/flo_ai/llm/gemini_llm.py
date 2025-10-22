@@ -24,8 +24,15 @@ class Gemini(BaseLLM):
         **kwargs,
     ):
         super().__init__(model, api_key, temperature, **kwargs)
+        # Configure http_options for proxy or custom base_url
+        http_options = {'base_url': base_url} if base_url else {}
+        if base_url and self.api_key:
+            # For custom base_url (proxy), set Authorization header explicitly
+            http_options['headers'] = {'Authorization': f'Bearer {self.api_key}'}
         self.client = (
-            genai.Client(api_key=self.api_key) if self.api_key else genai.Client()
+            genai.Client(http_options=http_options)
+            if http_options
+            else genai.Client(api_key=self.api_key)
         )
 
     @trace_llm_call(provider='gemini')
@@ -34,6 +41,7 @@ class Gemini(BaseLLM):
         messages: List[Dict[str, str]],
         functions: Optional[List[Dict[str, Any]]] = None,
         output_schema: Optional[Dict[str, Any]] = None,
+        **kwargs,
     ) -> Dict[str, Any]:
         # Convert messages to Gemini format
         contents = []
@@ -50,10 +58,12 @@ class Gemini(BaseLLM):
 
         try:
             # Prepare generation config
+            # Merge instance kwargs with method kwargs
+            config_kwargs = {**self.kwargs, **kwargs}
             generation_config = types.GenerateContentConfig(
                 temperature=self.temperature,
                 system_instruction=system_prompt,
-                **self.kwargs,
+                **config_kwargs,
             )
 
             # Add tools if functions are provided
@@ -132,6 +142,7 @@ class Gemini(BaseLLM):
         self,
         messages: List[Dict[str, str]],
         functions: Optional[List[Dict[str, Any]]] = None,
+        **kwargs,
     ) -> AsyncIterator[Dict[str, Any]]:
         """Stream partial responses from Gemini as they are generated"""
         # Convert messages to Gemini format
@@ -148,10 +159,12 @@ class Gemini(BaseLLM):
                 contents.append(message_content)
 
         # Prepare generation config
+        # Merge instance kwargs with method kwargs
+        config_kwargs = {**self.kwargs, **kwargs}
         generation_config = types.GenerateContentConfig(
             temperature=self.temperature,
             system_instruction=system_prompt,
-            **self.kwargs,
+            **config_kwargs,
         )
 
         # Add tools if functions are provided
