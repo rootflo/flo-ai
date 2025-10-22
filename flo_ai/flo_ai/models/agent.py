@@ -19,6 +19,13 @@ from flo_ai.telemetry.instrumentation import (
 from flo_ai.telemetry import get_tracer
 
 
+class MessageType:
+    USER = 'user'
+    ASSISTANT = 'assistant'
+    FUNCTION = 'function'
+    SYSTEM = 'system'
+
+
 class Agent(BaseAgent):
     def __init__(
         self,
@@ -31,6 +38,7 @@ class Agent(BaseAgent):
         reasoning_pattern: ReasoningPattern = ReasoningPattern.DIRECT,
         output_schema: Optional[Dict[str, Any]] = None,
         role: Optional[str] = None,
+        act_as: Optional[str] = MessageType.ASSISTANT,
     ):
         # Determine agent type based on tools
         agent_type = AgentType.TOOL_USING if tools else AgentType.CONVERSATIONAL
@@ -53,6 +61,7 @@ class Agent(BaseAgent):
         self.reasoning_pattern = reasoning_pattern
         self.output_schema = output_schema
         self.role = role
+        self.act_as = act_as
 
     @trace_agent_execution()
     async def run(
@@ -83,14 +92,16 @@ class Agent(BaseAgent):
             # Process inputs and resolve variables in string inputs
             for input in inputs:
                 if isinstance(input, ImageMessage):
-                    self.add_to_history('user', self.llm.format_image_in_message(input))
+                    self.add_to_history(
+                        MessageType.USER, self.llm.format_image_in_message(input)
+                    )
                 elif isinstance(input, DocumentMessage):
                     formatted_doc = await self.llm.format_document_in_message(input)
-                    self.add_to_history('user', formatted_doc)
+                    self.add_to_history(MessageType.USER, formatted_doc)
                 else:
                     # Resolve variables in text input
                     resolved_input = resolve_variables(input, variables)
-                    self.add_to_history('user', resolved_input)
+                    self.add_to_history(MessageType.USER, resolved_input)
 
             # after resolving agent system prompts and inputs, mark variables as resolved
             self.resolved_variables = True
@@ -99,12 +110,14 @@ class Agent(BaseAgent):
             # Variables already resolved, process inputs without variable resolution
             for input in inputs:
                 if isinstance(input, ImageMessage):
-                    self.add_to_history('user', self.llm.format_image_in_message(input))
+                    self.add_to_history(
+                        MessageType.USER, self.llm.format_image_in_message(input)
+                    )
                 elif isinstance(input, DocumentMessage):
                     formatted_doc = await self.llm.format_document_in_message(input)
-                    self.add_to_history('user', formatted_doc)
+                    self.add_to_history(MessageType.USER, formatted_doc)
                 else:
-                    self.add_to_history('user', input)
+                    self.add_to_history(MessageType.USER, input)
 
         retry_count = 0
 
@@ -132,7 +145,7 @@ class Agent(BaseAgent):
 
                 messages = [
                     {
-                        'role': 'system',
+                        'role': MessageType.SYSTEM,
                         'content': system_content,
                     }
                 ] + self.conversation_history
@@ -147,7 +160,7 @@ class Agent(BaseAgent):
                 logger.debug(f'Extracted message: {assistant_message}')
 
                 if assistant_message:
-                    self.add_to_history('assistant', assistant_message)
+                    self.add_to_history(self.act_as, assistant_message)
                     return assistant_message
                 else:
                     possible_tool_message = await self.llm.get_function_call(response)
@@ -167,7 +180,7 @@ class Agent(BaseAgent):
 
                 if should_retry and retry_count <= self.max_retries:
                     self.add_to_history(
-                        'system', f'Error occurred. Analysis: {analysis}'
+                        MessageType.SYSTEM, f'Error occurred. Analysis: {analysis}'
                     )
                     continue
                 else:
@@ -194,7 +207,7 @@ class Agent(BaseAgent):
 
                 messages = [
                     {
-                        'role': 'system',
+                        'role': MessageType.SYSTEM,
                         'content': system_content,
                     }
                 ] + self.conversation_history
@@ -221,7 +234,7 @@ class Agent(BaseAgent):
                                 assistant_message, tool_call_count, messages
                             )
                             if is_final:
-                                self.add_to_history('assistant', assistant_message)
+                                self.add_to_history(self.act_as, assistant_message)
                                 return assistant_message
                             else:
                                 # This is intermediate reasoning, add to context and continue
@@ -233,17 +246,17 @@ class Agent(BaseAgent):
                                 logger.debug(
                                     f'Detected intermediate reasoning (not final answer): {msg_preview}...'
                                 )
-                                self.add_to_history('assistant', assistant_message)
+                                self.add_to_history(self.act_as, assistant_message)
                                 messages.append(
                                     {
-                                        'role': 'assistant',
+                                        'role': self.act_as,
                                         'content': assistant_message,
                                     }
                                 )
                                 # Prompt the agent to take action
                                 messages.append(
                                     {
-                                        'role': 'user',
+                                        'role': MessageType.USER,
                                         'content': 'Based on your reasoning, please proceed with the necessary tool calls to complete the task.',
                                     }
                                 )
@@ -290,7 +303,7 @@ class Agent(BaseAgent):
 
                         # Add function call to history
                         self.add_to_history(
-                            'function',
+                            MessageType.FUNCTION,
                             f'Tool response: {str(function_response)}',
                             name=function_name,
                         )
@@ -298,7 +311,7 @@ class Agent(BaseAgent):
                         # Add the function response to messages for context
                         messages.append(
                             {
-                                'role': 'function',
+                                'role': MessageType.FUNCTION,
                                 'name': function_name,
                                 'content': f'Here is the result of the tool call: \n {str(function_response)}',
                             }
@@ -307,7 +320,7 @@ class Agent(BaseAgent):
                         # Add a prompt to continue the reasoning
                         messages.append(
                             {
-                                'role': 'user',
+                                'role': MessageType.USER,
                                 'content': 'Continue with your reasoning based on this result. What should be done next?',
                             }
                         )
@@ -331,7 +344,7 @@ class Agent(BaseAgent):
                             )
 
                             self.add_to_history(
-                                'system', f'Tool execution error: {analysis}'
+                                MessageType.SYSTEM, f'Tool execution error: {analysis}'
                             )
                             continue
                         raise AgentError(
@@ -343,7 +356,7 @@ class Agent(BaseAgent):
                     messages
                     + [
                         {
-                            'role': 'system',
+                            'role': MessageType.SYSTEM,
                             'content': 'Please provide a final answer based on all the tool results above.',
                         }
                     ],
@@ -352,7 +365,7 @@ class Agent(BaseAgent):
 
                 assistant_message = self.llm.get_message_content(final_response)
                 if assistant_message:
-                    self.add_to_history('assistant', assistant_message)
+                    self.add_to_history(self.act_as, assistant_message)
                     return assistant_message
 
                 return f'The final result based on the tool executions is: {function_response}'
@@ -370,7 +383,7 @@ class Agent(BaseAgent):
                     agent_metrics.record_retry(self.name, 'execution_error')
 
                     self.add_to_history(
-                        'system', f'Error occurred. Analysis: {analysis}'
+                        MessageType.SYSTEM, f'Error occurred. Analysis: {analysis}'
                     )
                     continue
 
@@ -523,10 +536,10 @@ Respond with EXACTLY one word: "FINAL" or "INTERMEDIATE"
         try:
             analysis_messages = [
                 {
-                    'role': 'system',
+                    'role': MessageType.SYSTEM,
                     'content': 'You are a precise classification system. Respond with only FINAL or INTERMEDIATE.',
                 },
-                {'role': 'user', 'content': analysis_prompt},
+                {'role': MessageType.USER, 'content': analysis_prompt},
             ]
             analysis_response = await self.llm.generate(analysis_messages)
             analysis = self.llm.get_message_content(analysis_response).strip().upper()
