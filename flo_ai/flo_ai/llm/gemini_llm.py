@@ -29,11 +29,14 @@ class Gemini(BaseLLM):
         if base_url and self.api_key:
             # For custom base_url (proxy), set Authorization header explicitly
             http_options['headers'] = {'Authorization': f'Bearer {self.api_key}'}
-        self.client = (
-            genai.Client(http_options=http_options)
-            if http_options
-            else genai.Client(api_key=self.api_key)
-        )
+
+        # Initialize client based on configuration
+        if http_options:
+            self.client = genai.Client(http_options=http_options)
+        elif self.api_key:
+            self.client = genai.Client(api_key=self.api_key)
+        else:
+            self.client = genai.Client()
 
     @trace_llm_call(provider='gemini')
     async def generate(
