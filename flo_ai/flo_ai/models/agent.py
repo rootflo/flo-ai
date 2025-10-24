@@ -89,7 +89,8 @@ class Agent(BaseAgent):
                     formatted_doc = await self.llm.format_document_in_message(input)
                     self.add_to_history('user', formatted_doc)
                 elif isinstance(input, ChatMessage):
-                    self.add_to_history(input.role, input.content)
+                    resolved_content = resolve_variables(input.content, variables)
+                    self.add_to_history(input.role, resolved_content)
                 else:
                     # Resolve variables in text input
                     resolved_input = resolve_variables(input, variables)
