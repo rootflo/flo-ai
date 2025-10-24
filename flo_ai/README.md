@@ -24,9 +24,6 @@
 
 <p align="center">
   <br/>
-  <a href="https://flo-ai.rootflo.ai" rel="" target="_blank"><strong>📖 Documentation »</strong></a>
-  <br/>
-  <br/>
    <a href="https://github.com/rootflo/flo-ai">GitHub</a>
    •
     <a href="https://rootflo.ai" target="_blank">Website</a>
@@ -549,12 +546,7 @@ Check out the `examples/` directory for comprehensive examples:
 
 ### Documentation
 
-Visit our [comprehensive documentation](https://flo-ai.rootflo.ai) for:
-- Detailed tutorials
-- API reference
-- Best practices
-- Advanced examples
-- Architecture deep-dives
+Visit our [website](https://www.rootflo.ai) to know more
 
 **Additional Resources:**
 - [@flo_tool Decorator Guide](TOOLS.md) - Complete guide to the `@flo_tool` decorator
