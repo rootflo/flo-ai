@@ -15,8 +15,6 @@ from flo_ai.llm.openai_vllm import OpenAIVLLM
 from flo_ai.llm.base_llm import ImageMessage
 from flo_ai.tool.base_tool import Tool
 
-os.environ['OPENAI_API_KEY'] = 'test-key-123'
-
 
 class TestOpenAIVLLM:
     """Test class for OpenAI VLLM implementation."""
