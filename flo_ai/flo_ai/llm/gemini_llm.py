@@ -1,8 +1,18 @@
-from typing import Dict, Any, List, Optional
+import base64
+import asyncio
+from typing import Dict, Any, List, Optional, AsyncIterator
 from google import genai
 from google.genai import types
 from .base_llm import BaseLLM, ImageMessage
 from flo_ai.tool.base_tool import Tool
+from flo_ai.telemetry.instrumentation import (
+    trace_llm_call,
+    trace_llm_stream,
+    llm_metrics,
+    add_span_attributes,
+)
+from flo_ai.telemetry import get_tracer
+from opentelemetry import trace
 
 
 class Gemini(BaseLLM):
@@ -19,6 +29,7 @@ class Gemini(BaseLLM):
             genai.Client(api_key=self.api_key) if self.api_key else genai.Client()
         )
 
+    @trace_llm_call(provider='gemini')
     async def generate(
         self,
         messages: List[Dict[str, str]],
@@ -56,12 +67,41 @@ class Gemini(BaseLLM):
                 generation_config.response_mime_type = 'application/json'
                 generation_config.response_schema = output_schema
 
-            # Make the API call
-            response = self.client.models.generate_content(
+            # Make the API call (run in thread pool to avoid blocking event loop)
+            response = await asyncio.to_thread(
+                self.client.models.generate_content,
                 model=self.model,
                 contents=contents,
                 config=generation_config,
             )
+
+            # Record token usage if available
+            if hasattr(response, 'usage_metadata') and response.usage_metadata:
+                usage = response.usage_metadata
+                prompt_tokens = getattr(usage, 'prompt_token_count', 0)
+                completion_tokens = getattr(usage, 'candidates_token_count', 0)
+                total_tokens = getattr(usage, 'total_token_count', 0)
+
+                llm_metrics.record_tokens(
+                    total_tokens=total_tokens,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                    model=self.model,
+                    provider='gemini',
+                )
+
+                # Add token info to current span
+                tracer = get_tracer()
+                if tracer:
+                    current_span = trace.get_current_span()
+                    add_span_attributes(
+                        current_span,
+                        {
+                            'llm.tokens.prompt': prompt_tokens,
+                            'llm.tokens.completion': completion_tokens,
+                            'llm.tokens.total': total_tokens,
+                        },
+                    )
 
             # Check for function call in the response
             if (
@@ -88,6 +128,61 @@ class Gemini(BaseLLM):
 
         except Exception as e:
             raise Exception(f'Error in Gemini API call: {str(e)}')
+
+    @trace_llm_stream(provider='gemini')
+    async def stream(
+        self,
+        messages: List[Dict[str, str]],
+        functions: Optional[List[Dict[str, Any]]] = None,
+    ) -> AsyncIterator[Dict[str, Any]]:
+        """Stream partial responses from Gemini as they are generated"""
+        # Convert messages to Gemini format
+        contents = []
+        system_prompt = ''
+
+        for msg in messages:
+            role = msg['role']
+            message_content = msg['content']
+
+            if role == 'system':
+                system_prompt += f'{message_content}\n'
+            else:
+                contents.append(message_content)
+
+        # Prepare generation config
+        generation_config = types.GenerateContentConfig(
+            temperature=self.temperature,
+            system_instruction=system_prompt,
+            **self.kwargs,
+        )
+
+        # Add tools if functions are provided
+        if functions:
+            tools = types.Tool(function_declarations=functions)
+            generation_config.tools = [tools]
+
+        # Get stream in thread to avoid blocking the initial call
+        stream = await asyncio.to_thread(
+            self.client.models.generate_content_stream,
+            model=self.model,
+            contents=contents,
+            config=generation_config,
+        )
+
+        # Helper to get next chunk in thread pool
+        def get_next_chunk():
+            try:
+                return next(stream)
+            except StopIteration:
+                return None
+
+        # Iterate over synchronous stream without blocking event loop
+        while True:
+            chunk = await asyncio.to_thread(get_next_chunk)
+            if chunk is None:
+                break
+            if hasattr(chunk, 'text') and chunk.text:
+                yield {'content': chunk.text}
 
     def get_message_content(self, response: Any) -> str:
         """Extract message content from response"""
@@ -138,6 +233,11 @@ class Gemini(BaseLLM):
         elif image.image_bytes:
             return types.Part.from_bytes(
                 data=image.image_bytes,
+                mime_type=image.mime_type,
+            )
+        elif image.image_base64:
+            return types.Part.from_bytes(
+                data=base64.b64decode(image.image_base64),
                 mime_type=image.mime_type,
             )
         raise NotImplementedError(

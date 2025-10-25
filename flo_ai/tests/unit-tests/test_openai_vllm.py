@@ -15,8 +15,6 @@ from flo_ai.llm.openai_vllm import OpenAIVLLM
 from flo_ai.llm.base_llm import ImageMessage
 from flo_ai.tool.base_tool import Tool
 
-os.environ['OPENAI_API_KEY'] = 'test-key-123'
-
 
 class TestOpenAIVLLM:
     """Test class for OpenAI VLLM implementation."""
@@ -28,9 +26,11 @@ class TestOpenAIVLLM:
         mock_async_openai.return_value = mock_client
 
         # Test with minimal parameters
-        llm = OpenAIVLLM(base_url='https://api.vllm.com', model='gpt-4o-mini')
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
         assert llm.model == 'gpt-4o-mini'
-        assert llm.api_key is None
+        assert llm.api_key == 'test-key-123'
         assert llm.temperature == 0.7
         assert llm.base_url == 'https://api.vllm.com'
         assert llm.kwargs == {}
@@ -57,6 +57,7 @@ class TestOpenAIVLLM:
             model='gpt-4o-mini',
             max_tokens=1000,
             top_p=0.9,
+            api_key='test-key-123',
         )
         assert llm.kwargs == {'max_tokens': 1000, 'top_p': 0.9}
 
@@ -67,20 +68,28 @@ class TestOpenAIVLLM:
         mock_async_openai.return_value = mock_client
 
         # Test default temperature
-        llm = OpenAIVLLM(base_url='https://api.vllm.com', model='gpt-4o-mini')
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
         assert llm.temperature == 0.7
 
         # Test custom temperature
         mock_async_openai.reset_mock()
         llm = OpenAIVLLM(
-            base_url='https://api.vllm.com', model='gpt-4o-mini', temperature=0.0
+            base_url='https://api.vllm.com',
+            model='gpt-4o-mini',
+            temperature=0.0,
+            api_key='test-key-123',
         )
         assert llm.temperature == 0.0
 
         # Test high temperature
         mock_async_openai.reset_mock()
         llm = OpenAIVLLM(
-            base_url='https://api.vllm.com', model='gpt-4o-mini', temperature=1.0
+            base_url='https://api.vllm.com',
+            model='gpt-4o-mini',
+            temperature=1.0,
+            api_key='test-key-123',
         )
         assert llm.temperature == 1.0
 
@@ -91,6 +100,7 @@ class TestOpenAIVLLM:
             model='gpt-4o-mini',
             temperature=0.3,
             custom_temp=0.8,
+            api_key='test-key-123',
         )
         assert llm.temperature == 0.3
         assert llm.kwargs['custom_temp'] == 0.8
@@ -102,20 +112,24 @@ class TestOpenAIVLLM:
         mock_async_openai.return_value = mock_client
 
         llm = OpenAIVLLM(
-            base_url='https://custom.vllm.com', model='gpt-4o-mini', api_key='test-key'
+            base_url='https://custom.vllm.com',
+            model='gpt-4o-mini',
+            api_key='test-key-123',
         )
 
         mock_async_openai.assert_called_once_with(
-            api_key='test-key', base_url='https://custom.vllm.com'
+            api_key='test-key-123', base_url='https://custom.vllm.com'
         )
         assert llm.client == mock_client
 
         # Test without API key
         mock_async_openai.reset_mock()
-        llm = OpenAIVLLM(base_url='https://api.vllm.com', model='gpt-4o-mini')
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
 
         mock_async_openai.assert_called_once_with(
-            api_key=None, base_url='https://api.vllm.com'
+            api_key='test-key-123', base_url='https://api.vllm.com'
         )
         assert llm.client == mock_client
 
@@ -126,7 +140,9 @@ class TestOpenAIVLLM:
         mock_client = Mock()
         mock_async_openai.return_value = mock_client
 
-        llm = OpenAIVLLM(base_url='https://api.vllm.com', model='gpt-4o-mini')
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
 
         # Mock the client response
         mock_choice = Mock()
@@ -158,7 +174,9 @@ class TestOpenAIVLLM:
         mock_client = Mock()
         mock_async_openai.return_value = mock_client
 
-        llm = OpenAIVLLM(base_url='https://api.vllm.com', model='gpt-4o-mini')
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
 
         output_schema = {
             'title': 'test_schema',
@@ -200,7 +218,9 @@ class TestOpenAIVLLM:
         mock_client = Mock()
         mock_async_openai.return_value = mock_client
 
-        llm = OpenAIVLLM(base_url='https://api.vllm.com', model='gpt-4o-mini')
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
 
         output_schema = {'title': 'test_schema', 'schema': {'type': 'object'}}
 
@@ -242,6 +262,7 @@ class TestOpenAIVLLM:
             model='gpt-4o-mini',
             top_p=0.9,
             max_output_tokens=1000,
+            api_key='test-key-123',
         )
 
         # Mock the client response
@@ -266,7 +287,9 @@ class TestOpenAIVLLM:
 
     def test_openai_vllm_get_message_content(self):
         """Test get_message_content method."""
-        llm = OpenAIVLLM(base_url='https://api.vllm.com', model='gpt-4o-mini')
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
 
         # Test with dict response (should return str representation)
         response = {'content': 'Hello, world!'}
@@ -290,7 +313,9 @@ class TestOpenAIVLLM:
 
     def test_openai_vllm_format_tool_for_llm(self):
         """Test format_tool_for_llm method."""
-        llm = OpenAIVLLM(base_url='https://api.vllm.com', model='gpt-4o-mini')
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
 
         # Create a mock tool
         tool = Tool(
@@ -314,7 +339,9 @@ class TestOpenAIVLLM:
 
     def test_openai_vllm_format_tools_for_llm(self):
         """Test format_tools_for_llm method."""
-        llm = OpenAIVLLM(base_url='https://api.vllm.com', model='gpt-4o-mini')
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
 
         # Create mock tools
         tool1 = Tool(
@@ -339,7 +366,9 @@ class TestOpenAIVLLM:
 
     def test_openai_vllm_format_image_in_message(self):
         """Test format_image_in_message method."""
-        llm = OpenAIVLLM(base_url='https://api.vllm.com', model='gpt-4o-mini')
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
 
         # Test with image message
         image = ImageMessage(image_url='https://example.com/image.jpg')
@@ -356,7 +385,9 @@ class TestOpenAIVLLM:
         mock_client = Mock()
         mock_async_openai.return_value = mock_client
 
-        llm = OpenAIVLLM(base_url='https://api.vllm.com', model='gpt-4o-mini')
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
 
         # Mock client to raise an exception
         llm.client.chat.completions.create = AsyncMock(
@@ -378,7 +409,9 @@ class TestOpenAIVLLM:
 
         for model in test_models:
             mock_async_openai.reset_mock()
-            llm = OpenAIVLLM(base_url='https://api.vllm.com', model=model)
+            llm = OpenAIVLLM(
+                base_url='https://api.vllm.com', model=model, api_key='test-key-123'
+            )
             assert llm.model == model
 
     @patch('flo_ai.llm.openai_llm.AsyncOpenAI')
@@ -397,8 +430,10 @@ class TestOpenAIVLLM:
 
         # Test without API key
         mock_async_openai.reset_mock()
-        llm = OpenAIVLLM(base_url='https://api.vllm.com', model='gpt-4o-mini')
-        assert llm.api_key is None
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
+        assert llm.api_key == 'test-key-123'
 
         # Test with empty string API key
         mock_async_openai.reset_mock()
@@ -414,12 +449,20 @@ class TestOpenAIVLLM:
         mock_async_openai.return_value = mock_client
 
         # Test with base URL
-        llm = OpenAIVLLM(base_url='https://custom.vllm.com', model='gpt-4o-mini')
+        llm = OpenAIVLLM(
+            base_url='https://custom.vllm.com',
+            model='gpt-4o-mini',
+            api_key='test-key-123',
+        )
         assert llm.base_url == 'https://custom.vllm.com'
 
         # Test with different base URL
         mock_async_openai.reset_mock()
-        llm = OpenAIVLLM(base_url='https://another.vllm.com', model='gpt-4o-mini')
+        llm = OpenAIVLLM(
+            base_url='https://another.vllm.com',
+            model='gpt-4o-mini',
+            api_key='test-key-123',
+        )
         assert llm.base_url == 'https://another.vllm.com'
 
     @patch('flo_ai.llm.openai_llm.AsyncOpenAI')
@@ -428,7 +471,9 @@ class TestOpenAIVLLM:
         mock_client = Mock()
         mock_async_openai.return_value = mock_client
 
-        llm = OpenAIVLLM(base_url='https://api.vllm.com', model='gpt-4o-mini')
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
 
         # Should inherit from OpenAI
         from flo_ai.llm.openai_llm import OpenAI
@@ -466,10 +511,12 @@ class TestOpenAIVLLM:
 
         # Test with minimal parameters
         mock_async_openai.reset_mock()
-        llm = OpenAIVLLM(base_url='https://api.vllm.com', model='gpt-4o-mini')
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
 
         assert llm.model == 'gpt-4o-mini'
-        assert llm.api_key is None
+        assert llm.api_key == 'test-key-123'
         assert llm.temperature == 0.7
         assert llm.base_url == 'https://api.vllm.com'
         assert llm.kwargs == {}
@@ -480,7 +527,9 @@ class TestOpenAIVLLM:
         mock_client = Mock()
         mock_async_openai.return_value = mock_client
 
-        llm = OpenAIVLLM(base_url='https://api.vllm.com', model='gpt-4o-mini')
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
 
         # Test that OpenAIVLLM has all the methods from OpenAI
         assert hasattr(llm, 'generate')
@@ -502,14 +551,16 @@ class TestOpenAIVLLM:
         mock_client = Mock()
         mock_async_openai.return_value = mock_client
 
-        llm = OpenAIVLLM(base_url='https://api.vllm.com', model='gpt-4o-mini')
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
 
         # Default values from OpenAI
         assert llm.model == 'gpt-4o-mini'
         assert llm.temperature == 0.7
 
         # Default values from BaseLLM
-        assert llm.api_key is None
+        assert llm.api_key == 'test-key-123'
         assert llm.kwargs == {}
 
         # Default values from OpenAIVLLM
@@ -521,7 +572,9 @@ class TestOpenAIVLLM:
         mock_client = Mock()
         mock_async_openai.return_value = mock_client
 
-        llm = OpenAIVLLM(base_url='https://api.vllm.com', model='gpt-4o-mini')
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
 
         # Change parameters
         llm.model = 'new-model'
@@ -546,6 +599,7 @@ class TestOpenAIVLLM:
             top_p=0.9,
             frequency_penalty=0.1,
             presence_penalty=0.1,
+            api_key='test-key-123',
         )
 
         assert 'max_tokens' in llm.kwargs
@@ -567,9 +621,142 @@ class TestOpenAIVLLM:
             base_url='https://test.vllm.com',
             project='test-project',
             location='test-location',
+            api_key='test-key-123',
         )
 
         # Verify all attributes are set correctly
         assert llm.model == 'test-model'
         assert llm.base_url == 'https://test.vllm.com'
         assert llm.client == mock_client
+
+    @pytest.mark.asyncio
+    @patch('flo_ai.llm.openai_llm.AsyncOpenAI')
+    async def test_openai_vllm_stream_basic(self, mock_async_openai):
+        """Test basic stream method without functions."""
+        mock_client = Mock()
+        mock_async_openai.return_value = mock_client
+
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
+
+        # Mock streaming chunks
+        mock_delta1 = Mock()
+        mock_delta1.content = 'Hello'
+
+        mock_delta2 = Mock()
+        mock_delta2.content = ', world!'
+
+        mock_choice1 = Mock()
+        mock_choice1.delta = mock_delta1
+
+        mock_choice2 = Mock()
+        mock_choice2.delta = mock_delta2
+
+        mock_chunk1 = Mock()
+        mock_chunk1.choices = [mock_choice1]
+
+        mock_chunk2 = Mock()
+        mock_chunk2.choices = [mock_choice2]
+
+        # Create a proper async iterator
+        async def async_iter():
+            yield mock_chunk1
+            yield mock_chunk2
+
+        # Mock the client response
+        llm.client.chat.completions.create = AsyncMock(return_value=async_iter())
+
+        messages = [{'role': 'user', 'content': 'Hello'}]
+
+        # Collect streaming results
+        results = []
+        async for chunk in llm.stream(messages):
+            results.append(chunk)
+
+        # Verify the API call
+        llm.client.chat.completions.create.assert_called_once()
+        call_args = llm.client.chat.completions.create.call_args
+
+        assert call_args[1]['model'] == 'gpt-4o-mini'
+        assert call_args[1]['messages'] == messages
+        assert call_args[1]['temperature'] == 0.7
+        assert call_args[1]['stream'] is True
+
+        # Verify the streaming results
+        assert len(results) == 2
+        assert results[0] == {'content': 'Hello'}
+        assert results[1] == {'content': ', world!'}
+
+    @pytest.mark.asyncio
+    @patch('flo_ai.llm.openai_llm.AsyncOpenAI')
+    async def test_openai_vllm_stream_with_functions(self, mock_async_openai):
+        """Test stream method with functions."""
+        mock_client = Mock()
+        mock_async_openai.return_value = mock_client
+
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
+
+        functions = [
+            {
+                'name': 'test_function',
+                'description': 'A test function',
+                'parameters': {'type': 'object'},
+            }
+        ]
+
+        # Mock streaming chunks
+        mock_delta = Mock()
+        mock_delta.content = 'I will use the function'
+
+        mock_choice = Mock()
+        mock_choice.delta = mock_delta
+
+        mock_chunk = Mock()
+        mock_chunk.choices = [mock_choice]
+
+        # Create a proper async iterator
+        async def async_iter():
+            yield mock_chunk
+
+        # Mock the client response
+        llm.client.chat.completions.create = AsyncMock(return_value=async_iter())
+
+        messages = [{'role': 'user', 'content': 'Use the function'}]
+
+        # Collect streaming results
+        results = []
+        async for chunk in llm.stream(messages, functions=functions):
+            results.append(chunk)
+
+        # Verify functions were passed correctly
+        call_args = llm.client.chat.completions.create.call_args
+        assert call_args[1]['functions'] == functions
+
+        # Verify the streaming results
+        assert len(results) == 1
+        assert results[0] == {'content': 'I will use the function'}
+
+    @pytest.mark.asyncio
+    @patch('flo_ai.llm.openai_llm.AsyncOpenAI')
+    async def test_openai_vllm_stream_error_handling(self, mock_async_openai):
+        """Test error handling in stream method."""
+        mock_client = Mock()
+        mock_async_openai.return_value = mock_client
+
+        llm = OpenAIVLLM(
+            base_url='https://api.vllm.com', model='gpt-4o-mini', api_key='test-key-123'
+        )
+
+        # Mock client to raise an exception
+        llm.client.chat.completions.create = AsyncMock(
+            side_effect=Exception('Streaming API Error')
+        )
+
+        messages = [{'role': 'user', 'content': 'Hello'}]
+
+        with pytest.raises(Exception, match='Streaming API Error'):
+            async for chunk in llm.stream(messages):
+                pass

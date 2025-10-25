@@ -11,6 +11,7 @@ from .models import (
     ReasoningPattern,
     DocumentType,
     DocumentMessage,
+    MessageType,
 )
 
 from .builder.agent_builder import AgentBuilder
@@ -40,6 +41,15 @@ from .arium import (
 # Utils package - Utility functions
 from .utils import FloUtils
 
+# Telemetry package - OpenTelemetry integration
+from .telemetry import (
+    configure_telemetry,
+    shutdown_telemetry,
+    get_tracer,
+    get_meter,
+    FloTelemetry,
+)
+
 __all__ = [
     # Models
     'Agent',
@@ -47,6 +57,7 @@ __all__ = [
     'BaseAgent',
     'AgentType',
     'ReasoningPattern',
+    'MessageType',
     # Utils
     'FloUtils',
     # LLM
@@ -81,6 +92,12 @@ __all__ = [
     'AriumEventType',
     'AriumEvent',
     'default_event_callback',
+    # Telemetry
+    'configure_telemetry',
+    'shutdown_telemetry',
+    'get_tracer',
+    'get_meter',
+    'FloTelemetry',
 ]
 
 __version__ = '1.0.0'

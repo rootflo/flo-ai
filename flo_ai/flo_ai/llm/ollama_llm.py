@@ -1,8 +1,9 @@
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, AsyncIterator
 import aiohttp
 import json
 from .base_llm import BaseLLM, ImageMessage
 from flo_ai.tool.base_tool import Tool
+from flo_ai.telemetry.instrumentation import trace_llm_call, trace_llm_stream
 
 
 class OllamaLLM(BaseLLM):
@@ -17,6 +18,7 @@ class OllamaLLM(BaseLLM):
         super().__init__(model, api_key, temperature, **kwargs)
         self.base_url = base_url.rstrip('/')
 
+    @trace_llm_call(provider='ollama')
     async def generate(
         self,
         messages: List[Dict[str, str]],
@@ -64,6 +66,63 @@ class OllamaLLM(BaseLLM):
                     'content': result.get('response', ''),
                     'function_call': result.get('function_call'),
                 }
+
+    @trace_llm_stream(provider='ollama')
+    async def stream(
+        self,
+        messages: List[Dict[str, str]],
+        functions: Optional[List[Dict[str, Any]]] = None,
+    ) -> AsyncIterator[Dict[str, Any]]:
+        """Stream partial responses from the hosted Ollama service.
+
+        Note: For streaming, do not include the 'stream' flag in payload; the
+        service defaults to streamed output.
+        """
+        # Convert messages to Ollama prompt format
+        prompt = ''
+        for msg in messages:
+            role = msg['role']
+            content = msg['content']
+            if role == 'system':
+                prompt += f'System: {content}\n'
+            elif role == 'user':
+                prompt += f'User: {content}\n'
+            elif role == 'assistant':
+                prompt += f'Assistant: {content}\n'
+
+        # Prepare request payload without 'stream' key for streaming
+        payload = {
+            'model': self.model,
+            'prompt': prompt,
+            'temperature': self.temperature,
+            **self.kwargs,
+        }
+
+        if functions:
+            payload['functions'] = functions
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                f'{self.base_url}/api/generate', json=payload
+            ) as response:
+                if response.status != 200:
+                    raise Exception(f'Ollama API error: {await response.text()}')
+
+                async for raw_line in response.content:
+                    line = raw_line.decode('utf-8').strip()
+                    if not line:
+                        continue
+                    try:
+                        data = json.loads(line)
+                    except Exception:
+                        # Skip non-JSON lines
+                        continue
+
+                    if 'response' in data and data['response']:
+                        yield {'content': data['response']}
+
+                    if data.get('done') is True:
+                        break
 
     def get_message_content(self, response: Any) -> str:
         """Extract message content from response"""

@@ -1,8 +1,16 @@
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, AsyncIterator
 from anthropic import AsyncAnthropic
 import json
 from .base_llm import BaseLLM, ImageMessage
 from flo_ai.tool.base_tool import Tool
+from flo_ai.telemetry.instrumentation import (
+    trace_llm_call,
+    trace_llm_stream,
+    llm_metrics,
+    add_span_attributes,
+)
+from flo_ai.telemetry import get_tracer
+from opentelemetry import trace
 
 
 class Anthropic(BaseLLM):
@@ -17,6 +25,7 @@ class Anthropic(BaseLLM):
         super().__init__(model, api_key, temperature, **kwargs)
         self.client = AsyncAnthropic(api_key=self.api_key, base_url=base_url)
 
+    @trace_llm_call(provider='anthropic')
     async def generate(
         self,
         messages: List[Dict[str, str]],
@@ -49,6 +58,7 @@ class Anthropic(BaseLLM):
                 'model': self.model,
                 'messages': conversation,
                 'temperature': self.temperature,
+                'max_tokens': self.kwargs.get('max_tokens', 1024),
                 **self.kwargs,
             }
 
@@ -59,6 +69,31 @@ class Anthropic(BaseLLM):
                 kwargs['tools'] = functions
 
             response = await self.client.messages.create(**kwargs)
+
+            # Record token usage if available
+            if hasattr(response, 'usage') and response.usage:
+                usage = response.usage
+                llm_metrics.record_tokens(
+                    total_tokens=usage.input_tokens + usage.output_tokens,
+                    prompt_tokens=usage.input_tokens,
+                    completion_tokens=usage.output_tokens,
+                    model=self.model,
+                    provider='anthropic',
+                )
+
+                # Add token info to current span
+                tracer = get_tracer()
+                if tracer:
+                    current_span = trace.get_current_span()
+                    add_span_attributes(
+                        current_span,
+                        {
+                            'llm.tokens.prompt': usage.input_tokens,
+                            'llm.tokens.completion': usage.output_tokens,
+                            'llm.tokens.total': usage.input_tokens
+                            + usage.output_tokens,
+                        },
+                    )
 
             # Check if there's a tool use in the response
             for content_block in response.content:
@@ -76,6 +111,52 @@ class Anthropic(BaseLLM):
 
         except Exception as e:
             raise Exception(f'Error in Claude API call: {str(e)}')
+
+    @trace_llm_stream(provider='anthropic')
+    async def stream(
+        self,
+        messages: List[Dict[str, str]],
+        functions: Optional[List[Dict[str, Any]]] = None,
+    ) -> AsyncIterator[Dict[str, Any]]:
+        """Stream partial responses from the LLM as they are generated"""
+        # Convert messages to Claude format
+        system_message = next(
+            (msg['content'] for msg in messages if msg['role'] == 'system'), None
+        )
+
+        conversation = []
+        for msg in messages:
+            if msg['role'] != 'system':
+                conversation.append(
+                    {
+                        'role': 'assistant' if msg['role'] == 'assistant' else 'user',
+                        'content': msg['content'],
+                    }
+                )
+
+        kwargs = {
+            'model': self.model,
+            'messages': conversation,
+            'temperature': self.temperature,
+            'max_tokens': self.kwargs.get('max_tokens', 1024),
+            **self.kwargs,
+        }
+
+        if system_message:
+            kwargs['system'] = system_message
+
+        if functions:
+            kwargs['tools'] = functions
+        # Use Anthropic SDK streaming API and yield text deltas
+        async with self.client.messages.stream(**kwargs) as stream:
+            async for event in stream:
+                if (
+                    getattr(event, 'type', None) == 'content_block_delta'
+                    and hasattr(event, 'delta')
+                    and getattr(event.delta, 'type', None) == 'text_delta'
+                    and hasattr(event.delta, 'text')
+                ):
+                    yield {'content': event.delta.text}
 
     def get_message_content(self, response: Any) -> str:
         """Extract message content from response"""
