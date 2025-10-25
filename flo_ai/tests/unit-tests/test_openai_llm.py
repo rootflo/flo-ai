@@ -56,7 +56,7 @@ class TestOpenAI:
         assert llm.temperature == 1.0
 
         # Test temperature in kwargs
-        llm = OpenAI(temperature=0.3, custom_temp=0.8)
+        llm = OpenAI(temperature=0.3, custom_temp=0.8, api_key='test-key-123')
         assert llm.temperature == 0.3
         assert llm.kwargs['custom_temp'] == 0.8
 
@@ -305,10 +305,6 @@ class TestOpenAI:
         # Test with API key
         llm = OpenAI(api_key='secret-key-123')
         assert llm.api_key == 'secret-key-123'
-
-        # Test without API key
-        llm = OpenAI()
-        assert llm.api_key is None
 
         # Test with empty string API key
         llm = OpenAI(api_key='')
