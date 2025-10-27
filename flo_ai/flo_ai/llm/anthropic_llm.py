@@ -65,6 +65,7 @@ class Anthropic(BaseLLM):
                 'model': self.model,
                 'messages': conversation,
                 'temperature': self.temperature,
+                'max_tokens': self.kwargs.get('max_tokens', 1024),
                 **self.kwargs,
                 **kwargs,
             }
