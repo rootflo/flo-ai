@@ -19,12 +19,18 @@ class OpenAI(BaseLLM):
         api_key: str = None,
         temperature: float = 0.7,
         base_url: str = None,
+        custom_headers: Optional[Dict[str, str]] = None,
         **kwargs,
     ):
         super().__init__(
             model=model, api_key=api_key, temperature=temperature, **kwargs
         )
-        self.client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+        # Add custom headers if base_url is provided (proxy scenario)
+        client_kwargs = {'api_key': api_key, 'base_url': base_url}
+        if base_url and custom_headers:
+            client_kwargs['default_headers'] = custom_headers
+
+        self.client = AsyncOpenAI(**client_kwargs)
         self.model = model
         self.kwargs = kwargs
 

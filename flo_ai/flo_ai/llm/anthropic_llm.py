@@ -20,10 +20,16 @@ class Anthropic(BaseLLM):
         temperature: float = 0.7,
         api_key: Optional[str] = None,
         base_url: str = None,
+        custom_headers: Optional[Dict[str, str]] = None,
         **kwargs,
     ):
         super().__init__(model, api_key, temperature, **kwargs)
-        self.client = AsyncAnthropic(api_key=self.api_key, base_url=base_url)
+        # Add custom headers if base_url is provided (proxy scenario)
+        client_kwargs = {'api_key': self.api_key, 'base_url': base_url}
+        if base_url and custom_headers:
+            client_kwargs['default_headers'] = custom_headers
+
+        self.client = AsyncAnthropic(**client_kwargs)
 
     @trace_llm_call(provider='anthropic')
     async def generate(

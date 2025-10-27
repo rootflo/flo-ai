@@ -21,6 +21,7 @@ class Gemini(BaseLLM):
         temperature: float = 0.7,
         api_key: Optional[str] = None,
         base_url: str = None,
+        custom_headers: Optional[Dict[str, str]] = None,
         **kwargs,
     ):
         super().__init__(model, api_key, temperature, **kwargs)
@@ -29,6 +30,9 @@ class Gemini(BaseLLM):
         if base_url and self.api_key:
             # For custom base_url (proxy), set Authorization header explicitly
             http_options['headers'] = {'Authorization': f'Bearer {self.api_key}'}
+            # Merge custom headers if provided (proxy scenario)
+            if custom_headers:
+                http_options['headers'].update(custom_headers)
 
         # Initialize client based on configuration
         if http_options:

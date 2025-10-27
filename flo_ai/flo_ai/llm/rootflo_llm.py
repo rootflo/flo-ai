@@ -1,5 +1,7 @@
 from enum import Enum
 from typing import AsyncIterator, Dict, Any, List, Optional
+from datetime import datetime, timedelta
+import jwt
 from .base_llm import BaseLLM, ImageMessage
 from .openai_llm import OpenAI
 from .gemini_llm import Gemini
@@ -27,7 +29,10 @@ class RootFloLLM(BaseLLM):
         model_id: str,
         llm_model: str,
         llm_provider: LLMProvider,
-        api_token: str,
+        app_key: str,
+        app_secret: str,
+        issuer: str,
+        audience: str,
         temperature: float = 0.7,
         **kwargs,
     ):
@@ -38,10 +43,27 @@ class RootFloLLM(BaseLLM):
             base_url: The base URL of the proxy server
             model_id: The model identifier
             llm_provider: Type of LLM SDK to use (LLMProvider enum)
-            api_token: API token (e.g., JWT Bearer token without bearer prefix) for authenticating with the proxy server
+            app_key: Application key for X-Rootflo-Key header
+            app_secret: Application secret for JWT signing
+            issuer: JWT issuer claim
+            audience: JWT audience claim
             temperature: Temperature parameter for generation
             **kwargs: Additional parameters to pass to the underlying SDK
         """
+        # Generate JWT token
+        now = datetime.now()
+        payload = {
+            'iss': issuer,
+            'aud': audience,
+            'iat': int(now.timestamp()),
+            'exp': int((now + timedelta(seconds=3600)).timestamp()),
+            'role_id': 'floconsole-service',
+            'user_id': 'service',
+            'service_auth': True,
+        }
+        service_token = jwt.encode(payload, app_secret, algorithm='HS256')
+        api_token = f'fc_{service_token}'
+
         super().__init__(
             model=llm_model, api_key=api_token, temperature=temperature, **kwargs
         )
@@ -53,6 +75,9 @@ class RootFloLLM(BaseLLM):
         # Construct full URL
         full_url = f'{base_url}/{model_id}'
 
+        # Prepare custom headers for proxy authentication
+        custom_headers = {'X-Rootflo-Key': app_key}
+
         # Instantiate appropriate SDK wrapper based on llm_provider
         if llm_provider == LLMProvider.OPENAI:
             self._llm = OpenAI(
@@ -60,6 +85,7 @@ class RootFloLLM(BaseLLM):
                 base_url=full_url,
                 api_key=api_token,
                 temperature=temperature,
+                custom_headers=custom_headers,
                 **kwargs,
             )
         elif llm_provider == LLMProvider.ANTHROPIC:
@@ -68,6 +94,7 @@ class RootFloLLM(BaseLLM):
                 base_url=full_url,
                 api_key=api_token,
                 temperature=temperature,
+                custom_headers=custom_headers,
                 **kwargs,
             )
         elif llm_provider == LLMProvider.GEMINI:
@@ -77,6 +104,7 @@ class RootFloLLM(BaseLLM):
                 api_key=api_token,
                 temperature=temperature,
                 base_url=full_url,
+                custom_headers=custom_headers,
                 **kwargs,
             )
         else:
