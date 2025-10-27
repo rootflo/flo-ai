@@ -39,17 +39,21 @@ async def main() -> None:
                 role='user', content='What is the formula for the area of a triangle?'
             ),
             ChatMessage(
-                role='user', content=ImageMessage(image_file_path=' Downloads/download.png',mime_type='image/png')
+                role='user',
+                content=ImageMessage(
+                    image_file_path=' Downloads/download.png', mime_type='image/png'
+                ),
             ),
+            ChatMessage(role='user', content='from where he got this badge?'),
             ChatMessage(
-                role='user', content='from where he got this badge?'
-            ),
-            ChatMessage(
-                role='user', content=DocumentMessage(document_file_path='doc_path.pdf',document_type=DocumentType.PDF)
+                role='user',
+                content=DocumentMessage(
+                    document_file_path='doc_path.pdf', document_type=DocumentType.PDF
+                ),
             ),
             ChatMessage(
                 role='user', content='what is the name of the person in the document?'
-            )
+            ),
         ]
     )
     print(f'Response: {response}')
