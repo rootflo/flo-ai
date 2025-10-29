@@ -38,18 +38,13 @@ async def main() -> None:
             ChatMessage(
                 role='user', content='What is the formula for the area of a triangle?'
             ),
-            ChatMessage(
-                role='user',
-                content=ImageMessage(
+          ImageMessage(
                     image_file_path=' Downloads/download.png', mime_type='image/png'
-                ),
             ),
             ChatMessage(role='user', content='from where he got this badge?'),
-            ChatMessage(
-                role='user',
-                content=DocumentMessage(
+            DocumentMessage(
                     document_file_path='doc_path.pdf', document_type=DocumentType.PDF
-                ),
+
             ),
             ChatMessage(
                 role='user', content='what is the name of the person in the document?'
@@ -57,6 +52,5 @@ async def main() -> None:
         ]
     )
     print(f'Response: {response}')
-
 
 asyncio.run(main())
