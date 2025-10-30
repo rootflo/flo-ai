@@ -1,7 +1,8 @@
 from flo_ai.arium.protocols import ExecutableNode
-from typing import List, Any, Dict, Optional, TYPE_CHECKING
+from typing import List, Any, Dict, Optional, TYPE_CHECKING, Callable
 from flo_ai.utils.logger import logger
 from flo_ai.arium.memory import MessageMemory
+import asyncio
 
 if TYPE_CHECKING:  # need to have an optional import else will get circular dependency error as arium also has AriumNode reference
     from flo_ai.arium.arium import Arium
@@ -12,7 +13,7 @@ class AriumNode:
     Wrapper to use an Arium as a node in another Arium workflow.
     """
 
-    def __init__(self, name: str, arium: 'Arium', inherit_variables: bool = True):
+    def __init__(self, name: str, arium: 'Arium', inherit_variables: bool = True, input_filter: Optional[List[str]] = None):
         """
         Args:
             name: Name for this node in the parent workflow
@@ -22,6 +23,7 @@ class AriumNode:
         self.name = name
         self.arium = arium
         self.inherit_variables = inherit_variables
+        self.input_filter: Optional[List[str]] = input_filter
 
     async def run(
         self, inputs: List[Any], variables: Optional[Dict[str, Any]] = None, **kwargs
@@ -48,7 +50,7 @@ class ForEachNode:
     Supports only sequential execution for now. (parallel execution would be supported in future)
     """
 
-    def __init__(self, name: str, execute_node: ExecutableNode):
+    def __init__(self, name: str, execute_node: ExecutableNode, input_filter: Optional[List[str]] = None):
         """
         Args:
             name: Node name
@@ -56,6 +58,7 @@ class ForEachNode:
         """
         self.name = name
         self.execute_node = execute_node
+        self.input_filter: Optional[List[str]] = input_filter
 
     async def _execute_item(
         self,
@@ -139,4 +142,41 @@ class ForEachNode:
         # Return last item if result is a list, otherwise return as-is
         if isinstance(result, list) and result:
             return result[-1]
+        return result
+
+class ToolNode:
+    """
+    Lightweight tool-as-node wrapper that conforms to ExecutableNode.
+
+    Forwards inputs and variables to the provided function along with any kwargs.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        function: Callable[..., Any],
+        input_filter: Optional[List[str]] = None,
+    ) -> None:
+        self.name = name
+        self.description = description
+        self.function = function
+        self.input_filter: Optional[List[str]] = input_filter
+
+    async def run(
+        self,
+        inputs: List[Any] = None,
+        variables: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> Any:
+        logger.info(
+            f"Executing ToolNode '{self.name}' with inputs: {inputs} variables: {variables} kwargs: {kwargs}"
+        )
+
+        if asyncio.iscoroutinefunction(self.function):
+            return await self.function(inputs=inputs, variables=variables, **kwargs)
+
+        result = self.function(inputs=inputs, variables=variables, **kwargs)
+        if asyncio.iscoroutine(result):
+            return await result
         return result

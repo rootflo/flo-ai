@@ -4,10 +4,9 @@ from flo_ai.llm.base_llm import ImageMessage
 from flo_ai.models.document import DocumentMessage
 from typing import List, Dict, Any, Optional, Callable
 from flo_ai.models.agent import Agent
-from flo_ai.tool.base_tool import Tool
 from flo_ai.arium.models import StartNode, EndNode
 from flo_ai.arium.events import AriumEventType, AriumEvent
-from flo_ai.arium.nodes import AriumNode, ForEachNode
+from flo_ai.arium.nodes import AriumNode, ForEachNode, ToolNode
 from flo_ai.utils.logger import logger
 from flo_ai.utils.variable_extractor import (
     extract_variables_from_inputs,
@@ -247,11 +246,11 @@ class Arium(BaseArium):
 
             if isinstance(result, List):  # for each node will give results array
                 for item in result:
-                    # update each item in result to memory
-                    self._add_to_memory(item)
+                    # update each item in result to memory using new schema
+                    self._add_to_memory({'node': current_node.name, 'output': item})
             else:
-                # update results to memory
-                self._add_to_memory(result)
+                # update results to memory using new schema
+                self._add_to_memory({'node': current_node.name, 'output': result})
 
             # find next node post current node
             # Prepare execution context for router functions
@@ -383,7 +382,7 @@ class Arium(BaseArium):
 
     async def _execute_node(
         self,
-        node: Agent | Tool | StartNode | EndNode,
+        node: Agent | ToolNode | ForEachNode | AriumNode | StartNode | EndNode,
         event_callback: Optional[Callable[[AriumEvent], None]] = None,
         events_filter: Optional[List[AriumEventType]] = None,
         variables: Optional[Dict[str, Any]] = None,
@@ -402,7 +401,7 @@ class Arium(BaseArium):
         # Determine node type for events
         if isinstance(node, Agent):
             node_type = 'agent'
-        elif isinstance(node, Tool):
+        elif isinstance(node, ToolNode):
             node_type = 'tool'
         elif isinstance(node, ForEachNode):
             node_type = 'foreach'
@@ -429,6 +428,8 @@ class Arium(BaseArium):
 
         # Start node telemetry tracing
         tracer = get_tracer()
+        memory_items = self.memory.get(getattr(node, 'input_filter', None)) if getattr(node, 'input_filter', None) else self.memory.get()
+        inputs = [item['output'] for item in memory_items]
 
         if tracer and node_type not in ['start', 'end']:
             with tracer.start_as_current_span(
@@ -441,20 +442,21 @@ class Arium(BaseArium):
             ) as node_span:
                 try:
                     # Execute the node based on its type
+
                     if isinstance(node, Agent):
                         # Variables are already resolved, pass empty dict to avoid re-processing
-                        result = await node.run(self.memory.get(), variables={})
-                    elif isinstance(node, Tool):
-                        result = await node.run(inputs=[], variables=None)
+                        result = await node.run(inputs, variables={})
+                    elif isinstance(node, ToolNode):
+                        result = await node.run(inputs, variables=None)
                     elif isinstance(node, ForEachNode):
                         result = await node.run(
-                            inputs=self.memory.get(),
+                            inputs,
                             variables=variables,
                         )
                     elif isinstance(node, AriumNode):
                         # AriumNode execution
                         result = await node.run(
-                            inputs=self.memory.get(), variables=variables
+                            inputs, variables=variables
                         )
                     elif isinstance(node, StartNode):
                         result = None
@@ -526,18 +528,16 @@ class Arium(BaseArium):
             try:
                 # Execute the node based on its type
                 if isinstance(node, Agent):
-                    result = await node.run(self.memory.get(), variables={})
-                elif isinstance(node, Tool):
-                    result = await node.run(inputs=[], variables=None)
+                    result = await node.run(inputs, variables={})
+                elif isinstance(node, ToolNode):
+                    result = await node.run(inputs, variables=None)
                 elif isinstance(node, ForEachNode):
                     result = await node.run(
-                        inputs=self.memory.get(),
+                        inputs,
                         variables=variables,
                     )
                 elif isinstance(node, AriumNode):
-                    result = await node.run(
-                        inputs=self.memory.get(), variables=variables
-                    )
+                    result = await node.run(inputs, variables=variables)
                 elif isinstance(node, StartNode):
                     result = None
                 elif isinstance(node, EndNode):
