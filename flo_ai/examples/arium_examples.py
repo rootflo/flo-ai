@@ -5,7 +5,7 @@ Examples demonstrating how to use the AriumBuilder pattern for creating and runn
 from typing import Literal
 from flo_ai.arium import AriumBuilder, create_arium
 from flo_ai.models.agent import Agent
-from flo_ai.tool.base_tool import Tool
+from flo_ai.arium.nodes import ToolNode
 from flo_ai.arium.memory import MessageMemory
 
 
@@ -15,18 +15,18 @@ async def example_linear_workflow():
 
     # Create some example agents and tools (these would be your actual implementations)
     analyzer_agent = Agent(name='analyzer', prompt='Analyze the input')
-    processing_tool = Tool(name='processor')
+    processing_tool_node = ToolNode(name='processor', description='Process the input', function=lambda x: x)
     summarizer_agent = Agent(name='summarizer', prompt='Summarize the results')
 
     # Build and run the workflow
     result = await (
         AriumBuilder()
         .add_agent(analyzer_agent)
-        .add_tool(processing_tool)
+        .add_tool_node(processing_tool_node)
         .add_agent(summarizer_agent)
         .start_with(analyzer_agent)
-        .connect(analyzer_agent, processing_tool)
-        .connect(processing_tool, summarizer_agent)
+        .connect(analyzer_agent, processing_tool_node)
+        .connect(processing_tool_node, summarizer_agent)
         .end_with(summarizer_agent)
         .build_and_run(['Analyze this text'])
     )
@@ -40,8 +40,8 @@ async def example_branching_workflow():
 
     # Create agents and tools
     classifier_agent = Agent(name='classifier', prompt='Classify the input type')
-    text_processor = Tool(name='text_processor')
-    image_processor = Tool(name='image_processor')
+    text_processor_node = ToolNode(name='text_processor', description='Process text', function=lambda x: x)
+    image_processor_node = ToolNode(name='image_processor', description='Process image', function=lambda x: x)
     final_agent = Agent(name='final', prompt='Provide final response')
 
     # Router function for conditional branching
@@ -56,19 +56,17 @@ async def example_branching_workflow():
     result = await (
         AriumBuilder()
         .add_agent(classifier_agent)
-        .add_tool(text_processor)
-        .add_tool(image_processor)
         .add_agent(final_agent)
+        .add_tool_node(ToolNode(name='text_processor', description='Process text', function=lambda x: x))
+        .add_tool_node(ToolNode(name='image_processor', description='Process image', function=lambda x: x))
         .start_with(classifier_agent)
-        .add_edge(classifier_agent, [text_processor, image_processor], content_router)
-        .connect(text_processor, final_agent)
-        .connect(image_processor, final_agent)
+        .add_edge(classifier_agent, [text_processor_node, image_processor_node], content_router)
+        .connect(text_processor_node, final_agent)
+        .connect(image_processor_node, final_agent)
         .end_with(final_agent)
         .build_and_run(['Process this content'])
     )
-
     return result
-
 
 # Example 3: Complex Multi-Agent Workflow
 async def example_complex_workflow():
@@ -80,8 +78,8 @@ async def example_complex_workflow():
     analyzer_agent = Agent(name='analyzer', prompt='Analyze findings')
     writer_agent = Agent(name='writer', prompt='Write the final report')
 
-    search_tool = Tool(name='search_tool')
-    data_tool = Tool(name='data_processor')
+    search_tool_node = ToolNode(name='search_tool', description='Search the web', function=lambda x: x)
+    data_tool_node = ToolNode(name='data_processor', description='Process the data', function=lambda x: x)
 
     # Router for deciding next step after analysis
     def analysis_router(memory) -> Literal['writer', 'researcher']:
@@ -93,13 +91,13 @@ async def example_complex_workflow():
     arium = (
         AriumBuilder()
         .add_agents([input_agent, researcher_agent, analyzer_agent, writer_agent])
-        .add_tools([search_tool, data_tool])
+        .add_tool_nodes([search_tool_node, data_tool_node])
         .with_memory(MessageMemory())
         .start_with(input_agent)
         .connect(input_agent, researcher_agent)
-        .connect(researcher_agent, search_tool)
-        .connect(search_tool, data_tool)
-        .connect(data_tool, analyzer_agent)
+        .connect(researcher_agent, search_tool_node)
+        .connect(search_tool_node, data_tool_node)
+        .connect(data_tool_node, analyzer_agent)
         .add_edge(analyzer_agent, [writer_agent, researcher_agent], analysis_router)
         .end_with(writer_agent)
         .build()
@@ -151,6 +149,49 @@ async def example_build_and_reuse():
     return result1, result2
 
 
+# Example 6: Four ToolNodes with input filtering (no agents)
+async def example_tool_nodes_with_filters():
+    """Workflow of only ToolNodes; each uses input_filter to read from specific nodes."""
+
+    # Define simple tool functions
+    async def pass_through(inputs=None, variables=None, **kwargs):
+        return inputs
+
+    async def capitalize_last(inputs=None, variables=None, **kwargs):
+        if not inputs:
+            return 'No inputs'
+        last = str(inputs[-1])
+        return last.capitalize()
+
+    async def uppercase_all(inputs=None, variables=None, **kwargs):
+        if not inputs:
+            return 'No inputs'
+        return ' '.join([str(x).upper() for x in inputs])
+
+    async def summarize(inputs=None, variables=None, **kwargs):
+        return f"count={len(inputs or [])} last={(str(inputs[-1]) if inputs else '')}"
+
+    # Create four ToolNodes with input filters
+    t1 = ToolNode(name='tool1', description='reads initial inputs', function=pass_through, input_filter=['input'])
+    t2 = ToolNode(name='tool2', description='reads tool1 only', function=capitalize_last, input_filter=['tool1'])
+    t3 = ToolNode(name='tool3', description='reads tool2 only', function=uppercase_all, input_filter=['tool2'])
+    t4 = ToolNode(name='tool4', description='reads tool1 & tool3', function=summarize, input_filter=['tool1', 'tool3'])
+
+    # Build and run: tool1 -> tool2 -> tool3 -> tool4
+    result = await (
+        AriumBuilder()
+        .with_memory(MessageMemory())
+        .add_tool_nodes([t1, t2, t3, t4])
+        .start_with(t1)
+        .connect(t1, t2)
+        .connect(t2, t3)
+        .connect(t3, t4)
+        .end_with(t4)
+        .build_and_run(['hello world'])
+    )
+
+    return result
+
 if __name__ == '__main__':
     import asyncio
 
@@ -164,6 +205,9 @@ if __name__ == '__main__':
         # result3 = await example_complex_workflow()
         # result4 = await example_convenience_function()
         # result5 = await example_build_and_reuse()
+        result6 = await example_tool_nodes_with_filters()
+
+        print(result6)
 
         print('Examples completed!')
 
