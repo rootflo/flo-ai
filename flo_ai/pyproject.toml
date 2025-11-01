@@ -1,6 +1,6 @@
 [project]
 name = "flo_ai"
-version = "1.0.7"
+version = "1.0.8rc1"
 description = "A easy way to create structured AI agents"
 authors = [{ name = "rootflo", email = "*@rootflo.ai" }]
 requires-python = ">=3.10,<4.0"
