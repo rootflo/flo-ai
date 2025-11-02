@@ -268,19 +268,21 @@ class Agent(BaseAgent):
                                 continue
                         break
 
-                    # If there's a function call, add the assistant's response with raw content
-                    # This is required for Claude's tool use flow
-                    raw_content = response.get('raw_content')
-                    if raw_content:
-                        # For Claude, use the raw content which includes tool_use blocks
+                    # If there's a function call, add the assistant's response
+                    # LLM-specific implementations handle special formatting (e.g., Claude's raw_content)
+                    assistant_message_content = (
+                        self.llm.get_assistant_message_for_tool_call(response)
+                    )
+                    if assistant_message_content:
+                        # LLM returned special formatting (e.g., Claude's raw_content)
                         messages.append(
                             {
                                 'role': self.act_as,
-                                'content': raw_content,
+                                'content': assistant_message_content,
                             }
                         )
                     else:
-                        # For other LLMs, use text content
+                        # Use default text content extraction
                         assistant_text = self.llm.get_message_content(response)
                         if assistant_text:
                             messages.append(
@@ -293,9 +295,8 @@ class Agent(BaseAgent):
                     # Execute the tool
                     try:
                         function_name = function_call['name']
-                        tool_use_id = function_call.get(
-                            'id', 'unknown'
-                        )  # Get the tool_use_id from Claude
+                        # Get tool_use_id if available (LLM-specific, e.g., Claude)
+                        tool_use_id = self.llm.get_tool_use_id(function_call)
                         if isinstance(function_call['arguments'], str):
                             function_args = json.loads(function_call['arguments'])
                         else:
@@ -339,15 +340,11 @@ class Agent(BaseAgent):
                         )
 
                         # Add the function response to messages for context
-                        # Include tool_use_id for Claude's tool result format
-                        messages.append(
-                            {
-                                'role': MessageType.FUNCTION,
-                                'name': function_name,
-                                'content': str(function_response),
-                                'tool_use_id': tool_use_id,
-                            }
+                        # LLM-specific implementations format the message appropriately
+                        function_result_msg = self.llm.format_function_result_message(
+                            function_name, str(function_response), tool_use_id
                         )
+                        messages.append(function_result_msg)
 
                     except (json.JSONDecodeError, KeyError, ToolExecutionError) as e:
                         # Record tool call failure
