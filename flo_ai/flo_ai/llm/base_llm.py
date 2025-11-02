@@ -36,12 +36,13 @@ class BaseLLM(ABC):
     async def get_function_call(
         self, response: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
+        """Extract function call information from LLM response"""
         if hasattr(response, 'function_call') and response.function_call:
             result = {
                 'name': response.function_call.name,
                 'arguments': response.function_call.arguments,
             }
-            # Include ID if available (for Claude's tool_use tracking)
+            # Include ID if available (LLM-specific)
             if hasattr(response.function_call, 'id'):
                 result['id'] = response.function_call.id
             return result
@@ -50,11 +51,45 @@ class BaseLLM(ABC):
                 'name': response['function_call']['name'],
                 'arguments': response['function_call']['arguments'],
             }
-            # Include ID if available (for Claude's tool_use tracking)
+            # Include ID if available (LLM-specific)
             if 'id' in response['function_call']:
                 result['id'] = response['function_call']['id']
             return result
         return None
+
+    def get_assistant_message_for_tool_call(
+        self, response: Dict[str, Any]
+    ) -> Optional[Any]:
+        """
+        Get the assistant message content for tool calls.
+        Override in LLM-specific implementations if special handling is needed.
+        Returns None to use default text content extraction.
+        """
+        return None
+
+    def get_tool_use_id(self, function_call: Dict[str, Any]) -> Optional[str]:
+        """
+        Extract tool_use_id from function call if available.
+        Override in LLM-specific implementations if IDs are used.
+        Returns None by default.
+        """
+        return function_call.get('id')
+
+    def format_function_result_message(
+        self, function_name: str, content: str, tool_use_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Format a function result message for the LLM.
+        Override in LLM-specific implementations for special formatting.
+        """
+        message = {
+            'role': 'function',
+            'name': function_name,
+            'content': content,
+        }
+        if tool_use_id:
+            message['tool_use_id'] = tool_use_id
+        return message
 
     @abstractmethod
     def get_message_content(self, response: Dict[str, Any]) -> str:

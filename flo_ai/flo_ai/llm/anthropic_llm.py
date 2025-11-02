@@ -240,3 +240,38 @@ class Anthropic(BaseLLM):
     def format_image_in_message(self, image: ImageMessageContent) -> str:
         """Format a image in the message"""
         raise NotImplementedError('Not implemented image for LLM Anthropic')
+
+    def get_assistant_message_for_tool_call(
+        self, response: Dict[str, Any]
+    ) -> Optional[Any]:
+        """
+        Get the assistant message content for tool calls.
+        For Claude, this returns the raw_content which includes tool_use blocks.
+        For other LLMs, returns None to use default text content.
+        """
+        if isinstance(response, dict) and 'raw_content' in response:
+            return response['raw_content']
+        return None
+
+    def get_tool_use_id(self, function_call: Dict[str, Any]) -> Optional[str]:
+        """
+        Extract tool_use_id from function call if available.
+        Returns the ID for Claude's tool_use tracking, None for other LLMs.
+        """
+        return function_call.get('id')
+
+    def format_function_result_message(
+        self, function_name: str, content: str, tool_use_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Format a function result message for the LLM.
+        For Claude, includes tool_use_id in the message.
+        """
+        message = {
+            'role': 'function',
+            'name': function_name,
+            'content': content,
+        }
+        if tool_use_id:
+            message['tool_use_id'] = tool_use_id
+        return message
