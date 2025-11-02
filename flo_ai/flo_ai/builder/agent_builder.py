@@ -24,7 +24,9 @@ class AgentBuilder:
         self._reasoning_pattern = ReasoningPattern.DIRECT
         self._output_schema: Optional[Dict[str, Any]] = None
         self._role: Optional[str] = None
-        self._act_as: Optional[str] = None
+        self._act_as: Optional[str] = (
+            'assistant'  # Default to 'assistant' instead of None
+        )
 
     def with_name(self, name: str) -> 'AgentBuilder':
         """Set the agent's name"""

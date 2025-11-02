@@ -37,15 +37,23 @@ class BaseLLM(ABC):
         self, response: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
         if hasattr(response, 'function_call') and response.function_call:
-            return {
+            result = {
                 'name': response.function_call.name,
                 'arguments': response.function_call.arguments,
             }
+            # Include ID if available (for Claude's tool_use tracking)
+            if hasattr(response.function_call, 'id'):
+                result['id'] = response.function_call.id
+            return result
         elif isinstance(response, dict) and 'function_call' in response:
-            return {
+            result = {
                 'name': response['function_call']['name'],
                 'arguments': response['function_call']['arguments'],
             }
+            # Include ID if available (for Claude's tool_use tracking)
+            if 'id' in response['function_call']:
+                result['id'] = response['function_call']['id']
+            return result
         return None
 
     @abstractmethod
