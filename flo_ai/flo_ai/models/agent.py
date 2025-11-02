@@ -34,7 +34,7 @@ class Agent(BaseAgent):
         system_prompt: str,
         llm: BaseLLM,
         tools: Optional[List[Tool]] = None,
-        max_retries: int = 3,
+        max_retries: int = 0,
         max_tool_calls: int = 5,
         reasoning_pattern: ReasoningPattern = ReasoningPattern.DIRECT,
         output_schema: Optional[Dict[str, Any]] = None,
@@ -268,9 +268,34 @@ class Agent(BaseAgent):
                                 continue
                         break
 
+                    # If there's a function call, add the assistant's response with raw content
+                    # This is required for Claude's tool use flow
+                    raw_content = response.get('raw_content')
+                    if raw_content:
+                        # For Claude, use the raw content which includes tool_use blocks
+                        messages.append(
+                            {
+                                'role': self.act_as,
+                                'content': raw_content,
+                            }
+                        )
+                    else:
+                        # For other LLMs, use text content
+                        assistant_text = self.llm.get_message_content(response)
+                        if assistant_text:
+                            messages.append(
+                                {
+                                    'role': self.act_as,
+                                    'content': assistant_text,
+                                }
+                            )
+
                     # Execute the tool
                     try:
                         function_name = function_call['name']
+                        tool_use_id = function_call.get(
+                            'id', 'unknown'
+                        )  # Get the tool_use_id from Claude
                         if isinstance(function_call['arguments'], str):
                             function_args = json.loads(function_call['arguments'])
                         else:
@@ -314,19 +339,13 @@ class Agent(BaseAgent):
                         )
 
                         # Add the function response to messages for context
+                        # Include tool_use_id for Claude's tool result format
                         messages.append(
                             {
                                 'role': MessageType.FUNCTION,
                                 'name': function_name,
-                                'content': f'Here is the result of the tool call: \n {str(function_response)}',
-                            }
-                        )
-
-                        # Add a prompt to continue the reasoning
-                        messages.append(
-                            {
-                                'role': MessageType.USER,
-                                'content': 'Continue with your reasoning based on this result. What should be done next?',
+                                'content': str(function_response),
+                                'tool_use_id': tool_use_id,
                             }
                         )
 
