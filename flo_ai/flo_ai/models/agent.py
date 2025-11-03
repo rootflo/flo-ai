@@ -40,6 +40,7 @@ class Agent(BaseAgent):
         output_schema: Optional[Dict[str, Any]] = None,
         role: Optional[str] = None,
         act_as: Optional[str] = MessageType.ASSISTANT,
+        input_filter: Optional[List[str]] = None,
     ):
         # Determine agent type based on tools
         agent_type = AgentType.TOOL_USING if tools else AgentType.CONVERSATIONAL
@@ -63,6 +64,7 @@ class Agent(BaseAgent):
         self.output_schema = output_schema
         self.role = role
         self.act_as = act_as
+        self.input_filter: Optional[List[str]] = input_filter
 
     @trace_agent_execution()
     async def run(
