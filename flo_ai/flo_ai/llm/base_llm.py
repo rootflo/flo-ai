@@ -13,7 +13,7 @@ class ImageMessage:
     image_bytes: Optional[bytes] = None
     image_file_path: Optional[str] = None
     image_base64: Optional[str] = None
-    mime_type: Optional[str] = None
+    mime_type: str
 
 
 class BaseLLM(ABC):

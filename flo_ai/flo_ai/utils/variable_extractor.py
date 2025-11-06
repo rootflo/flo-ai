@@ -7,7 +7,7 @@ inputs, and agent configurations for runtime variable validation.
 
 import re
 from typing import List, Set, Dict, Any
-from flo_ai.llm.base_llm import ImageMessage
+from flo_ai.llm.base_llm import InputMessage
 
 
 def extract_variables_from_text(text: str) -> Set[str]:
@@ -35,7 +35,7 @@ def extract_variables_from_text(text: str) -> Set[str]:
     return set(matches)
 
 
-def extract_variables_from_inputs(inputs: List[str | ImageMessage]) -> Set[str]:
+def extract_variables_from_inputs(inputs: List[str | InputMessage]) -> Set[str]:
     """Extract variable placeholders from a list of input messages.
 
     Args:
@@ -50,6 +50,9 @@ def extract_variables_from_inputs(inputs: List[str | ImageMessage]) -> Set[str]:
     all_variables = set()
 
     for input_item in inputs:
+        if isinstance(input_item, InputMessage):
+            variables = extract_variables_from_text(input_item.content)
+            all_variables.update(variables)
         if isinstance(input_item, str):
             variables = extract_variables_from_text(input_item)
             all_variables.update(variables)
@@ -99,7 +102,7 @@ def validate_variables(
         )
 
 
-def resolve_variables(text: str, variables: Dict[str, Any]) -> str:
+def resolve_variables(text: str | InputMessage, variables: Dict[str, Any]) -> str | InputMessage:
     """Replace <variable_name> patterns with actual values
 
     Args:

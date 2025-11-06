@@ -12,6 +12,12 @@ from .models import (
     DocumentType,
     DocumentMessage,
     MessageType,
+    SystemMessage,
+    UserMessage,
+    AssistantMessage,
+    HumanMessage,
+    AIMessage,
+    InputMessage,
 )
 
 from .builder.agent_builder import AgentBuilder
@@ -58,6 +64,12 @@ __all__ = [
     'AgentType',
     'ReasoningPattern',
     'MessageType',
+    'SystemMessage',
+    'UserMessage',
+    'AssistantMessage',
+    'HumanMessage',
+    'AIMessage',
+    'InputMessage',
     # Utils
     'FloUtils',
     # LLM

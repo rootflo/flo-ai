@@ -2,8 +2,8 @@ import json
 from typing import Dict, Any, List, Optional
 from flo_ai.models.base_agent import BaseAgent, AgentType, ReasoningPattern
 from flo_ai.llm.base_llm import BaseLLM, ImageMessage
+from flo_ai.models.chat_message import InputMessage, ChatMessage
 from flo_ai.models.document import DocumentMessage
-from flo_ai.models.chat_message import ChatMessage
 from flo_ai.tool.base_tool import Tool, ToolExecutionError
 from flo_ai.models.agent_error import AgentError
 from flo_ai.utils.logger import logger
@@ -67,7 +67,7 @@ class Agent(BaseAgent):
     @trace_agent_execution()
     async def run(
         self,
-        inputs: List[str | ImageMessage | DocumentMessage | ChatMessage] | str,
+        inputs: List[InputMessage] ,
         variables: Optional[Dict[str, Any]] = None,
     ) -> str:
         variables = variables or {}
@@ -92,21 +92,25 @@ class Agent(BaseAgent):
 
             # Process inputs and resolve variables in string inputs
             for input in inputs:
-                if isinstance(input, ImageMessage):
-                    self.add_to_history(
-                        MessageType.USER, self.llm.format_image_in_message(input)
-                    )
-                elif isinstance(input, DocumentMessage):
-                    formatted_doc = await self.llm.format_document_in_message(input)
-                    self.add_to_history(MessageType.USER, formatted_doc)
-                elif isinstance(input, ChatMessage):
-                    resolved_content = resolve_variables(input.content, variables)
-                    self.add_to_history(input.role, resolved_content)
+                if isinstance(input, InputMessage):
+                    # Handle InputMessage - check content type
+                    if isinstance(input.content, ImageMessage):
+                        # Format image message and add to history
+                        formatted_content = self.llm.format_image_in_message(input.content)
+                        self.add_to_history(input.role, formatted_content)
+                    elif isinstance(input.content, DocumentMessage):
+                        # Format document message and add to history
+                        formatted_content = await self.llm.format_document_in_message(input.content)
+                        self.add_to_history(input.role, formatted_content)
+                    elif isinstance(input.content, str):
+                        # Resolve variables in string content
+                        resolved_content = resolve_variables(input.content, variables)
+                        self.add_to_history(input.role, resolved_content)
+                    else:
+                        # Fallback: add content as-is
+                        self.add_to_history(input.role, input.content)
                 else:
-                    # Resolve variables in text input
-                    resolved_input = resolve_variables(input, variables)
-                    self.add_to_history(MessageType.USER, resolved_input)
-
+                    raise ValueError(f'Invalid input type: {type(input)}')
             # after resolving agent system prompts and inputs, mark variables as resolved
             self.resolved_variables = True
 

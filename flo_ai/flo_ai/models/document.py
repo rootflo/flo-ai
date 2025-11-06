@@ -29,5 +29,5 @@ class DocumentMessage:
     document_bytes: Optional[bytes] = None
     document_file_path: Optional[str] = None
     document_base64: Optional[str] = None
-    mime_type: Optional[str] = None
+    mime_type: str
     metadata: Optional[Dict[str, Any]] = None
