@@ -7,7 +7,9 @@ instead of programmatic builder patterns.
 
 import asyncio
 from typing import Dict, Literal
+from flo_ai import AssistantMessage
 from flo_ai.arium.builder import AriumBuilder
+from flo_ai.models import TextMessageContent, UserMessage
 from flo_ai.tool.base_tool import Tool
 from flo_ai.llm import OpenAI
 from flo_ai.arium.memory import BaseMemory
@@ -320,16 +322,16 @@ async def run_simple_example():
     # Run the workflow
     result = await builder.build_and_run(
         [
-            'Machine learning is transforming healthcare by enabling predictive analytics, '
+            UserMessage(TextMessageContent(type='text', text='Machine learning is transforming healthcare by enabling predictive analytics, '
             'personalized treatment recommendations, and automated medical imaging analysis. '
             'However, challenges include data privacy concerns, the need for regulatory approval, '
-            'and ensuring AI systems are transparent and unbiased in their decision-making.'
+            'and ensuring AI systems are transparent and unbiased in their decision-making.')),
         ]
     )
 
     print('Result:')
     for i, message in enumerate(result):
-        print(f'{i+1}. {message}')
+      print(f'{i+1}. {message}')
 
     return result
 
@@ -370,8 +372,8 @@ async def run_complex_example():
 
     result2 = await builder.build_and_run(
         [
-            "Please analyze this text and process it: 'The quick brown fox jumps over the lazy dog. "
-            "This sentence contains every letter of the alphabet at least once.'"
+            UserMessage(TextMessageContent(type='text', text="Please analyze this text and process it: 'The quick brown fox jumps over the lazy dog. ")),
+            UserMessage(TextMessageContent(type='text', text="This sentence contains every letter of the alphabet at least once.'")),
         ]
     )
 
@@ -394,10 +396,10 @@ async def run_mixed_config_example():
     # Run the workflow
     result = await builder.build_and_run(
         [
-            'Please analyze this business report: Our Q3 revenue increased by 15% compared to Q2, '
+            UserMessage(TextMessageContent(type='text', text='Please analyze this business report: Our Q3 revenue increased by 15% compared to Q2, '
             'driven primarily by strong performance in the software division. However, hardware sales '
             'declined by 8%. Customer satisfaction scores improved to 4.2/5.0. We recommend focusing '
-            'on digital transformation initiatives and reconsidering the hardware product line.'
+            'on digital transformation initiatives and reconsidering the hardware product line.')),
         ]
     )
 
@@ -448,7 +450,7 @@ async def run_prebuilt_agents_example():
         .with_name('summarizer')
         .with_role('Executive Summarizer')
         .with_prompt(
-            'Create a concise executive summary from the content analysis. Focus on actionable insights and key recommendations.'
+           'Create a concise executive summary from the content analysis. Focus on actionable insights and key recommendations.'
         )
         .with_llm(llm)
         .with_reasoning(ReasoningPattern.DIRECT)
@@ -523,13 +525,13 @@ async def main():
     """Main function to run all examples."""
     try:
         # Run simple example
-        await run_simple_example()
+        # await run_simple_example()
 
         # Run complex example
-        await run_complex_example()
+        # await run_complex_example()
 
         # Run mixed configuration example
-        await run_mixed_config_example()
+        # await run_mixed_config_example()
 
         # Run pre-built agents example
         await run_prebuilt_agents_example()
