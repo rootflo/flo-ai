@@ -1,6 +1,7 @@
 import base64
 import asyncio
 from typing import Dict, Any, List, Optional, AsyncIterator
+from flo_ai.models.chat_message import ImageMessageContent
 from google import genai
 from google.genai import types
 from .base_llm import BaseLLM, ImageMessage
@@ -241,23 +242,17 @@ class Gemini(BaseLLM):
         """Format tools for Gemini's function declarations"""
         return [self.format_tool_for_llm(tool) for tool in tools]
 
-    def format_image_in_message(self, image: ImageMessage) -> str:
+    def format_image_in_message(self, image: ImageMessageContent) -> str:
         """Format a image in the message"""
-        if image.image_file_path:
-            with open(image.image_file_path, 'rb') as image_file:
-                image_bytes = image_file.read()
-            return types.Part.from_bytes(
-                data=image_bytes,
+     
+        if image.base64:
+           return types.Part.from_bytes(
+                data=base64.b64decode(image.base64),
                 mime_type=image.mime_type,
             )
-        elif image.image_bytes:
-            return types.Part.from_bytes(
-                data=image.image_bytes,
-                mime_type=image.mime_type,
-            )
-        elif image.image_base64:
-            return types.Part.from_bytes(
-                data=base64.b64decode(image.image_base64),
+        elif image.url:
+            return types.Part.from_url(
+                url=image.url,
                 mime_type=image.mime_type,
             )
         raise NotImplementedError(

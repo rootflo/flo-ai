@@ -6,7 +6,7 @@ from .agent import Agent, MessageType
 from .agent_error import AgentError
 from .base_agent import BaseAgent, AgentType, ReasoningPattern
 from .document import DocumentMessage, DocumentType
-from .chat_message import ChatMessage, SystemMessage, UserMessage, AssistantMessage, HumanMessage, AIMessage, InputMessage
+from .chat_message import  SystemMessage, UserMessage, AssistantMessage, InputMessage, MediaMessageContent, TextMessageContent, ImageMessageContent, DocumentMessageContent
 
 __all__ = [
     'Agent',
@@ -17,11 +17,12 @@ __all__ = [
     'DocumentMessage',
     'DocumentType',
     'MessageType',
-    'ChatMessage',
     'SystemMessage',
     'UserMessage',
     'AssistantMessage',
-    'HumanMessage',
-    'AIMessage',
     'InputMessage',
+    'MediaMessageContent',
+    'TextMessageContent',
+    'ImageMessageContent',
+    'DocumentMessageContent',
 ]

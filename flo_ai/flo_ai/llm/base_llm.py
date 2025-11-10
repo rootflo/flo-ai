@@ -5,6 +5,7 @@ from flo_ai.utils.document_processor import get_default_processor
 from flo_ai.utils.logger import logger
 from dataclasses import dataclass
 from flo_ai.models.document import DocumentMessage
+from flo_ai.models.chat_message import DocumentMessageContent, ImageMessageContent
 
 
 @dataclass
@@ -13,7 +14,7 @@ class ImageMessage:
     image_bytes: Optional[bytes] = None
     image_file_path: Optional[str] = None
     image_base64: Optional[str] = None
-    mime_type: str
+    mime_type: Optional[str] = None
 
 
 class BaseLLM(ABC):
@@ -74,11 +75,11 @@ class BaseLLM(ABC):
         pass
 
     @abstractmethod
-    def format_image_in_message(self, image: ImageMessage) -> str:
+    def format_image_in_message(self, image: ImageMessageContent) -> str:
         """Format a image in the message"""
         pass
 
-    async def format_document_in_message(self, document: 'DocumentMessage') -> str:
+    async def format_document_in_message(self, document: DocumentMessageContent) -> str:
         """Format a document in the message by extracting text content"""
 
         try:

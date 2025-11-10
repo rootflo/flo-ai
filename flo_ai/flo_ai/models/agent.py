@@ -1,9 +1,8 @@
 import json
 from typing import Dict, Any, List, Optional
 from flo_ai.models.base_agent import BaseAgent, AgentType, ReasoningPattern
-from flo_ai.llm.base_llm import BaseLLM, ImageMessage
-from flo_ai.models.chat_message import InputMessage, ChatMessage
-from flo_ai.models.document import DocumentMessage
+from flo_ai.llm.base_llm import BaseLLM
+from flo_ai.models.chat_message import InputMessage, MediaMessageContent, UserMessage, TextMessageContent
 from flo_ai.tool.base_tool import Tool, ToolExecutionError
 from flo_ai.models.agent_error import AgentError
 from flo_ai.utils.logger import logger
@@ -67,14 +66,14 @@ class Agent(BaseAgent):
     @trace_agent_execution()
     async def run(
         self,
-        inputs: List[InputMessage] ,
+        inputs: List[InputMessage] | InputMessage ,
         variables: Optional[Dict[str, Any]] = None,
     ) -> str:
+
         variables = variables or {}
-
         if isinstance(inputs, str):
-            inputs = [inputs]
-
+            inputs = [UserMessage(TextMessageContent(type='text', text=inputs))]
+        
         # Perform runtime variable validation if not already resolved (single agent usage)
         if not self.resolved_variables:
             # Extract variables from inputs and system prompt
@@ -94,21 +93,29 @@ class Agent(BaseAgent):
             for input in inputs:
                 if isinstance(input, InputMessage):
                     # Handle InputMessage - check content type
-                    if isinstance(input.content, ImageMessage):
-                        # Format image message and add to history
-                        formatted_content = self.llm.format_image_in_message(input.content)
-                        self.add_to_history(input.role, formatted_content)
-                    elif isinstance(input.content, DocumentMessage):
-                        # Format document message and add to history
-                        formatted_content = await self.llm.format_document_in_message(input.content)
-                        self.add_to_history(input.role, formatted_content)
-                    elif isinstance(input.content, str):
-                        # Resolve variables in string content
+                    if isinstance(input.content,str):
                         resolved_content = resolve_variables(input.content, variables)
                         self.add_to_history(input.role, resolved_content)
+                    elif isinstance(input.content, MediaMessageContent):
+                        if input.content.type == 'text':
+                            resolved_content = resolve_variables(input.content.text, variables)
+                            self.add_to_history(input.role, resolved_content)
+
+                        elif  input.content.type == 'image':
+                            # Format image message and add to history
+                            formatted_content = self.llm.format_image_in_message(input.content)
+                            print(f"formatted_content: {formatted_content}")
+                            self.add_to_history(input.role, formatted_content)
+
+                        elif input.content.type == 'document':
+                            # Format document message and add to history
+                            formatted_content = await self.llm.format_document_in_message(input.content)
+                            self.add_to_history(input.role, formatted_content)
+                        else:
+                            raise ValueError(f'Invalid media message content type: {input.content.type}')
                     else:
                         # Fallback: add content as-is
-                        self.add_to_history(input.role, input.content)
+                        raise ValueError(f'Invalid content type: {type(input.content)}')
                 else:
                     raise ValueError(f'Invalid input type: {type(input)}')
             # after resolving agent system prompts and inputs, mark variables as resolved
@@ -117,17 +124,31 @@ class Agent(BaseAgent):
         else:
             # Variables already resolved, process inputs without variable resolution
             for input in inputs:
-                if isinstance(input, ImageMessage):
-                    self.add_to_history(
-                        MessageType.USER, self.llm.format_image_in_message(input)
-                    )
-                elif isinstance(input, DocumentMessage):
-                    formatted_doc = await self.llm.format_document_in_message(input)
-                    self.add_to_history(MessageType.USER, formatted_doc)
-                elif isinstance(input, ChatMessage):
-                    self.add_to_history(input.role, input.content)
+                if isinstance(input, InputMessage):
+                    # Handle InputMessage - check content type
+                    if isinstance(input.content,str):
+                        resolved_content = resolve_variables(input.content, variables)
+                        self.add_to_history(input.role, resolved_content)
+                    elif isinstance(input.content, MediaMessageContent):
+                        if input.content.type == 'text':
+                            resolved_content = resolve_variables(input.content.text, variables)
+                            self.add_to_history(input.role, resolved_content)
+
+                        elif  input.content.type == 'image':
+                            # Format image message and add to history
+                            formatted_content = self.llm.format_image_in_message(input.content)
+                            self.add_to_history(input.role, formatted_content)
+
+                        elif input.content.type == 'document':
+                            # Format document message and add to history
+                            formatted_content = await self.llm.format_document_in_message(input.content)
+                            self.add_to_history(input.role, formatted_content)
+                        else:
+                            raise ValueError(f'Invalid media message content type: {input.content.type}')
+                    else:
+                        raise ValueError(f'Invalid content type: {type(input.content)}')
                 else:
-                    self.add_to_history(MessageType.USER, input)
+                    raise ValueError(f'Invalid input type: {type(input)}')
 
         retry_count = 0
 
@@ -169,7 +190,9 @@ class Agent(BaseAgent):
                 logger.debug(f'Extracted message: {assistant_message}')
 
                 if assistant_message:
-                    self.add_to_history(self.act_as, assistant_message)
+                    # Ensure act_as is not None (default to 'assistant' if missing)
+                    role = self.act_as if self.act_as is not None else MessageType.ASSISTANT
+                    self.add_to_history(role, assistant_message)
                     return assistant_message
                 else:
                     possible_tool_message = await self.llm.get_function_call(response)
@@ -243,7 +266,9 @@ class Agent(BaseAgent):
                                 assistant_message, tool_call_count, messages
                             )
                             if is_final:
-                                self.add_to_history(self.act_as, assistant_message)
+                                # Ensure act_as is not None (default to 'assistant' if missing)
+                                role = self.act_as if self.act_as is not None else MessageType.ASSISTANT
+                                self.add_to_history(role, assistant_message)
                                 return assistant_message
                             else:
                                 # This is intermediate reasoning, add to context and continue
@@ -255,10 +280,12 @@ class Agent(BaseAgent):
                                 logger.debug(
                                     f'Detected intermediate reasoning (not final answer): {msg_preview}...'
                                 )
-                                self.add_to_history(self.act_as, assistant_message)
+                                # Ensure act_as is not None (default to 'assistant' if missing)
+                                role = self.act_as if self.act_as is not None else MessageType.ASSISTANT
+                                self.add_to_history(role, assistant_message)
                                 messages.append(
                                     {
-                                        'role': self.act_as,
+                                        'role': role,
                                         'content': assistant_message,
                                     }
                                 )
@@ -374,7 +401,9 @@ class Agent(BaseAgent):
 
                 assistant_message = self.llm.get_message_content(final_response)
                 if assistant_message:
-                    self.add_to_history(self.act_as, assistant_message)
+                    # Ensure act_as is not None (default to 'assistant' if missing)
+                    role = self.act_as if self.act_as is not None else MessageType.ASSISTANT
+                    self.add_to_history(role, assistant_message)
                     return assistant_message
 
                 return f'The final result based on the tool executions is: {function_response}'

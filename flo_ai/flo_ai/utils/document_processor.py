@@ -16,6 +16,7 @@ import pymupdf4llm
 import chardet
 
 from flo_ai.models.document import DocumentMessage, DocumentType
+from flo_ai.models.chat_message import DocumentMessageContent
 from flo_ai.utils.logger import logger
 
 
@@ -188,12 +189,12 @@ class DocumentProcessor:
         """Register a new document processor for a specific type."""
         self._processors[document_type] = processor
 
-    async def process_document(self, document: DocumentMessage) -> Dict[str, Any]:
+    async def process_document(self, document: DocumentMessageContent) -> Dict[str, Any]:
         """
         Process a document using the appropriate processor.
 
         Args:
-            document: DocumentMessage containing document data
+            document: DocumentMessageContent containing document data
 
         Returns:
             Dict containing extracted content and metadata
@@ -201,22 +202,41 @@ class DocumentProcessor:
         Raises:
             DocumentProcessingError: If processing fails or document type unsupported
         """
-        if document.document_type not in self._processors:
+        # Convert mime_type string to DocumentType enum
+        if not document.mime_type:
+            raise DocumentProcessingError('Document mime_type is required')
+        
+        # Map mime_type string to DocumentType enum
+        document_type = None
+        for doc_type in DocumentType:
+            if doc_type.value == document.mime_type:
+                document_type = doc_type
+                break
+        
+        if document_type is None or document_type not in self._processors:
             raise DocumentProcessingError(
-                f'Unsupported document type: {document.document_type}. '
-                f'Supported types: {list(self._processors.keys())}'
+                f'Unsupported document type: {document.mime_type}. '
+                f'Supported types: {[dt.value for dt in self._processors.keys()]}'
             )
 
-        processor: BaseDocumentProcessor = self._processors[document.document_type]
+        # Convert DocumentMessageContent to DocumentMessage
+        document_message = DocumentMessage(
+            document_type=document_type,
+            document_url=document.url,
+            document_base64=document.base64,
+            mime_type=document.mime_type,
+        )
+
+        processor: BaseDocumentProcessor = self._processors[document_type]
 
         try:
-            result = await processor.process(document)
+            result = await processor.process(document_message)
 
             # Add common metadata
             result['processing_timestamp'] = time.time()
 
             logger.info(
-                f"Successfully processed {document.document_type.value} document "
+                f"Successfully processed {document_type.value} document "
                 f"using {result.get('processing_method', 'unknown')} method"
             )
 

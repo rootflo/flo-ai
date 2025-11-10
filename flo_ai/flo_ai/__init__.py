@@ -15,9 +15,11 @@ from .models import (
     SystemMessage,
     UserMessage,
     AssistantMessage,
-    HumanMessage,
-    AIMessage,
     InputMessage,
+    MediaMessageContent,
+    TextMessageContent,
+    ImageMessageContent,
+    DocumentMessageContent,
 )
 
 from .builder.agent_builder import AgentBuilder
@@ -70,6 +72,10 @@ __all__ = [
     'HumanMessage',
     'AIMessage',
     'InputMessage',
+    'MediaMessageContent',
+    'TextMessageContent',
+    'ImageMessageContent',
+    'DocumentMessageContent',
     # Utils
     'FloUtils',
     # LLM

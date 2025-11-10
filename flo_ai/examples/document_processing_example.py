@@ -13,6 +13,7 @@ import asyncio
 import os
 import base64
 from pathlib import Path
+from flo_ai.models import DocumentMessageContent, TextMessageContent, UserMessage
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
@@ -146,7 +147,7 @@ def create_sample_pdf_file():
 
 async def example_1_basic_document_agent():
     """Example 1: Basic document processing with an agent"""
-    print('=' * 60)
+    print('\n' + '=' * 60)
     print('EXAMPLE 1: Basic Document Processing with Agent')
     print('=' * 60)
 
@@ -154,10 +155,15 @@ async def example_1_basic_document_agent():
     txt_file = create_sample_txt_file()
 
     try:
+        # Read file and convert to base64
+        with open(txt_file, 'rb') as f:
+            txt_bytes = f.read()
+            txt_base64 = base64.b64encode(txt_bytes).decode('utf-8')
+        
         # Create document message
-        document = DocumentMessage(
-            document_type=DocumentType.TXT, document_file_path=txt_file
-        )
+        document = UserMessage(content=DocumentMessageContent(
+            mime_type=DocumentType.TXT.value, base64=txt_base64
+        ))
 
         # Create document analysis agent
         llm = OpenAI(
@@ -168,7 +174,7 @@ async def example_1_basic_document_agent():
             AgentBuilder()
             .with_name('Document Analyzer')
             .with_prompt(
-                'You are a document analysis expert. Analyze the provided document and provide insights about its content, structure, and key points.'
+            'You are a document analysis expert. Analyze the provided document and provide insights about its content, structure, and key points.'
             )
             .with_llm(llm)
             .build()
@@ -262,18 +268,20 @@ async def example_2_document_workflow():
                 to: [summary_generator]
             end: [summary_generator]
         """
-
+        with open(txt_file, 'rb') as f:
+            txt_bytes = f.read()
+            txt_base64 = base64.b64encode(txt_bytes).decode('utf-8')
         # Create document message for workflow processing
-        document = DocumentMessage(
-            document_type=DocumentType.TXT, document_file_path=txt_file
-        )
+        document = UserMessage(content=DocumentMessageContent(
+            mime_type=DocumentType.TXT.value, base64=txt_base64
+        ))
 
         # Build and run workflow with DocumentMessage
         print('🔄 Running document analysis workflow...')
 
         workflow = AriumBuilder().from_yaml(yaml_str=workflow_yaml).build()
 
-        result = await workflow.run([document, 'process this document'])
+        result = await workflow.run([document, UserMessage(TextMessageContent(type='text', text='process this document'))])
 
         print('📊 Workflow Analysis Results:')
         for i, message in enumerate(result, 1):
@@ -307,10 +315,14 @@ async def example_6_gemini_document_processing():
     txt_file = create_sample_txt_file()
 
     try:
+        with open(txt_file, 'rb') as f:
+            txt_bytes = f.read()
+            txt_base64 = base64.b64encode(txt_bytes).decode('utf-8')
         # Create document message
-        document = DocumentMessage(
-            document_type=DocumentType.TXT, document_file_path=txt_file
-        )
+        document = UserMessage(content=DocumentMessageContent(
+            mime_type=DocumentType.TXT.value, base64=txt_base64
+        ))
+        
 
         # Create document analysis agent with Gemini
         llm = Gemini(model='gemini-2.5-flash', api_key=google_api_key)
@@ -352,11 +364,14 @@ async def example_3_pdf_document_processing():
     pdf_file = create_sample_pdf_file()
 
     try:
+        with open(pdf_file, 'rb') as f:
+            pdf_bytes = f.read()
+            pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
         # Create document message for PDF
-        document = DocumentMessage(
-            document_type=DocumentType.PDF, document_file_path=pdf_file
-        )
-
+        document = UserMessage(content=DocumentMessageContent(
+            mime_type=DocumentType.PDF.value, base64=pdf_base64
+        ))
+           
         # Create PDF analysis agent
         llm = OpenAI(model='gpt-4o-mini', api_key=openai_api_key)
 
@@ -400,18 +415,17 @@ async def example_4_document_bytes_processing():
     try:
         print('🔧 Testing Document Processing from Bytes Data\n')
 
-        # Process TXT from bytes
+        # # Process TXT from bytes
         print('1. Processing TXT document from bytes:')
         with open(txt_file, 'rb') as f:
             txt_bytes = f.read()
+            txt_base64 = base64.b64encode(txt_bytes).decode('utf-8')
 
-        txt_document = DocumentMessage(
-            document_type=DocumentType.TXT,
-            document_bytes=txt_bytes,
-            mime_type='text/plain',
-        )
+        txt_document = UserMessage(content=DocumentMessageContent(
+            mime_type=DocumentType.TXT.value, base64=txt_base64
+        ))
 
-        # Create agent for bytes processing
+        # # Create agent for bytes processing
         llm = OpenAI(model='gpt-4o-mini', api_key=openai_api_key)
         agent = (
             AgentBuilder()
@@ -424,18 +438,17 @@ async def example_4_document_bytes_processing():
         )
 
         result = await agent.run([txt_document])
-        print(f'   TXT from bytes analysis: {result[:100]}...\n')
+        # print(f'   TXT from bytes analysis: {result[:100]}...\n')
 
         # Process PDF from bytes
         print('2. Processing PDF document from bytes:')
         with open(pdf_file, 'rb') as f:
             pdf_bytes = f.read()
+            pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
 
-        pdf_document = DocumentMessage(
-            document_type=DocumentType.PDF,
-            document_bytes=pdf_bytes,
-            mime_type='application/pdf',
-        )
+        pdf_document = UserMessage(content=DocumentMessageContent(
+            mime_type=DocumentType.PDF.value, base64=pdf_base64
+        ))
 
         result = await agent.run([pdf_document])
         print(f'   PDF from bytes analysis: {result[:100]}...\n')
@@ -443,7 +456,7 @@ async def example_4_document_bytes_processing():
         # Test tools with bytes (using extract tools)
         print('3. Using document tools with bytes data:')
         # Note: Tools expect file paths, so we'll show the concept
-        print(f'   TXT bytes size: {len(txt_bytes)} bytes')
+        # print(f'   TXT bytes size: {len(txt_bytes)} bytes')
         print(f'   PDF bytes size: {len(pdf_bytes)} bytes')
         print('   ✅ Documents successfully processed from bytes data')
 
@@ -477,11 +490,9 @@ async def example_5_document_base64_processing():
             txt_bytes = f.read()
             txt_base64 = base64.b64encode(txt_bytes).decode('utf-8')
 
-        txt_document = DocumentMessage(
-            document_type=DocumentType.TXT,
-            document_base64=txt_base64,
-            mime_type='text/plain',
-        )
+        txt_document = UserMessage(content=DocumentMessageContent(
+            mime_type=DocumentType.TXT.value, base64=txt_base64
+        ))
 
         # Create agent for base64 processing
         llm = OpenAI(model='gpt-4o-mini', api_key=openai_api_key)
@@ -504,11 +515,9 @@ async def example_5_document_base64_processing():
             pdf_bytes = f.read()
             pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
 
-        pdf_document = DocumentMessage(
-            document_type=DocumentType.PDF,
-            document_base64=pdf_base64,
-            mime_type='application/pdf',
-        )
+        pdf_document = UserMessage(content=DocumentMessageContent(
+            mime_type=DocumentType.PDF.value, base64=pdf_base64
+        ))
 
         result = await agent.run([pdf_document])
         print(f'   PDF from base64 analysis: {result[:100]}...\n')
@@ -536,39 +545,39 @@ async def main():
     print('🚀 Flo AI Document Processing Examples')
     print('Demonstrating PDF and TXT document processing capabilities\n')
 
-    try:
-        # Run examples
-        await example_1_basic_document_agent()
-        # await example_2_document_workflow()
-        await example_3_pdf_document_processing()
-        await example_4_document_bytes_processing()
-        await example_5_document_base64_processing()
-        await example_6_gemini_document_processing()
+    # try:
+    # Run examples
+    # await example_1_basic_document_agent()
+    # await example_2_document_workflow()
+    # await example_3_pdf_document_processing()
+    # await example_4_document_bytes_processing()
+    # await example_5_document_base64_processing()
+    await example_6_gemini_document_processing()
 
-        print('\n' + '=' * 60)
-        print('🎉 ALL DOCUMENT PROCESSING EXAMPLES COMPLETED!')
-        print('=' * 60)
-        print('\n📋 Examples demonstrated:')
-        print('   • Basic document processing with agents')
-        print('   • YAML-based document workflows')
-        print('   • PDF document processing and analysis')
-        print('   • Document processing from bytes data')
-        print('   • Document processing from base64 encoded data')
-        print('   • Multi-LLM document support (OpenAI, Gemini)')
-        print('\n💡 Key features showcased:')
-        print(
-            '   • DocumentMessage for structured document inputs (file_path, bytes, base64)'
-        )
-        print('   • Extensible document processor architecture')
-        print('   • PDF and TXT document format support')
-        print('   • LLM-agnostic document formatting')
-        print('   • Integration with existing Arium workflows')
+    print('\n' + '=' * 60)
+    print('🎉 ALL DOCUMENT PROCESSING EXAMPLES COMPLETED!')
+    print('=' * 60)
+    print('\n📋 Examples demonstrated:')
+    print('   • Basic document processing with agents')
+    print('   • YAML-based document workflows')
+    print('   • PDF document processing and analysis')
+    print('   • Document processing from bytes data')
+    print('   • Document processing from base64 encoded data')
+    print('   • Multi-LLM document support (OpenAI, Gemini)')
+    print('\n💡 Key features showcased:')
+    print(
+        '   • DocumentMessage for structured document inputs (file_path, bytes, base64)'
+    )
+    print('   • Extensible document processor architecture')
+    print('   • PDF and TXT document format support')
+    print('   • LLM-agnostic document formatting')
+    print('   • Integration with existing Arium workflows')
 
-    except Exception as e:
-        print(f'❌ Error running examples: {e}')
-        import traceback
+    # except Exception as e:
+    #     print(f'❌ Error running examples: {e}')
+    #     import traceback
 
-        traceback.print_exc()
+    #     traceback.print_exc()
 
 
 if __name__ == '__main__':

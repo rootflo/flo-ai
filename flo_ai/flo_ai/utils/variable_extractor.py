@@ -7,7 +7,9 @@ inputs, and agent configurations for runtime variable validation.
 
 import re
 from typing import List, Set, Dict, Any
-from flo_ai.llm.base_llm import InputMessage
+
+from flo_ai.models.chat_message import InputMessage, TextMessageContent
+
 
 
 def extract_variables_from_text(text: str) -> Set[str]:
@@ -35,7 +37,7 @@ def extract_variables_from_text(text: str) -> Set[str]:
     return set(matches)
 
 
-def extract_variables_from_inputs(inputs: List[str | InputMessage]) -> Set[str]:
+def extract_variables_from_inputs(inputs: List[InputMessage] ) -> Set[str]:
     """Extract variable placeholders from a list of input messages.
 
     Args:
@@ -48,11 +50,11 @@ def extract_variables_from_inputs(inputs: List[str | InputMessage]) -> Set[str]:
         ImageMessage objects are skipped as they don't contain variable placeholders
     """
     all_variables = set()
-
     for input_item in inputs:
         if isinstance(input_item, InputMessage):
-            variables = extract_variables_from_text(input_item.content)
-            all_variables.update(variables)
+            if(isinstance(input_item.content, TextMessageContent)):
+                variables = extract_variables_from_text(input_item.content.text)
+                all_variables.update(variables)
         if isinstance(input_item, str):
             variables = extract_variables_from_text(input_item)
             all_variables.update(variables)
@@ -128,7 +130,6 @@ def resolve_variables(text: str | InputMessage, variables: Dict[str, Any]) -> st
                 f"Variable '{var_name}' referenced in text but not provided. "
                 f'Available variables: {available}'
             )
-
     return re.sub(r'<(\w+)>', replace_var, text)
 
 

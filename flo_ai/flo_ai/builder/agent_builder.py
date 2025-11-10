@@ -1,4 +1,5 @@
 from typing import List, Optional, Dict, Any, Union, Type
+from flo_ai.models import InputMessage, TextMessageContent
 import yaml
 from flo_ai.models.agent import Agent
 from flo_ai.models.base_agent import ReasoningPattern
@@ -16,7 +17,7 @@ class AgentBuilder:
 
     def __init__(self):
         self._name = 'AI Assistant'
-        self._system_prompt = 'You are a helpful AI assistant.'
+        self._system_prompt: str|InputMessage = 'You are a helpful AI assistant.'
         self._llm: Optional[BaseLLM] = None
         self._tools: List[Tool] = []
         self._max_retries = 3
@@ -30,9 +31,17 @@ class AgentBuilder:
         self._name = name
         return self
 
-    def with_prompt(self, system_prompt: str) -> 'AgentBuilder':
-        """Set the system prompt"""
-        self._system_prompt = system_prompt
+    def with_prompt(self, system_prompt: str | InputMessage) -> 'AgentBuilder':
+        """Set the system prompt
+        
+        Args:
+            system_prompt: Either a string prompt or a list of InputMessage objects
+        """
+        if isinstance(system_prompt, str):
+            self._system_prompt = system_prompt
+        else:
+            raise ValueError(f'Unsupported system prompt type: {type(system_prompt)}')
+        
         return self
 
     def with_llm(self, llm: BaseLLM) -> 'AgentBuilder':
