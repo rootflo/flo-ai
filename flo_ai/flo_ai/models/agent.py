@@ -66,7 +66,7 @@ class Agent(BaseAgent):
     @trace_agent_execution()
     async def run(
         self,
-        inputs: List[InputMessage] | InputMessage ,
+        inputs: List[InputMessage]  ,
         variables: Optional[Dict[str, Any]] = None,
     ) -> str:
 
