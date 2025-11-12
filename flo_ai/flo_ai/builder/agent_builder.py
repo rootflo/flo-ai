@@ -192,6 +192,7 @@ class AgentBuilder:
         tools: Optional[List[Tool]] = None,
         base_llm: Optional[BaseLLM] = None,
         tool_registry: Optional[Dict[str, Tool]] = None,
+        **kwargs,
     ) -> 'AgentBuilder':
         """Create an agent builder from a YAML configuration string
 
@@ -228,32 +229,47 @@ class AgentBuilder:
 
             if provider == 'rootflo':
                 model_id = model_config.get('model_id')
-                base_url = os.getenv('ROOTFLO_BASE_URL')
-                app_key = os.getenv('ROOTFLO_APP_KEY')
-                app_secret = os.getenv('ROOTFLO_APP_SECRET')
-                issuer = os.getenv('ROOTFLO_ISSUER')
-                audience = os.getenv('ROOTFLO_AUDIENCE')
+                base_url = kwargs.get('base_url') or os.getenv('ROOTFLO_BASE_URL')
+                app_key = kwargs.get('app_key') or os.getenv('ROOTFLO_APP_KEY')
+                app_secret = kwargs.get('app_secret') or os.getenv('ROOTFLO_APP_SECRET')
+                issuer = kwargs.get('issuer') or os.getenv('ROOTFLO_ISSUER')
+                audience = kwargs.get('audience') or os.getenv('ROOTFLO_AUDIENCE')
+                access_token = kwargs.get('access_token')  # Optional, from kwargs only
 
                 if not model_id:
                     raise ValueError(
                         'RootFlo provider requires model_id in YAML configuration'
                     )
 
-                if not all([base_url, app_key, app_secret, issuer, audience]):
-                    missing = []
-                    if not base_url:
-                        missing.append('ROOTFLO_BASE_URL')
-                    if not app_key:
-                        missing.append('ROOTFLO_APP_KEY')
-                    if not app_secret:
-                        missing.append('ROOTFLO_APP_SECRET')
-                    if not issuer:
-                        missing.append('ROOTFLO_ISSUER')
-                    if not audience:
-                        missing.append('ROOTFLO_AUDIENCE')
-                    raise ValueError(
-                        f'RootFlo configuration incomplete. Missing environment variables: {", ".join(missing)}'
-                    )
+                # if access_token is not provided
+                if not access_token:
+                    if not all([base_url, app_key, app_secret, issuer, audience]):
+                        missing = []
+                        if not base_url:
+                            missing.append('base_url')
+                        if not app_key:
+                            missing.append('app_key')
+                        if not app_secret:
+                            missing.append('app_secret')
+                        if not issuer:
+                            missing.append('issuer')
+                        if not audience:
+                            missing.append('audience')
+                        raise ValueError(
+                            f'RootFlo configuration incomplete. Missing required parameters: {", ".join(missing)}. '
+                            f'These can be provided via kwargs or environment variables (ROOTFLO_BASE_URL, ROOTFLO_APP_KEY, ROOTFLO_APP_SECRET, ROOTFLO_ISSUER, ROOTFLO_AUDIENCE).'
+                        )
+                else:
+                    if not all([base_url, app_key]):
+                        missing = []
+                        if not base_url:
+                            missing.append('base_url')
+                        if not app_key:
+                            missing.append('app_key')
+                        raise ValueError(
+                            f'RootFlo configuration incomplete. Missing required parameters: {", ".join(missing)}. '
+                            f'These can be provided via kwargs or environment variables (ROOTFLO_BASE_URL, ROOTFLO_APP_KEY).'
+                        )
 
                 builder.with_llm(
                     RootFloLLM(
@@ -263,6 +279,7 @@ class AgentBuilder:
                         app_secret=app_secret,
                         issuer=issuer,
                         audience=audience,
+                        access_token=access_token,
                     )
                 )
             else:

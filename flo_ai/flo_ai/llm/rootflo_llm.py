@@ -32,6 +32,7 @@ class RootFloLLM(BaseLLM):
         app_secret: str,
         issuer: str,
         audience: str,
+        access_token: Optional[str] = None,
         temperature: float = 0.7,
         **kwargs,
     ):
@@ -45,22 +46,55 @@ class RootFloLLM(BaseLLM):
             app_secret: Application secret for JWT signing
             issuer: JWT issuer claim
             audience: JWT audience claim
+            access_token: Optional pre-generated access token (if provided, skips JWT generation)
             temperature: Temperature parameter for generation
             **kwargs: Additional parameters to pass to the underlying SDK
         """
-        # Generate JWT token
-        now = datetime.now()
-        payload = {
-            'iss': issuer,
-            'aud': audience,
-            'iat': int(now.timestamp()),
-            'exp': int((now + timedelta(seconds=3600)).timestamp()),
-            'role_id': 'floconsole-service',
-            'user_id': 'service',
-            'service_auth': True,
-        }
-        service_token = jwt.encode(payload, app_secret, algorithm='HS256')
-        api_token = f'fc_{service_token}'
+        # Validate required parameters
+
+        if not model_id:
+            raise ValueError('model_id is required')
+
+        if not base_url:
+            raise ValueError('base_url is required')
+
+        # Validate JWT credentials if access_token is not provided
+        if not access_token:
+            missing = []
+            if not app_key:
+                missing.append('app_key')
+            if not app_secret:
+                missing.append('app_secret')
+            if not issuer:
+                missing.append('issuer')
+            if not audience:
+                missing.append('audience')
+
+            if missing:
+                raise ValueError(
+                    f'Missing required parameters for JWT generation: {", ".join(missing)}. '
+                    f'Either provide these parameters or pass an access_token directly.'
+                )
+        else:  # app key is still required
+            if not app_key:
+                raise ValueError('app_key is required even when using access_token')
+
+        # Use provided access_token or generate JWT token
+        if access_token:
+            api_token = access_token
+        else:
+            now = datetime.now()
+            payload = {
+                'iss': issuer,
+                'aud': audience,
+                'iat': int(now.timestamp()),
+                'exp': int((now + timedelta(seconds=3600)).timestamp()),
+                'role_id': 'floconsole-service',
+                'user_id': 'service',
+                'service_auth': True,
+            }
+            service_token = jwt.encode(payload, app_secret, algorithm='HS256')
+            api_token = f'fc_{service_token}'
 
         # Fetch LLM configuration from API
         config = self._fetch_llm_config(base_url, model_id, api_token, app_key)
