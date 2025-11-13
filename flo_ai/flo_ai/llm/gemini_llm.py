@@ -1,6 +1,7 @@
 import base64
 import asyncio
 from typing import Dict, Any, List, Optional, AsyncIterator
+from flo_ai import BaseLLM
 from flo_ai.models.chat_message import ImageMessageContent
 from google import genai
 from google.genai import types
