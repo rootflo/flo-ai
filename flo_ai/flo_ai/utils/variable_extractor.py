@@ -12,7 +12,6 @@ from flo_ai.models.agent import AssistantMessage
 from flo_ai.models.chat_message import BaseMessage, TextMessageContent
 
 
-
 def extract_variables_from_text(text: str | AssistantMessage) -> Set[str]:
     """Extract variable placeholders from text using <variable_name> pattern.
 
@@ -30,11 +29,11 @@ def extract_variables_from_text(text: str | AssistantMessage) -> Set[str]:
     """
     if not text:
         return set()
-    if isinstance(text,AssistantMessage):
+    if isinstance(text, AssistantMessage):
         text_str = text.content
     elif isinstance(text, str):
         text_str = text
-   
+
     # Use regex to find all <variable_name> patterns
     # \w+ matches word characters (letters, digits, underscore)
     variable_pattern = r'<(\w+)>'
@@ -42,7 +41,7 @@ def extract_variables_from_text(text: str | AssistantMessage) -> Set[str]:
     return set(matches)
 
 
-def extract_variables_from_inputs(inputs: List[BaseMessage] ) -> Set[str]:
+def extract_variables_from_inputs(inputs: List[BaseMessage]) -> Set[str]:
     """Extract variable placeholders from a list of input messages.
 
     Args:
@@ -57,7 +56,7 @@ def extract_variables_from_inputs(inputs: List[BaseMessage] ) -> Set[str]:
     all_variables = set()
     for input_item in inputs:
         if isinstance(input_item, BaseMessage):
-            if(isinstance(input_item.content, TextMessageContent)):
+            if isinstance(input_item.content, TextMessageContent):
                 variables = extract_variables_from_text(input_item.content.text)
                 all_variables.update(variables)
         if isinstance(input_item, str):
@@ -109,7 +108,9 @@ def validate_variables(
         )
 
 
-def resolve_variables(text: str | BaseMessage | AssistantMessage, variables: Dict[str, Any]) -> str | BaseMessage | AssistantMessage:
+def resolve_variables(
+    text: str | BaseMessage | AssistantMessage, variables: Dict[str, Any]
+) -> str | BaseMessage | AssistantMessage:
     """Replace <variable_name> patterns with actual values
 
     Args:
@@ -135,6 +136,7 @@ def resolve_variables(text: str | BaseMessage | AssistantMessage, variables: Dic
                 f"Variable '{var_name}' referenced in text but not provided. "
                 f'Available variables: {available}'
             )
+
     return re.sub(r'<(\w+)>', replace_var, text)
 
 

@@ -1,9 +1,10 @@
 import asyncio
 from typing import Any
 from flo_ai.builder.agent_builder import AgentBuilder
-from flo_ai.llm import  Gemini
+from flo_ai.llm import Gemini
 from flo_ai.models.agent import Agent
-from flo_ai.models import   AssistantMessage, UserMessage, TextMessageContent
+from flo_ai.models import AssistantMessage, UserMessage, TextMessageContent
+
 
 async def main() -> None:
     # Create a simple conversational agent
@@ -16,28 +17,38 @@ async def main() -> None:
     )
 
     response: Any = await agent.run(
-        [   
+        [
             UserMessage(
-                TextMessageContent(type='text', text='What is the formula for the area of a circle?'),
+                TextMessageContent(
+                    type='text', text='What is the formula for the area of a circle?'
+                ),
             ),
             AssistantMessage(
-               TextMessageContent(type='text', text='The formula for the area of a circle is πr^2.'),
+                TextMessageContent(
+                    type='text', text='The formula for the area of a circle is πr^2.'
+                ),
             ),
             UserMessage(
-                TextMessageContent(type='text', text='What is the formula for the area of a rectangle?')
+                TextMessageContent(
+                    type='text', text='What is the formula for the area of a rectangle?'
+                )
             ),
             AssistantMessage(
-               TextMessageContent(type='text', text='The formula for the area of a rectangle is length * width.'),
+                TextMessageContent(
+                    type='text',
+                    text='The formula for the area of a rectangle is length * width.',
+                ),
             ),
-        
-           UserMessage(
-                TextMessageContent(type='text', text='What is the area of a rectable of length <length> and breadth <breadth>'),
+            UserMessage(
+                TextMessageContent(
+                    type='text',
+                    text='What is the area of a rectable of length <length> and breadth <breadth>',
+                ),
             ),
         ],
-        variables={
-            "length":10,
-            "breadth":70
-        },
+        variables={'length': 10, 'breadth': 70},
     )
     print(f'Response: {response}')
+
+
 asyncio.run(main())

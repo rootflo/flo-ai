@@ -187,10 +187,10 @@ class OpenAI(BaseLLM):
         if image.url:
             return {
                 'type': 'input_image',
-                "image":{
-                    "url": image.url,
-                    "mime_type": image.mime_type,
-                }
+                'image': {
+                    'url': image.url,
+                    'mime_type': image.mime_type,
+                },
             }
         elif image.base64:
             image_bytes = base64.b64decode(image.base64)
@@ -202,9 +202,8 @@ class OpenAI(BaseLLM):
 
         return {
             'type': 'input_image',
-            "image":{
-                "data": image_64,
-                "mime_type": image.mime_type,
-            }
-
+            'image': {
+                'data': image_64,
+                'mime_type': image.mime_type,
+            },
         }

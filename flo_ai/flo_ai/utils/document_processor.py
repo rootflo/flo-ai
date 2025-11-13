@@ -189,7 +189,9 @@ class DocumentProcessor:
         """Register a new document processor for a specific type."""
         self._processors[document_type] = processor
 
-    async def process_document(self, document: DocumentMessageContent) -> Dict[str, Any]:
+    async def process_document(
+        self, document: DocumentMessageContent
+    ) -> Dict[str, Any]:
         """
         Process a document using the appropriate processor.
 
@@ -205,14 +207,14 @@ class DocumentProcessor:
         # Convert mime_type string to DocumentType enum
         if not document.mime_type:
             raise DocumentProcessingError('Document mime_type is required')
-        
+
         # Map mime_type string to DocumentType enum
         document_type = None
         for doc_type in DocumentType:
             if doc_type.value == document.mime_type:
                 document_type = doc_type
                 break
-        
+
         if document_type is None or document_type not in self._processors:
             raise DocumentProcessingError(
                 f'Unsupported document type: {document.mime_type}. '

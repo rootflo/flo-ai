@@ -233,7 +233,7 @@ class AriumBuilder:
 
     async def build_and_run(
         self,
-        inputs: List[BaseMessage]|str,
+        inputs: List[BaseMessage] | str,
         variables: Optional[Dict[str, Any]] = None,
     ) -> List[dict]:
         """Build the Arium and run it with the given inputs and optional runtime variables."""
@@ -241,11 +241,17 @@ class AriumBuilder:
         new_inputs = []
         for input in inputs:
             if isinstance(input, str):
-                new_inputs.append(UserMessage(TextMessageContent(type='text', text=resolve_variables(input, variables))))
+                new_inputs.append(
+                    UserMessage(
+                        TextMessageContent(
+                            type='text', text=resolve_variables(input, variables)
+                        )
+                    )
+                )
             elif isinstance(input, BaseMessage):
                 new_inputs.append(input)
             else:
-                raise ValueError(f"Invalid input type: {type(input)}")
+                raise ValueError(f'Invalid input type: {type(input)}')
         return await arium.run(new_inputs, variables=variables)
 
     def visualize(

@@ -99,7 +99,12 @@ Check plan status first, then execute writing steps thoroughly.""",
     )
 
     # Execute task
-    task = UserMessage(TextMessageContent(type='text', text='Research the impact of AI on software development productivity'))
+    task = UserMessage(
+        TextMessageContent(
+            type='text',
+            text='Research the impact of AI on software development productivity',
+        )
+    )
     print(f'📋 Task: {task}')
     print('🔄 Executing custom research workflow...\n')
 

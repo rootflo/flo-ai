@@ -244,9 +244,9 @@ class Gemini(BaseLLM):
 
     def format_image_in_message(self, image: ImageMessageContent) -> str:
         """Format a image in the message"""
-     
+
         if image.base64:
-           return types.Part.from_bytes(
+            return types.Part.from_bytes(
                 data=base64.b64decode(image.base64),
                 mime_type=image.mime_type,
             )
@@ -256,5 +256,5 @@ class Gemini(BaseLLM):
                 mime_type=image.mime_type,
             )
         raise NotImplementedError(
-                f'Image formatting for Gemini LLM requires either url or base64 data. Received: url={image.url}, base64={bool(image.base64)}'
+            f'Image formatting for Gemini LLM requires either url or base64 data. Received: url={image.url}, base64={bool(image.base64)}'
         )

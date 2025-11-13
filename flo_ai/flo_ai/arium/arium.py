@@ -1,6 +1,6 @@
 from flo_ai.arium.base import BaseArium
 from flo_ai.arium.memory import MessageMemory, BaseMemory
-from flo_ai.models import BaseMessage, UserMessage,  TextMessageContent
+from flo_ai.models import BaseMessage, UserMessage, TextMessageContent
 from typing import List, Dict, Any, Optional, Callable
 from flo_ai.models.agent import Agent
 from flo_ai.tool.base_tool import Tool
@@ -51,7 +51,13 @@ class Arium(BaseArium):
             List of workflow execution results
         """
         if isinstance(inputs, str):
-            inputs = [UserMessage(TextMessageContent(type='text', text=resolve_variables(inputs, variables)))]
+            inputs = [
+                UserMessage(
+                    TextMessageContent(
+                        type='text', text=resolve_variables(inputs, variables)
+                    )
+                )
+            ]
 
         if not self.is_compiled:
             raise ValueError('Arium is not compiled')
@@ -247,8 +253,6 @@ class Arium(BaseArium):
                 current_node, event_callback, events_filter, variables
             )
 
-
-
             if isinstance(result, List):  # for each node will give results array
                 self._add_to_memory(result[-1])
             else:
@@ -367,9 +371,18 @@ class Arium(BaseArium):
             if isinstance(input_item, str):
                 # Resolve variables in text input
                 resolved_input = resolve_variables(input_item, variables)
-                resolved_inputs.append(UserMessage(TextMessageContent(type='text', text=resolved_input)))
+                resolved_inputs.append(
+                    UserMessage(TextMessageContent(type='text', text=resolved_input))
+                )
             elif isinstance(input_item, TextMessageContent):
-                resolved_inputs.append(UserMessage(TextMessageContent(type='text', text=resolve_variables(input_item.text, variables))))
+                resolved_inputs.append(
+                    UserMessage(
+                        TextMessageContent(
+                            type='text',
+                            text=resolve_variables(input_item.text, variables),
+                        )
+                    )
+                )
             else:
                 # ImageMessage and DocumentMessage objects don't need variable resolution
                 resolved_inputs.append(input_item)
@@ -590,5 +603,5 @@ class Arium(BaseArium):
         """
         if result is None:
             return
-        
+
         self.memory.add(result)

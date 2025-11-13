@@ -2,7 +2,14 @@ import json
 from typing import Dict, Any, List, Optional
 from flo_ai.models.base_agent import BaseAgent, AgentType, ReasoningPattern
 from flo_ai.llm.base_llm import BaseLLM
-from flo_ai.models.chat_message import AssistantMessage, BaseMessage, MediaMessageContent, MessageType, UserMessage, TextMessageContent
+from flo_ai.models.chat_message import (
+    AssistantMessage,
+    BaseMessage,
+    MediaMessageContent,
+    MessageType,
+    UserMessage,
+    TextMessageContent,
+)
 from flo_ai.tool.base_tool import Tool, ToolExecutionError
 from flo_ai.models.agent_error import AgentError
 from flo_ai.utils.logger import logger
@@ -23,7 +30,7 @@ class Agent(BaseAgent):
     def __init__(
         self,
         name: str,
-        system_prompt: str| AssistantMessage,
+        system_prompt: str | AssistantMessage,
         llm: BaseLLM,
         tools: Optional[List[Tool]] = None,
         max_retries: int = 3,
@@ -62,13 +69,13 @@ class Agent(BaseAgent):
     @trace_agent_execution()
     async def run(
         self,
-        inputs: List[BaseMessage] | str ,
+        inputs: List[BaseMessage] | str,
         variables: Optional[Dict[str, Any]] = None,
     ) -> str:
         variables = variables or {}
         if isinstance(inputs, str):
             inputs = [UserMessage(TextMessageContent(type='text', text=inputs))]
-        
+
         # Perform runtime variable validation if not already resolved (single agent usage)
         if not self.resolved_variables:
             # Extract variables from inputs and system prompt
@@ -89,7 +96,9 @@ class Agent(BaseAgent):
                 if isinstance(input, BaseMessage):
                     # checking whether the TextMessageContent is resolved
                     if isinstance(input.content, TextMessageContent) and variables:
-                        input.content.text = resolve_variables(input.content.text, variables)
+                        input.content.text = resolve_variables(
+                            input.content.text, variables
+                        )
                     self.add_to_history(input)
                 else:
                     raise ValueError(f'Invalid input type: {type(input)}')
@@ -128,7 +137,9 @@ class Agent(BaseAgent):
                     if self.reasoning_pattern == ReasoningPattern.COT
                     else resolve_variables(self.system_prompt, variables)
                 )
-                system_message = AssistantMessage(role=MessageType.SYSTEM, content=system_content)
+                system_message = AssistantMessage(
+                    role=MessageType.SYSTEM, content=system_content
+                )
                 self.add_to_history(system_message)
                 messages = await self._get_message_history(variables)
 
@@ -143,8 +154,14 @@ class Agent(BaseAgent):
 
                 if assistant_message:
                     # Ensure act_as is not None (default to 'assistant' if missing)
-                    role = self.act_as if self.act_as is not None else MessageType.ASSISTANT
-                    self.add_to_history(AssistantMessage(role=role, content=assistant_message))
+                    role = (
+                        self.act_as
+                        if self.act_as is not None
+                        else MessageType.ASSISTANT
+                    )
+                    self.add_to_history(
+                        AssistantMessage(role=role, content=assistant_message)
+                    )
 
                     return self.conversation_history
                 else:
@@ -165,7 +182,9 @@ class Agent(BaseAgent):
 
                 if should_retry and retry_count <= self.max_retries:
                     self.add_to_history(
-                       AssistantMessage(content=f'Error occurred. Analysis: {analysis}')
+                        AssistantMessage(
+                            content=f'Error occurred. Analysis: {analysis}'
+                        )
                     )
                     continue
                 else:
@@ -189,10 +208,12 @@ class Agent(BaseAgent):
                     system_content = self._get_cot_prompt(variables)
                 else:
                     system_content = resolve_variables(self.system_prompt, variables)
-                    
-                system_message = AssistantMessage(role=MessageType.SYSTEM, content=system_content)
+
+                system_message = AssistantMessage(
+                    role=MessageType.SYSTEM, content=system_content
+                )
                 self.add_to_history(system_message)
-                messages =  await self._get_message_history(variables)
+                messages = await self._get_message_history(variables)
 
                 # Keep executing tools until we get a final answer
                 tool_call_count = 0
@@ -217,8 +238,14 @@ class Agent(BaseAgent):
                             )
                             if is_final:
                                 # Ensure act_as is not None (default to 'assistant' if missing)
-                                role = self.act_as if self.act_as is not None else MessageType.ASSISTANT
-                                self.add_to_history(AssistantMessage(content=assistant_message))
+                                role = (
+                                    self.act_as
+                                    if self.act_as is not None
+                                    else MessageType.ASSISTANT
+                                )
+                                self.add_to_history(
+                                    AssistantMessage(content=assistant_message)
+                                )
                                 return assistant_message
                             else:
                                 # This is intermediate reasoning, add to context and continue
@@ -231,8 +258,14 @@ class Agent(BaseAgent):
                                     f'Detected intermediate reasoning (not final answer): {msg_preview}...'
                                 )
                                 # Ensure act_as is not None (default to 'assistant' if missing)
-                                role = self.act_as if self.act_as is not None else MessageType.ASSISTANT
-                                self.add_to_history(AssistantMessage(content=assistant_message))
+                                role = (
+                                    self.act_as
+                                    if self.act_as is not None
+                                    else MessageType.ASSISTANT
+                                )
+                                self.add_to_history(
+                                    AssistantMessage(content=assistant_message)
+                                )
                                 messages.append(
                                     {
                                         'role': role,
@@ -290,12 +323,20 @@ class Agent(BaseAgent):
                         # Add function call to history
                         self.add_to_history(
                             [
-                                AssistantMessage(content=f'Tool response: {str(function_response)}', name=function_name),
-                                AssistantMessage(content= f'Here is the result of the tool call: \n {str(function_response)}', role=MessageType.USER),
-                                UserMessage(content= 'Continue with your reasoning based on this result. What should be done next?', role=MessageType.USER),
+                                AssistantMessage(
+                                    content=f'Tool response: {str(function_response)}',
+                                    name=function_name,
+                                ),
+                                AssistantMessage(
+                                    content=f'Here is the result of the tool call: \n {str(function_response)}',
+                                    role=MessageType.USER,
+                                ),
+                                UserMessage(
+                                    content='Continue with your reasoning based on this result. What should be done next?',
+                                    role=MessageType.USER,
+                                ),
                             ]
                         )
-
 
                     except (json.JSONDecodeError, KeyError, ToolExecutionError) as e:
                         # Record tool call failure
@@ -316,7 +357,9 @@ class Agent(BaseAgent):
                             )
 
                             self.add_to_history(
-                              AssistantMessage(content=f'Tool execution error: {analysis}')
+                                AssistantMessage(
+                                    content=f'Tool execution error: {analysis}'
+                                )
                             )
                             continue
                         raise AgentError(
@@ -324,10 +367,13 @@ class Agent(BaseAgent):
                         )
 
                 # Generate final response if we've hit the tool call limit or exited the loop
-                system_message = AssistantMessage(role=MessageType.SYSTEM, content='Please provide a final answer based on all the tool results above.')
+                system_message = AssistantMessage(
+                    role=MessageType.SYSTEM,
+                    content='Please provide a final answer based on all the tool results above.',
+                )
                 self.add_to_history(system_message)
                 messages = await self._get_message_history(variables)
-                
+
                 final_response = await self.llm.generate(
                     messages,
                     output_schema=self.output_schema,
@@ -336,7 +382,11 @@ class Agent(BaseAgent):
                 assistant_message = self.llm.get_message_content(final_response)
                 if assistant_message:
                     # Ensure act_as is not None (default to 'assistant' if missing)
-                    role = self.act_as if self.act_as is not None else MessageType.ASSISTANT
+                    role = (
+                        self.act_as
+                        if self.act_as is not None
+                        else MessageType.ASSISTANT
+                    )
                     self.add_to_history(AssistantMessage(content=assistant_message))
                     return await self.conversation_history
 
@@ -355,7 +405,9 @@ class Agent(BaseAgent):
                     agent_metrics.record_retry(self.name, 'execution_error')
 
                     self.add_to_history(
-                        AssistantMessage(content=f'Error occurred. Analysis: {analysis}')
+                        AssistantMessage(
+                            content=f'Error occurred. Analysis: {analysis}'
+                        )
                     )
                     continue
 
@@ -371,21 +423,31 @@ class Agent(BaseAgent):
         for input in self.conversation_history:
             if isinstance(input, AssistantMessage):
                 message_history.append({'role': input.role, 'content': input.content})
-            elif isinstance(input.content,TextMessageContent):
+            elif isinstance(input.content, TextMessageContent):
                 resolved_content = resolve_variables(input.content.text, variables)
-                message_history.append({'role': input.role, 'content': resolved_content})
+                message_history.append(
+                    {'role': input.role, 'content': resolved_content}
+                )
             elif isinstance(input.content, MediaMessageContent):
-                if  input.content.type == 'image':
+                if input.content.type == 'image':
                     # Format image message and add to history
                     formatted_content = self.llm.format_image_in_message(input.content)
-                    message_history.append({'role': input.role, 'content': formatted_content})
+                    message_history.append(
+                        {'role': input.role, 'content': formatted_content}
+                    )
 
                 elif input.content.type == 'document':
                     # Format document message and add to history
-                    formatted_content = await self.llm.format_document_in_message(input.content)
-                    message_history.append({'role': input.role, 'content': formatted_content})
+                    formatted_content = await self.llm.format_document_in_message(
+                        input.content
+                    )
+                    message_history.append(
+                        {'role': input.role, 'content': formatted_content}
+                    )
                 else:
-                    raise ValueError(f'Invalid media message content type: {input.content.type}')
+                    raise ValueError(
+                        f'Invalid media message content type: {input.content.type}'
+                    )
             else:
                 raise ValueError(f'Invalid content type: {type(input.content)}')
         return message_history
@@ -558,5 +620,3 @@ Respond with EXACTLY one word: "FINAL" or "INTERMEDIATE"
             # Conservative default: treat as intermediate to avoid premature exit
             # This is safer as it allows the agent to continue rather than stopping too early
             return False
-
-

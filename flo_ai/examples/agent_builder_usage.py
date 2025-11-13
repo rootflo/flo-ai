@@ -18,7 +18,15 @@ async def example_simple_agent():
         .build()
     )
 
-    response = await agent.run([UserMessage(TextMessageContent(type='text', text='What is the formula for the area of a circle?'))])
+    response = await agent.run(
+        [
+            UserMessage(
+                TextMessageContent(
+                    type='text', text='What is the formula for the area of a circle?'
+                )
+            )
+        ]
+    )
     print(f'Simple Agent Response: {response}')
 
 
@@ -68,10 +76,14 @@ async def example_tool_agent():
         .build()
     )
 
-    response = await agent_openai.run([UserMessage(TextMessageContent(type='text', text='Calculate 5 plus 3'))])
+    response = await agent_openai.run(
+        [UserMessage(TextMessageContent(type='text', text='Calculate 5 plus 3'))]
+    )
     print(f'OpenAI Tool Agent Response: {response}')
 
-    response = await agent_claude.run([UserMessage(TextMessageContent(type='text', text='Calculate 5 plus 3'))])
+    response = await agent_claude.run(
+        [UserMessage(TextMessageContent(type='text', text='Calculate 5 plus 3'))]
+    )
     print(f'Claude Tool Agent Response: {response}')
 
 

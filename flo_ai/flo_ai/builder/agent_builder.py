@@ -17,7 +17,7 @@ class AgentBuilder:
 
     def __init__(self):
         self._name = 'AI Assistant'
-        self._system_prompt: str|AssistantMessage = 'You are a helpful AI assistant.'
+        self._system_prompt: str | AssistantMessage = 'You are a helpful AI assistant.'
         self._llm: Optional[BaseLLM] = None
         self._tools: List[Tool] = []
         self._max_retries = 3
@@ -33,12 +33,12 @@ class AgentBuilder:
 
     def with_prompt(self, system_prompt: str | AssistantMessage) -> 'AgentBuilder':
         """Set the system prompt
-        
+
         Args:
             system_prompt: Either a string prompt or a list of InputMessage objects
         """
         self._system_prompt = system_prompt
-        return self 
+        return self
 
     def with_llm(self, llm: BaseLLM) -> 'AgentBuilder':
         """Configure the LLM to use

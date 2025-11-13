@@ -1,11 +1,14 @@
 from typing import Literal, Optional, Dict, Any
 from dataclasses import dataclass
 
+
 class MessageType:
     USER = 'user'
     ASSISTANT = 'assistant'
     FUNCTION = 'function'
     SYSTEM = 'system'
+
+
 @dataclass
 class MediaMessageContent:
     type: Optional[Literal['text', 'image', 'document']] = None
@@ -19,7 +22,7 @@ class ImageMessageContent(MediaMessageContent):
     url: Optional[str] = None
     base64: Optional[str] = None
     mime_type: Optional[str] = None
-    
+
     def __post_init__(self):
         self.type = 'image'
 
@@ -29,7 +32,7 @@ class DocumentMessageContent(MediaMessageContent):
     url: Optional[str] = None
     base64: Optional[str] = None
     mime_type: Optional[str] = None
-    
+
     def __post_init__(self):
         self.type = 'document'
 
@@ -51,7 +54,7 @@ class BaseMessage:
 class SystemMessage(BaseMessage):
     content: str
     metadata: Optional[Dict[str, Any]] = None
-    
+
     def __post_init__(self):
         self.role = 'system'
 
@@ -60,7 +63,7 @@ class SystemMessage(BaseMessage):
 class UserMessage(BaseMessage):
     content: str | ImageMessageContent | DocumentMessageContent | TextMessageContent
     metadata: Optional[Dict[str, Any]] = None
-    
+
     def __post_init__(self):
         self.role = 'user'
 
@@ -69,8 +72,8 @@ class UserMessage(BaseMessage):
 class AssistantMessage(BaseMessage):
     content: str
     metadata: Optional[Dict[str, Any]] = None
-    role : Optional[str] = None
-    
+    role: Optional[str] = None
+
     def __post_init__(self):
         if self.role is None:
             self.role = MessageType.ASSISTANT

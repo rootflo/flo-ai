@@ -69,7 +69,6 @@ class BaseAgent(ABC):
             return False, f'Error during error handling: {str(e)}'
 
     def add_to_history(self, input_message: BaseMessage | List[BaseMessage]):
-
         if isinstance(input_message, list):
             self.conversation_history.extend(input_message)
         else:
