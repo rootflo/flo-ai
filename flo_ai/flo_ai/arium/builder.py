@@ -3,8 +3,8 @@ from flo_ai.arium.arium import Arium
 from flo_ai.arium.memory import MessageMemory, BaseMemory
 from flo_ai.arium.protocols import ExecutableNode
 from flo_ai.arium.nodes import AriumNode, ForEachNode
-from flo_ai.models import InputMessage, TextMessageContent, UserMessage
-from flo_ai.models.agent import Agent
+from flo_ai.models import BaseMessage, TextMessageContent, UserMessage
+from flo_ai.models.agent import Agent, resolve_variables
 from flo_ai.tool.base_tool import Tool
 from flo_ai.llm.base_llm import ImageMessage
 from flo_ai.models.document import DocumentMessage
@@ -235,7 +235,7 @@ class AriumBuilder:
 
     async def build_and_run(
         self,
-        inputs: List[InputMessage],
+        inputs: List[BaseMessage]|str,
         variables: Optional[Dict[str, Any]] = None,
     ) -> List[dict]:
         """Build the Arium and run it with the given inputs and optional runtime variables."""
@@ -243,9 +243,8 @@ class AriumBuilder:
         new_inputs = []
         for input in inputs:
             if isinstance(input, str):
-                text_input = UserMessage(TextMessageContent(type='text', text=input))
-                new_inputs.append(text_input)
-            elif isinstance(input, InputMessage):
+                new_inputs.append(UserMessage(TextMessageContent(type='text', text=resolve_variables(input, variables))))
+            elif isinstance(input, BaseMessage):
                 new_inputs.append(input)
             else:
                 raise ValueError(f"Invalid input type: {type(input)}")

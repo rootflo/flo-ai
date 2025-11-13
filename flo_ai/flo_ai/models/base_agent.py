@@ -2,6 +2,7 @@ from typing import Dict, Any, List, Tuple
 from abc import ABC, abstractmethod
 from enum import Enum
 from flo_ai.llm.base_llm import BaseLLM
+from flo_ai.models.chat_message import BaseMessage
 
 
 class AgentType(Enum):
@@ -32,7 +33,7 @@ class BaseAgent(ABC):
         self.max_retries = max_retries
         self.max_tool_calls = max_tool_calls
         self.resolved_variables = False
-        self.conversation_history: List[Dict[str, str]] = []
+        self.conversation_history: List[BaseMessage] = []
 
     @abstractmethod
     async def run(self, input_text: str) -> str:
@@ -67,11 +68,12 @@ class BaseAgent(ABC):
         except Exception as e:
             return False, f'Error during error handling: {str(e)}'
 
-    def add_to_history(self, role: str, content: str, **kwargs):
-        """Add a message to conversation history"""
-        message = {'role': role, 'content': content}
-        message.update(kwargs)  # Add any additional fields like name
-        self.conversation_history.append(message)
+    def add_to_history(self, input_message: BaseMessage | List[BaseMessage]):
+
+        if isinstance(input_message, list):
+            self.conversation_history.extend(input_message)
+        else:
+            self.conversation_history.append(input_message)
 
     def clear_history(self):
         """Clear conversation history"""

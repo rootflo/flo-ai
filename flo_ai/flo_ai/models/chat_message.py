@@ -1,46 +1,77 @@
 import base64
-from typing import Literal, List
-from typing import Optional, Dict, Any
+from typing import Literal, Optional, Dict, Any
+from dataclasses import dataclass, field
 
-
+class MessageType:
+    USER = 'user'
+    ASSISTANT = 'assistant'
+    FUNCTION = 'function'
+    SYSTEM = 'system'
+@dataclass
 class MediaMessageContent:
-    type: Literal['text', 'image', 'document']
-    url: str | None = None
-    base64: str | None = None
-    mime_type: str | None = None
+    type: Optional[Literal['text', 'image', 'document']] = None
+    url: Optional[str] = None
+    base64: Optional[str] = None
+    mime_type: Optional[str] = None
 
+
+@dataclass
 class ImageMessageContent(MediaMessageContent):
-    def __init__(self, url: str|None = None, base64: str | None = None, mime_type: str | None = None):
+    url: Optional[str] = None
+    base64: Optional[str] = None
+    mime_type: Optional[str] = None
+    
+    def __post_init__(self):
         self.type = 'image'
-        self.url = url
-        self.base64 = base64
-        self.mime_type = mime_type
 
+
+@dataclass
 class DocumentMessageContent(MediaMessageContent):
-    def __init__(self, url: str | None = None, base64: str | None = None, mime_type: str | None = None):
+    url: Optional[str] = None
+    base64: Optional[str] = None
+    mime_type: Optional[str] = None
+    
+    def __post_init__(self):
         self.type = 'document'
-        self.url = url
-        self.base64 = base64
-        self.mime_type = mime_type
 
-class TextMessageContent(MediaMessageContent):
-    def __init__(self, type: Literal['text'], text: str):
-        self.type = 'text'
-        self.text = text
 
-class InputMessage:
-    def __init__(self, role: Literal['system', 'user', 'assistant'], content: str | ImageMessageContent | DocumentMessageContent | TextMessageContent, metadata: Optional[Dict[str, Any]] = None):
-        self.role = role
-        self.content = content
-        self.metadata = metadata
-class SystemMessage(InputMessage):
-    def __init__(self, content: str, metadata: Optional[Dict[str, Any]] = None):
-        super().__init__('system', content, metadata)
+@dataclass
+class TextMessageContent:
+    text: str
+    type: Literal['text'] = 'text'
 
-class UserMessage(InputMessage):
-    def __init__(self, content: str | ImageMessageContent | DocumentMessageContent | TextMessageContent, metadata: Optional[Dict[str, Any]] = None):
-        super().__init__('user', content, metadata)
 
-class AssistantMessage(InputMessage):
-    def __init__(self, content: str, metadata: Optional[Dict[str, Any]] = None):
-        super().__init__('assistant', content, metadata)
+@dataclass
+class BaseMessage:
+    content: str | ImageMessageContent | DocumentMessageContent | TextMessageContent
+    role: Optional[Literal['system', 'user', 'assistant']] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
+@dataclass
+class SystemMessage(BaseMessage):
+    content: str
+    metadata: Optional[Dict[str, Any]] = None
+    
+    def __post_init__(self):
+        self.role = 'system'
+
+
+@dataclass
+class UserMessage(BaseMessage):
+    content: str | ImageMessageContent | DocumentMessageContent | TextMessageContent
+    metadata: Optional[Dict[str, Any]] = None
+    
+    def __post_init__(self):
+        self.role = 'user'
+
+
+@dataclass
+class AssistantMessage(BaseMessage):
+    content: str
+    metadata: Optional[Dict[str, Any]] = None
+    role : Optional[str] = None
+    
+    def __post_init__(self):
+        if self.role is None:
+            self.role = MessageType.ASSISTANT

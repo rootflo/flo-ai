@@ -195,7 +195,9 @@ class OpenAI(BaseLLM):
         elif image.base64:
             image_bytes = base64.b64decode(image.base64)
         else:
-            raise NotImplementedError('Not implemented image for LLM OpenAI')
+            raise NotImplementedError(
+                f'Image formatting for OpenAI LLM requires either url or base64 data. Received: url={image.url}, base64={bool(image.base64)}'
+            )
         image_64 = base64.b64encode(image_bytes).decode('utf-8')
 
         return {

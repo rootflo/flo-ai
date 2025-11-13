@@ -8,11 +8,12 @@ inputs, and agent configurations for runtime variable validation.
 import re
 from typing import List, Set, Dict, Any
 
-from flo_ai.models.chat_message import InputMessage, TextMessageContent
+from flo_ai.models.agent import AssistantMessage
+from flo_ai.models.chat_message import BaseMessage, TextMessageContent
 
 
 
-def extract_variables_from_text(text: str) -> Set[str]:
+def extract_variables_from_text(text: str | AssistantMessage) -> Set[str]:
     """Extract variable placeholders from text using <variable_name> pattern.
 
     Args:
@@ -29,15 +30,19 @@ def extract_variables_from_text(text: str) -> Set[str]:
     """
     if not text:
         return set()
-
+    if isinstance(text,AssistantMessage):
+        text_str = text.content
+    elif isinstance(text, str):
+        text_str = text
+   
     # Use regex to find all <variable_name> patterns
     # \w+ matches word characters (letters, digits, underscore)
     variable_pattern = r'<(\w+)>'
-    matches = re.findall(variable_pattern, text)
+    matches = re.findall(variable_pattern, text_str)
     return set(matches)
 
 
-def extract_variables_from_inputs(inputs: List[InputMessage] ) -> Set[str]:
+def extract_variables_from_inputs(inputs: List[BaseMessage] ) -> Set[str]:
     """Extract variable placeholders from a list of input messages.
 
     Args:
@@ -51,7 +56,7 @@ def extract_variables_from_inputs(inputs: List[InputMessage] ) -> Set[str]:
     """
     all_variables = set()
     for input_item in inputs:
-        if isinstance(input_item, InputMessage):
+        if isinstance(input_item, BaseMessage):
             if(isinstance(input_item.content, TextMessageContent)):
                 variables = extract_variables_from_text(input_item.content.text)
                 all_variables.update(variables)
@@ -104,7 +109,7 @@ def validate_variables(
         )
 
 
-def resolve_variables(text: str | InputMessage, variables: Dict[str, Any]) -> str | InputMessage:
+def resolve_variables(text: str | BaseMessage | AssistantMessage, variables: Dict[str, Any]) -> str | BaseMessage | AssistantMessage:
     """Replace <variable_name> patterns with actual values
 
     Args:

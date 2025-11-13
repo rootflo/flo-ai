@@ -256,5 +256,5 @@ class Gemini(BaseLLM):
                 mime_type=image.mime_type,
             )
         raise NotImplementedError(
-            'Not other way other than file path has been implemented'
+                f'Image formatting for Gemini LLM requires either url or base64 data. Received: url={image.url}, base64={bool(image.base64)}'
         )

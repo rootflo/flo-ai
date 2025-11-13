@@ -1,8 +1,9 @@
 import json
 from typing import Dict, Any, List, Optional
+from unittest import result
 from flo_ai.models.base_agent import BaseAgent, AgentType, ReasoningPattern
 from flo_ai.llm.base_llm import BaseLLM
-from flo_ai.models.chat_message import InputMessage, MediaMessageContent, UserMessage, TextMessageContent
+from flo_ai.models.chat_message import AssistantMessage, BaseMessage, MediaMessageContent, MessageType, UserMessage, TextMessageContent
 from flo_ai.tool.base_tool import Tool, ToolExecutionError
 from flo_ai.models.agent_error import AgentError
 from flo_ai.utils.logger import logger
@@ -19,18 +20,11 @@ from flo_ai.telemetry.instrumentation import (
 from flo_ai.telemetry import get_tracer
 
 
-class MessageType:
-    USER = 'user'
-    ASSISTANT = 'assistant'
-    FUNCTION = 'function'
-    SYSTEM = 'system'
-
-
 class Agent(BaseAgent):
     def __init__(
         self,
         name: str,
-        system_prompt: str,
+        system_prompt: str| AssistantMessage,
         llm: BaseLLM,
         tools: Optional[List[Tool]] = None,
         max_retries: int = 3,
@@ -46,7 +40,10 @@ class Agent(BaseAgent):
         # Enhance system prompt with role if provided
         enhanced_prompt = system_prompt
         if role:
-            enhanced_prompt = f'You are {role}. {system_prompt}'
+            if isinstance(system_prompt, str):
+                enhanced_prompt = f'You are {role}. {system_prompt}'
+            elif isinstance(system_prompt, AssistantMessage):
+                enhanced_prompt = f'You are {role}. {system_prompt.content}'
 
         super().__init__(
             name=name,
@@ -66,10 +63,9 @@ class Agent(BaseAgent):
     @trace_agent_execution()
     async def run(
         self,
-        inputs: List[InputMessage]  ,
+        inputs: List[BaseMessage] | str ,
         variables: Optional[Dict[str, Any]] = None,
     ) -> str:
-
         variables = variables or {}
         if isinstance(inputs, str):
             inputs = [UserMessage(TextMessageContent(type='text', text=inputs))]
@@ -91,31 +87,11 @@ class Agent(BaseAgent):
 
             # Process inputs and resolve variables in string inputs
             for input in inputs:
-                if isinstance(input, InputMessage):
-                    # Handle InputMessage - check content type
-                    if isinstance(input.content,str):
-                        resolved_content = resolve_variables(input.content, variables)
-                        self.add_to_history(input.role, resolved_content)
-                    elif isinstance(input.content, MediaMessageContent):
-                        if input.content.type == 'text':
-                            resolved_content = resolve_variables(input.content.text, variables)
-                            self.add_to_history(input.role, resolved_content)
-
-                        elif  input.content.type == 'image':
-                            # Format image message and add to history
-                            formatted_content = self.llm.format_image_in_message(input.content)
-                            print(f"formatted_content: {formatted_content}")
-                            self.add_to_history(input.role, formatted_content)
-
-                        elif input.content.type == 'document':
-                            # Format document message and add to history
-                            formatted_content = await self.llm.format_document_in_message(input.content)
-                            self.add_to_history(input.role, formatted_content)
-                        else:
-                            raise ValueError(f'Invalid media message content type: {input.content.type}')
-                    else:
-                        # Fallback: add content as-is
-                        raise ValueError(f'Invalid content type: {type(input.content)}')
+                if isinstance(input, BaseMessage):
+                    # checking whether the TextMessageContent is resolved
+                    if isinstance(input.content, TextMessageContent) and variables:
+                        input.content.text = resolve_variables(input.content.text, variables)
+                    self.add_to_history(input)
                 else:
                     raise ValueError(f'Invalid input type: {type(input)}')
             # after resolving agent system prompts and inputs, mark variables as resolved
@@ -124,29 +100,9 @@ class Agent(BaseAgent):
         else:
             # Variables already resolved, process inputs without variable resolution
             for input in inputs:
-                if isinstance(input, InputMessage):
+                if isinstance(input, BaseMessage):
                     # Handle InputMessage - check content type
-                    if isinstance(input.content,str):
-                        resolved_content = resolve_variables(input.content, variables)
-                        self.add_to_history(input.role, resolved_content)
-                    elif isinstance(input.content, MediaMessageContent):
-                        if input.content.type == 'text':
-                            resolved_content = resolve_variables(input.content.text, variables)
-                            self.add_to_history(input.role, resolved_content)
-
-                        elif  input.content.type == 'image':
-                            # Format image message and add to history
-                            formatted_content = self.llm.format_image_in_message(input.content)
-                            self.add_to_history(input.role, formatted_content)
-
-                        elif input.content.type == 'document':
-                            # Format document message and add to history
-                            formatted_content = await self.llm.format_document_in_message(input.content)
-                            self.add_to_history(input.role, formatted_content)
-                        else:
-                            raise ValueError(f'Invalid media message content type: {input.content.type}')
-                    else:
-                        raise ValueError(f'Invalid content type: {type(input.content)}')
+                    self.add_to_history(input)
                 else:
                     raise ValueError(f'Invalid input type: {type(input)}')
 
@@ -173,12 +129,9 @@ class Agent(BaseAgent):
                     if self.reasoning_pattern == ReasoningPattern.COT
                     else resolve_variables(self.system_prompt, variables)
                 )
-                messages = [
-                    {
-                        'role': MessageType.SYSTEM,
-                        'content': system_content,
-                    }
-                ] + self.conversation_history
+                system_message = AssistantMessage(role=MessageType.SYSTEM, content=system_content)
+                self.add_to_history(system_message)
+                messages = await self._get_message_history(variables)
 
                 logger.debug(f'Sending messages to LLM: {messages}')
                 response = await self.llm.generate(
@@ -192,8 +145,9 @@ class Agent(BaseAgent):
                 if assistant_message:
                     # Ensure act_as is not None (default to 'assistant' if missing)
                     role = self.act_as if self.act_as is not None else MessageType.ASSISTANT
-                    self.add_to_history(role, assistant_message)
-                    return assistant_message
+                    self.add_to_history(AssistantMessage(role=role, content=assistant_message))
+
+                    return self.conversation_history
                 else:
                     possible_tool_message = await self.llm.get_function_call(response)
                     if possible_tool_message:
@@ -212,7 +166,7 @@ class Agent(BaseAgent):
 
                 if should_retry and retry_count <= self.max_retries:
                     self.add_to_history(
-                        MessageType.SYSTEM, f'Error occurred. Analysis: {analysis}'
+                       AssistantMessage(content=f'Error occurred. Analysis: {analysis}')
                     )
                     continue
                 else:
@@ -236,13 +190,10 @@ class Agent(BaseAgent):
                     system_content = self._get_cot_prompt(variables)
                 else:
                     system_content = resolve_variables(self.system_prompt, variables)
-
-                messages = [
-                    {
-                        'role': MessageType.SYSTEM,
-                        'content': system_content,
-                    }
-                ] + self.conversation_history
+                    
+                system_message = AssistantMessage(role=MessageType.SYSTEM, content=system_content)
+                self.add_to_history(system_message)
+                messages =  await self._get_message_history(variables)
 
                 # Keep executing tools until we get a final answer
                 tool_call_count = 0
@@ -268,7 +219,7 @@ class Agent(BaseAgent):
                             if is_final:
                                 # Ensure act_as is not None (default to 'assistant' if missing)
                                 role = self.act_as if self.act_as is not None else MessageType.ASSISTANT
-                                self.add_to_history(role, assistant_message)
+                                self.add_to_history(AssistantMessage(content=assistant_message))
                                 return assistant_message
                             else:
                                 # This is intermediate reasoning, add to context and continue
@@ -282,7 +233,7 @@ class Agent(BaseAgent):
                                 )
                                 # Ensure act_as is not None (default to 'assistant' if missing)
                                 role = self.act_as if self.act_as is not None else MessageType.ASSISTANT
-                                self.add_to_history(role, assistant_message)
+                                self.add_to_history(AssistantMessage(content=assistant_message))
                                 messages.append(
                                     {
                                         'role': role,
@@ -339,27 +290,13 @@ class Agent(BaseAgent):
 
                         # Add function call to history
                         self.add_to_history(
-                            MessageType.FUNCTION,
-                            f'Tool response: {str(function_response)}',
-                            name=function_name,
+                            [
+                                AssistantMessage(content=f'Tool response: {str(function_response)}', name=function_name),
+                                AssistantMessage(content= f'Here is the result of the tool call: \n {str(function_response)}', role=MessageType.USER),
+                                UserMessage(content= 'Continue with your reasoning based on this result. What should be done next?', role=MessageType.USER),
+                            ]
                         )
 
-                        # Add the function response to messages for context
-                        messages.append(
-                            {
-                                'role': MessageType.FUNCTION,
-                                'name': function_name,
-                                'content': f'Here is the result of the tool call: \n {str(function_response)}',
-                            }
-                        )
-
-                        # Add a prompt to continue the reasoning
-                        messages.append(
-                            {
-                                'role': MessageType.USER,
-                                'content': 'Continue with your reasoning based on this result. What should be done next?',
-                            }
-                        )
 
                     except (json.JSONDecodeError, KeyError, ToolExecutionError) as e:
                         # Record tool call failure
@@ -380,7 +317,7 @@ class Agent(BaseAgent):
                             )
 
                             self.add_to_history(
-                                MessageType.SYSTEM, f'Tool execution error: {analysis}'
+                              AssistantMessage(content=f'Tool execution error: {analysis}')
                             )
                             continue
                         raise AgentError(
@@ -388,14 +325,12 @@ class Agent(BaseAgent):
                         )
 
                 # Generate final response if we've hit the tool call limit or exited the loop
+                system_message = AssistantMessage(role=MessageType.SYSTEM, content='Please provide a final answer based on all the tool results above.')
+                self.add_to_history(system_message)
+                messages = await self._get_message_history(variables)
+                
                 final_response = await self.llm.generate(
-                    messages
-                    + [
-                        {
-                            'role': MessageType.SYSTEM,
-                            'content': 'Please provide a final answer based on all the tool results above.',
-                        }
-                    ],
+                    messages,
                     output_schema=self.output_schema,
                 )
 
@@ -403,8 +338,8 @@ class Agent(BaseAgent):
                 if assistant_message:
                     # Ensure act_as is not None (default to 'assistant' if missing)
                     role = self.act_as if self.act_as is not None else MessageType.ASSISTANT
-                    self.add_to_history(role, assistant_message)
-                    return assistant_message
+                    self.add_to_history(AssistantMessage(content=assistant_message))
+                    return await self.conversation_history
 
                 return f'The final result based on the tool executions is: {function_response}'
 
@@ -421,7 +356,7 @@ class Agent(BaseAgent):
                     agent_metrics.record_retry(self.name, 'execution_error')
 
                     self.add_to_history(
-                        MessageType.SYSTEM, f'Error occurred. Analysis: {analysis}'
+                        AssistantMessage(content=f'Error occurred. Analysis: {analysis}')
                     )
                     continue
 
@@ -431,6 +366,30 @@ class Agent(BaseAgent):
                 )
 
         raise AgentError(f'Failed after maximum {self.max_retries} attempts.')
+
+    async def _get_message_history(self, variables: Optional[Dict[str, Any]] = None):
+        message_history = []
+        for input in self.conversation_history:
+            if isinstance(input, AssistantMessage):
+                message_history.append({'role': input.role, 'content': input.content})
+            elif isinstance(input.content,TextMessageContent):
+                resolved_content = resolve_variables(input.content.text, variables)
+                message_history.append({'role': input.role, 'content': resolved_content})
+            elif isinstance(input.content, MediaMessageContent):
+                if  input.content.type == 'image':
+                    # Format image message and add to history
+                    formatted_content = self.llm.format_image_in_message(input.content)
+                    message_history.append({'role': input.role, 'content': formatted_content})
+
+                elif input.content.type == 'document':
+                    # Format document message and add to history
+                    formatted_content = await self.llm.format_document_in_message(input.content)
+                    message_history.append({'role': input.role, 'content': formatted_content})
+                else:
+                    raise ValueError(f'Invalid media message content type: {input.content.type}')
+            else:
+                raise ValueError(f'Invalid content type: {type(input.content)}')
+        return message_history
 
     def _get_react_prompt(self, variables: Optional[Dict[str, Any]] = None) -> str:
         """Get system prompt modified for ReACT pattern"""
@@ -600,3 +559,5 @@ Respond with EXACTLY one word: "FINAL" or "INTERMEDIATE"
             # Conservative default: treat as intermediate to avoid premature exit
             # This is safer as it allows the agent to continue rather than stopping too early
             return False
+
+
