@@ -87,11 +87,11 @@ async def main():
         print(f'Question {i}: {question}')
         print('-' * 50)
 
-        # try:
-        response = await agent.run(question)
-        print(f'Answer: {response}')
-        # except Exception as e:
-            # print(f'Error: {e}')
+        try:
+            response = await agent.run(question)
+            print(f'Answer: {response}')
+        except Exception as e:
+            print(f'Error: {e}')
 
         print('\n' + '=' * 60 + '\n')
 

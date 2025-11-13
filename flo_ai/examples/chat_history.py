@@ -3,8 +3,7 @@ from typing import Any
 from flo_ai.builder.agent_builder import AgentBuilder
 from flo_ai.llm import OpenAI, Gemini
 from flo_ai.models.agent import Agent
-from flo_ai.models import  DocumentMessageContent, UserMessage, AssistantMessage, TextMessageContent, ImageMessageContent
-
+from flo_ai.models import   AssistantMessage, UserMessage, TextMessageContent, ImageMessageContent
 
 async def main() -> None:
     # Create a simple conversational agent
@@ -41,6 +40,4 @@ async def main() -> None:
         },
     )
     print(f'Response: {response}')
-
-
 asyncio.run(main())

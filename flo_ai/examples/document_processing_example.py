@@ -456,7 +456,7 @@ async def example_4_document_bytes_processing():
         # Test tools with bytes (using extract tools)
         print('3. Using document tools with bytes data:')
         # Note: Tools expect file paths, so we'll show the concept
-        # print(f'   TXT bytes size: {len(txt_bytes)} bytes')
+        print(f'   TXT bytes size: {len(txt_bytes)} bytes')
         print(f'   PDF bytes size: {len(pdf_bytes)} bytes')
         print('   ✅ Documents successfully processed from bytes data')
 
@@ -545,39 +545,39 @@ async def main():
     print('🚀 Flo AI Document Processing Examples')
     print('Demonstrating PDF and TXT document processing capabilities\n')
 
-    # try:
-    # Run examples
-    # await example_1_basic_document_agent()
-    # await example_2_document_workflow()
-    # await example_3_pdf_document_processing()
-    # await example_4_document_bytes_processing()
-    # await example_5_document_base64_processing()
-    await example_6_gemini_document_processing()
+    try:
+        # Run examples
+        await example_1_basic_document_agent()
+        # await example_2_document_workflow()
+        await example_3_pdf_document_processing()
+        await example_4_document_bytes_processing()
+        await example_5_document_base64_processing()
+        await example_6_gemini_document_processing()
 
-    print('\n' + '=' * 60)
-    print('🎉 ALL DOCUMENT PROCESSING EXAMPLES COMPLETED!')
-    print('=' * 60)
-    print('\n📋 Examples demonstrated:')
-    print('   • Basic document processing with agents')
-    print('   • YAML-based document workflows')
-    print('   • PDF document processing and analysis')
-    print('   • Document processing from bytes data')
-    print('   • Document processing from base64 encoded data')
-    print('   • Multi-LLM document support (OpenAI, Gemini)')
-    print('\n💡 Key features showcased:')
-    print(
-        '   • DocumentMessage for structured document inputs (file_path, bytes, base64)'
-    )
-    print('   • Extensible document processor architecture')
-    print('   • PDF and TXT document format support')
-    print('   • LLM-agnostic document formatting')
-    print('   • Integration with existing Arium workflows')
+        print('\n' + '=' * 60)
+        print('🎉 ALL DOCUMENT PROCESSING EXAMPLES COMPLETED!')
+        print('=' * 60)
+        print('\n📋 Examples demonstrated:')
+        print('   • Basic document processing with agents')
+        print('   • YAML-based document workflows')
+        print('   • PDF document processing and analysis')
+        print('   • Document processing from bytes data')
+        print('   • Document processing from base64 encoded data')
+        print('   • Multi-LLM document support (OpenAI, Gemini)')
+        print('\n💡 Key features showcased:')
+        print(
+            '   • DocumentMessage for structured document inputs (file_path, bytes, base64)'
+        )
+        print('   • Extensible document processor architecture')
+        print('   • PDF and TXT document format support')
+        print('   • LLM-agnostic document formatting')
+        print('   • Integration with existing Arium workflows')
 
-    # except Exception as e:
-    #     print(f'❌ Error running examples: {e}')
-    #     import traceback
+    except Exception as e:
+        print(f'❌ Error running examples: {e}')
+        import traceback
 
-    #     traceback.print_exc()
+        traceback.print_exc()
 
 
 if __name__ == '__main__':

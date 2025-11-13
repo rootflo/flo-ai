@@ -131,9 +131,18 @@ async def example_complex_workflow():
 async def example_convenience_function():
     """Example using the create_arium convenience function"""
 
-    agent1 = Agent(name='agent1', prompt='First agent')
-    agent2 = Agent(name='agent2', prompt='Second agent')
+    agent1 = Agent(
+        name='agent1', 
+        system_prompt='First agent', 
+        llm=OpenAI(model='gpt-4o-mini')
+    )
+    agent2 = Agent(
+        name='agent2', 
+        system_prompt='Second agent',
+        llm=OpenAI(model='gpt-4o-mini')
+    )
 
+    # Fix: Use proper InputMessage format for consistency
     result = await (
         create_arium()
         .add_agent(agent1)
@@ -141,7 +150,7 @@ async def example_convenience_function():
         .start_with(agent1)
         .connect(agent1, agent2)
         .end_with(agent2)
-        .build_and_run(['Hello'])
+        .build_and_run([UserMessage(TextMessageContent(type='text', text='Hello'))])
     )
 
     return result
@@ -171,12 +180,11 @@ if __name__ == '__main__':
         print('Running AriumBuilder examples...')
 
         # You can uncomment and run these examples
-        result1 = await example_linear_workflow()
+        # result1 = await example_linear_workflow()
         # result2 = await example_branching_workflow()
         # result3 = await example_complex_workflow()
         # result4 = await example_convenience_function()
         # result5 = await example_build_and_reuse()
-
         print('Examples completed!')
 
     asyncio.run(main())

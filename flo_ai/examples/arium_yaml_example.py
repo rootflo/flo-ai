@@ -525,13 +525,13 @@ async def main():
     """Main function to run all examples."""
     try:
         # Run simple example
-        # await run_simple_example()
+        await run_simple_example()
 
         # Run complex example
-        # await run_complex_example()
+        await run_complex_example()
 
         # Run mixed configuration example
-        # await run_mixed_config_example()
+        await run_mixed_config_example()
 
         # Run pre-built agents example
         await run_prebuilt_agents_example()
