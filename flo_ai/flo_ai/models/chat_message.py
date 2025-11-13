@@ -1,6 +1,5 @@
-import base64
 from typing import Literal, Optional, Dict, Any
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 class MessageType:
     USER = 'user'

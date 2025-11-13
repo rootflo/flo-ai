@@ -4,7 +4,6 @@ from flo_ai.tool.base_tool import Tool
 from flo_ai.utils.document_processor import get_default_processor
 from flo_ai.utils.logger import logger
 from dataclasses import dataclass
-from flo_ai.models.document import DocumentMessage
 from flo_ai.models.chat_message import DocumentMessageContent, ImageMessageContent
 
 

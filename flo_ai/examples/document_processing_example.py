@@ -21,7 +21,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from flo_ai.builder.agent_builder import AgentBuilder
 from flo_ai.arium import AriumBuilder
 from flo_ai.llm import OpenAI, Gemini
-from flo_ai.models.document import DocumentMessage, DocumentType
+from flo_ai.models.document import  DocumentType
 
 openai_api_key = os.getenv('OPENAI_API_KEY')
 google_api_key = os.getenv('GOOGLE_API_KEY')

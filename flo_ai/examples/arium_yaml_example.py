@@ -7,7 +7,6 @@ instead of programmatic builder patterns.
 
 import asyncio
 from typing import Dict, Literal
-from flo_ai import AssistantMessage
 from flo_ai.arium.builder import AriumBuilder
 from flo_ai.models import TextMessageContent, UserMessage
 from flo_ai.tool.base_tool import Tool

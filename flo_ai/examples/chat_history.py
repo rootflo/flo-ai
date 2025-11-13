@@ -1,9 +1,9 @@
 import asyncio
 from typing import Any
 from flo_ai.builder.agent_builder import AgentBuilder
-from flo_ai.llm import OpenAI, Gemini
+from flo_ai.llm import  Gemini
 from flo_ai.models.agent import Agent
-from flo_ai.models import   AssistantMessage, UserMessage, TextMessageContent, ImageMessageContent
+from flo_ai.models import   AssistantMessage, UserMessage, TextMessageContent
 
 async def main() -> None:
     # Create a simple conversational agent
@@ -31,7 +31,7 @@ async def main() -> None:
             ),
         
            UserMessage(
-                TextMessageContent(type='text', text=f'What is the area of a rectable of length <length> and breadth <breadth>'),
+                TextMessageContent(type='text', text='What is the area of a rectable of length <length> and breadth <breadth>'),
             ),
         ],
         variables={

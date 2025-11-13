@@ -4,7 +4,6 @@ from typing import Dict, Any, List, Optional, AsyncIterator
 from flo_ai.models.chat_message import ImageMessageContent
 from google import genai
 from google.genai import types
-from .base_llm import BaseLLM, ImageMessage
 from flo_ai.tool.base_tool import Tool
 from flo_ai.telemetry.instrumentation import (
     trace_llm_call,
