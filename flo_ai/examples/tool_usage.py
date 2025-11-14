@@ -17,13 +17,7 @@ async def test_conversational():
     )
 
     response = await agent.run(
-        [
-            UserMessage(
-                content=TextMessageContent(
-                    text='What is the capital of France?', type='text'
-                )
-            )
-        ]
+        [UserMessage(content=TextMessageContent(text='What is the capital of France?'))]
     )
     print(response)
 
@@ -55,9 +49,7 @@ async def test_tool_agent():
     response = await agent.run(
         [
             UserMessage(
-                content=TextMessageContent(
-                    text="What's the weather like in Paris?", type='text'
-                )
+                content=TextMessageContent(text="What's the weather like in Paris?")
             )
         ]
     )
@@ -93,9 +85,7 @@ async def test_error_handling():
         # This will trigger error handling and retries
         response = await agent.run(
             UserMessage(
-                content=TextMessageContent(
-                    text="What's the weather like in error?", type='text'
-                )
+                content=TextMessageContent(text="What's the weather like in error?")
             )
         )
         print(response)
@@ -138,7 +128,7 @@ async def test_direct_reasoning():
     )
 
     response = await agent.run(
-        UserMessage(content=TextMessageContent(text='Calculate 5 plus 3', type='text'))
+        UserMessage(content=TextMessageContent(text='Calculate 5 plus 3'))
     )
     print(response)
 

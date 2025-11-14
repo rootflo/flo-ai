@@ -49,9 +49,7 @@ async def example_linear_workflow():
         .connect(analyzer_agent, print_result.tool)
         .connect(print_result.tool, summarizer_agent)
         .end_with(summarizer_agent)
-        .build_and_run(
-            [UserMessage(TextMessageContent(type='text', text='Analyze this text'))]
-        )
+        .build_and_run([UserMessage(TextMessageContent(text='Analyze this text'))])
     )
 
     return result
@@ -157,7 +155,7 @@ async def example_convenience_function():
         .start_with(agent1)
         .connect(agent1, agent2)
         .end_with(agent2)
-        .build_and_run([UserMessage(TextMessageContent(type='text', text='Hello'))])
+        .build_and_run([UserMessage(TextMessageContent(text='Hello'))])
     )
 
     return result

@@ -35,19 +35,16 @@ async def main():
     questions = [
         UserMessage(
             TextMessageContent(
-                type='text',
                 text='If a train leaves station A at 2 PM traveling 60 mph and another train leaves station B at 3 PM traveling 80 mph, and the stations are 300 miles apart, when will they meet?',
             )
         ),
         UserMessage(
             TextMessageContent(
-                type='text',
                 text='A store has a 20% discount on all items. If a customer buys 3 items that originally cost $50, $30, and $20, what is the final total after the discount?',
             )
         ),
         UserMessage(
             TextMessageContent(
-                type='text',
                 text='Explain why the sky appears blue during the day but red during sunset.',
             )
         ),

@@ -76,17 +76,14 @@ async def main():
 
     # Test questions
     questions = [
-        UserMessage(TextMessageContent(type='text', text='What is 15 + 27?')),
+        UserMessage(TextMessageContent(text='What is 15 + 27?')),
         UserMessage(
             TextMessageContent(
-                type='text',
                 text='If I have 100 apples and I give away 23, then buy 15 more, how many do I have?',
             )
         ),
         UserMessage(
-            TextMessageContent(
-                type='text', text='Calculate 8 * 7 and then add 12 to the result.'
-            )
+            TextMessageContent(text='Calculate 8 * 7 and then add 12 to the result.')
         ),
     ]
 

@@ -21,9 +21,7 @@ async def example_simple_agent():
     response = await agent.run(
         [
             UserMessage(
-                TextMessageContent(
-                    type='text', text='What is the formula for the area of a circle?'
-                )
+                TextMessageContent(text='What is the formula for the area of a circle?')
             )
         ]
     )
@@ -77,12 +75,12 @@ async def example_tool_agent():
     )
 
     response = await agent_openai.run(
-        [UserMessage(TextMessageContent(type='text', text='Calculate 5 plus 3'))]
+        [UserMessage(TextMessageContent(text='Calculate 5 plus 3'))]
     )
     print(f'OpenAI Tool Agent Response: {response}')
 
     response = await agent_claude.run(
-        [UserMessage(TextMessageContent(type='text', text='Calculate 5 plus 3'))]
+        [UserMessage(TextMessageContent(text='Calculate 5 plus 3'))]
     )
     print(f'Claude Tool Agent Response: {response}')
 
@@ -111,7 +109,7 @@ async def example_structured_output():
     )
 
     response = await agent.run(
-        [UserMessage(TextMessageContent(type='text', text='Solve: 2x + 5 = 15'))]
+        [UserMessage(TextMessageContent(text='Solve: 2x + 5 = 15'))]
     )
     print(f'Structured Output Response: {response}')
 

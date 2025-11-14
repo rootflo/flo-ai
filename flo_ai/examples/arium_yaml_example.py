@@ -323,7 +323,6 @@ async def run_simple_example():
         [
             UserMessage(
                 TextMessageContent(
-                    type='text',
                     text='Machine learning is transforming healthcare by enabling predictive analytics, '
                     'personalized treatment recommendations, and automated medical imaging analysis. '
                     'However, challenges include data privacy concerns, the need for regulatory approval, '
@@ -378,13 +377,11 @@ async def run_complex_example():
         [
             UserMessage(
                 TextMessageContent(
-                    type='text',
                     text="Please analyze this text and process it: 'The quick brown fox jumps over the lazy dog. ",
                 )
             ),
             UserMessage(
                 TextMessageContent(
-                    type='text',
                     text="This sentence contains every letter of the alphabet at least once.'",
                 )
             ),
@@ -412,7 +409,6 @@ async def run_mixed_config_example():
         [
             UserMessage(
                 TextMessageContent(
-                    type='text',
                     text='Please analyze this business report: Our Q3 revenue increased by 15% compared to Q2, '
                     'driven primarily by strong performance in the software division. However, hardware sales '
                     'declined by 8%. Customer satisfaction scores improved to 4.2/5.0. We recommend focusing '

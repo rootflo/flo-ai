@@ -288,9 +288,7 @@ async def example_2_document_workflow():
         result = await workflow.run(
             [
                 document,
-                UserMessage(
-                    TextMessageContent(type='text', text='process this document')
-                ),
+                UserMessage(TextMessageContent(text='process this document')),
             ]
         )
 
