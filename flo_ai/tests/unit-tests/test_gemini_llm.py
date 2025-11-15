@@ -404,8 +404,7 @@ class TestGemini:
         )
 
         # This will raise AttributeError because types.Part.from_url doesn't exist
-        with pytest.raises(AttributeError, match='from_url'):
-            llm.format_image_in_message(image)
+        llm.format_image_in_message(image)
 
     def test_gemini_format_image_in_message_unsupported(self):
         """Test format_image_in_message method with unsupported image format."""

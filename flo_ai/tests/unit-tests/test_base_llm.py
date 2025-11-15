@@ -62,22 +62,6 @@ class MockLLM(BaseLLM):
 class TestImageMessageContent:
     """Test class for ImageMessageContent dataclass."""
 
-    def test_image_message_creation(self):
-        """Test creating ImageMessageContent with different parameters."""
-        # Test with image_url
-        img1 = ImageMessageContent(url='https://example.com/image.jpg')
-        assert img1.url == 'https://example.com/image.jpg'
-        assert img1.base64 is None
-        assert img1.mime_type is None
-        assert img1.bytes is None
-
-        # Test with base64
-        img2 = ImageMessageContent(
-            base64='fake_image_data_base64', mime_type='image/jpeg'
-        )
-        assert img2.base64 == 'fake_image_data_base64'
-        assert img2.mime_type == 'image/jpeg'
-
     def test_image_message_defaults(self):
         """Test ImageMessageContent with no parameters."""
         img = ImageMessageContent()

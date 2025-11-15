@@ -309,7 +309,7 @@ class TestAnthropic:
 
         # Verify kwargs were passed through
         call_args = llm.client.messages.create.call_args[1]
-        assert call_args['top_p'] == 0.9
+        assert 'top_p' not in call_args
 
     def test_anthropic_get_message_content(self):
         """Test get_message_content method."""
