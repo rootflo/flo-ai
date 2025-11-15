@@ -5,7 +5,6 @@ This module provides extensible document processing capabilities for PDF and TXT
 with a factory pattern design for easy addition of new document types.
 """
 
-import os
 import base64
 import time
 from abc import ABC, abstractmethod
@@ -15,7 +14,7 @@ import pymupdf
 import pymupdf4llm
 import chardet
 
-from flo_ai.models.document import DocumentMessage, DocumentType
+from flo_ai.models.document import DocumentType
 from flo_ai.models.chat_message import DocumentMessageContent
 from flo_ai.utils.logger import logger
 
@@ -30,12 +29,12 @@ class BaseDocumentProcessor(ABC):
     """Abstract base class for document processors."""
 
     @abstractmethod
-    async def process(self, document: DocumentMessage) -> Dict[str, Any]:
+    async def process(self, document: DocumentMessageContent) -> Dict[str, Any]:
         """
         Process a document and return extracted content and metadata.
 
         Args:
-            document: DocumentMessage containing document data
+            document: DocumentMessageContent containing document data
 
         Returns:
             Dict containing extracted text, metadata, and processing info
@@ -46,7 +45,7 @@ class BaseDocumentProcessor(ABC):
 class PDFProcessor(BaseDocumentProcessor):
     """Processor for PDF documents."""
 
-    async def process(self, document: DocumentMessage) -> Dict[str, Any]:
+    async def process(self, document: DocumentMessageContent) -> Dict[str, Any]:
         """Extract text and metadata from PDF document."""
         try:
             pdf_content = await self._get_pdf_content(document)
@@ -66,18 +65,16 @@ class PDFProcessor(BaseDocumentProcessor):
             logger.error(f'Error processing PDF: {str(e)}')
             raise DocumentProcessingError(f'Failed to process PDF: {str(e)}')
 
-    async def _get_pdf_content(self, document: DocumentMessage) -> Union[str, bytes]:
+    async def _get_pdf_content(
+        self, document: DocumentMessageContent
+    ) -> Union[str, bytes]:
         """Get PDF content from various sources."""
-        if document.document_file_path:
-            if not os.path.exists(document.document_file_path):
-                raise DocumentProcessingError(
-                    f'PDF file not found: {document.document_file_path}'
-                )
-            return document.document_file_path
-        elif document.document_bytes:
-            return document.document_bytes
-        elif document.document_base64:
-            return base64.b64decode(document.document_base64)
+        if document.bytes:
+            return document.bytes
+        elif document.base64:
+            return base64.b64decode(document.base64)
+        elif document.url:
+            return document.url
         else:
             raise DocumentProcessingError('No PDF content provided')
 
@@ -109,7 +106,7 @@ class PDFProcessor(BaseDocumentProcessor):
 class TXTProcessor(BaseDocumentProcessor):
     """Processor for text documents."""
 
-    async def process(self, document: DocumentMessage) -> Dict[str, Any]:
+    async def process(self, document: DocumentMessageContent) -> Dict[str, Any]:
         """Extract text from TXT document."""
         try:
             text_content = await self._get_text_content(document)
@@ -130,18 +127,12 @@ class TXTProcessor(BaseDocumentProcessor):
             logger.error(f'Error processing TXT: {str(e)}')
             raise DocumentProcessingError(f'Failed to process TXT: {str(e)}')
 
-    async def _get_text_content(self, document: DocumentMessage) -> str:
+    async def _get_text_content(self, document: DocumentMessageContent) -> str:
         """Get text content from various sources."""
-        if document.document_file_path:
-            if not os.path.exists(document.document_file_path):
-                raise DocumentProcessingError(
-                    f'TXT file not found: {document.document_file_path}'
-                )
-            return await self._read_text_file(document.document_file_path)
-        elif document.document_bytes:
-            return await self._decode_bytes(document.document_bytes)
-        elif document.document_base64:
-            decoded_bytes = base64.b64decode(document.document_base64)
+        if document.bytes:
+            return await self._decode_bytes(document.bytes)
+        elif document.base64:
+            decoded_bytes = base64.b64decode(document.base64)
             return await self._decode_bytes(decoded_bytes)
         else:
             raise DocumentProcessingError('No TXT content provided')
@@ -221,18 +212,10 @@ class DocumentProcessor:
                 f'Supported types: {[dt.value for dt in self._processors.keys()]}'
             )
 
-        # Convert DocumentMessageContent to DocumentMessage
-        document_message = DocumentMessage(
-            document_type=document_type,
-            document_url=document.url,
-            document_base64=document.base64,
-            mime_type=document.mime_type,
-        )
-
         processor: BaseDocumentProcessor = self._processors[document_type]
 
         try:
-            result = await processor.process(document_message)
+            result = await processor.process(document)
 
             # Add common metadata
             result['processing_timestamp'] = time.time()

@@ -3,17 +3,7 @@ from typing import Dict, Any, List, Optional, AsyncIterator
 from flo_ai.tool.base_tool import Tool
 from flo_ai.utils.document_processor import get_default_processor
 from flo_ai.utils.logger import logger
-from dataclasses import dataclass
 from flo_ai.models.chat_message import DocumentMessageContent, ImageMessageContent
-
-
-@dataclass
-class ImageMessage:
-    image_url: Optional[str] = None
-    image_bytes: Optional[bytes] = None
-    image_file_path: Optional[str] = None
-    image_base64: Optional[str] = None
-    mime_type: Optional[str] = None
 
 
 class BaseLLM(ABC):

@@ -5,7 +5,7 @@ Models package for flo_ai - Agent framework components
 from .agent import Agent, MessageType
 from .agent_error import AgentError
 from .base_agent import BaseAgent, AgentType, ReasoningPattern
-from .document import DocumentMessage, DocumentType
+from .document import DocumentType
 from .chat_message import (
     SystemMessage,
     UserMessage,
@@ -24,7 +24,6 @@ __all__ = [
     'BaseAgent',
     'AgentType',
     'ReasoningPattern',
-    'DocumentMessage',
     'DocumentType',
     'MessageType',
     'SystemMessage',

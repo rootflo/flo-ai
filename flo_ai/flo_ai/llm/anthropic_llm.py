@@ -1,7 +1,9 @@
 from typing import Dict, Any, List, Optional, AsyncIterator
 from anthropic import AsyncAnthropic
 import json
-from .base_llm import BaseLLM, ImageMessage
+
+from flo_ai.models.chat_message import ImageMessageContent
+from .base_llm import BaseLLM
 from flo_ai.tool.base_tool import Tool
 from flo_ai.telemetry.instrumentation import (
     trace_llm_call,
@@ -206,6 +208,6 @@ class Anthropic(BaseLLM):
         """Format tools for Claude's API"""
         return [self.format_tool_for_llm(tool) for tool in tools]
 
-    def format_image_in_message(self, image: ImageMessage) -> str:
+    def format_image_in_message(self, image: ImageMessageContent) -> str:
         """Format a image in the message"""
         raise NotImplementedError('Not implemented image for LLM Anthropic')

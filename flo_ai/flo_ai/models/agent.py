@@ -199,6 +199,7 @@ class Agent(BaseAgent):
     ) -> str:
         """Run as a tool-using agent when tools are provided"""
         variables = variables or {}
+        print('running with tools')
 
         while retry_count <= self.max_retries:
             try:
@@ -249,7 +250,7 @@ class Agent(BaseAgent):
                                         role=role, content=assistant_message
                                     )
                                 )
-                                return assistant_message
+                                return self.conversation_history
                             else:
                                 # This is intermediate reasoning, add to context and continue
                                 msg_preview = (

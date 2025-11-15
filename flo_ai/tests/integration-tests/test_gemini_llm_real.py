@@ -9,7 +9,7 @@ import pytest
 import asyncio
 import json
 from flo_ai.llm.gemini_llm import Gemini
-from flo_ai.llm.base_llm import ImageMessage
+from flo_ai.models import ImageMessageContent
 from flo_ai.tool.base_tool import Tool
 
 
@@ -402,7 +402,9 @@ class TestGeminiReal:
             temp_file_path = temp_file.name
 
         try:
-            image = ImageMessage(image_file_path=temp_file_path, mime_type='image/png')
+            image = ImageMessageContent(
+                image_file_path=temp_file_path, mime_type='image/png'
+            )
 
             result = self.llm.format_image_in_message(image)
 
@@ -423,7 +425,7 @@ class TestGeminiReal:
             'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
         )
 
-        image = ImageMessage(image_bytes=test_image_data, mime_type='image/png')
+        image = ImageMessageContent(bytes=test_image_data, mime_type='image/png')
 
         result = self.llm.format_image_in_message(image)
 
@@ -436,7 +438,7 @@ class TestGeminiReal:
         # Create a simple test image (1x1 pixel PNG)
         test_image_base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
 
-        image = ImageMessage(image_base64=test_image_base64, mime_type='image/png')
+        image = ImageMessageContent(base64=test_image_base64, mime_type='image/png')
 
         result = self.llm.format_image_in_message(image)
 
@@ -446,7 +448,7 @@ class TestGeminiReal:
 
     def test_format_image_in_message_not_implemented(self):
         """Test format_image_in_message with unsupported input."""
-        image = ImageMessage(image_url='https://example.com/image.jpg')
+        image = ImageMessageContent(url='https://example.com/image.jpg')
 
         with pytest.raises(
             NotImplementedError,

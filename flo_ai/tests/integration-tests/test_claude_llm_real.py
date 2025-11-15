@@ -8,7 +8,7 @@ import os
 import pytest
 import asyncio
 from flo_ai.llm.anthropic_llm import Anthropic
-from flo_ai.llm.base_llm import ImageMessage
+from flo_ai.models import ImageMessageContent
 from flo_ai.tool.base_tool import Tool
 
 
@@ -389,7 +389,7 @@ class TestAnthropicReal:
 
     def test_format_image_in_message(self):
         """Test format_image_in_message method (should raise NotImplementedError)."""
-        image = ImageMessage(image_url='https://example.com/image.jpg')
+        image = ImageMessageContent(url='https://example.com/image.jpg')
 
         with pytest.raises(
             NotImplementedError, match='Not implemented image for LLM Anthropic'

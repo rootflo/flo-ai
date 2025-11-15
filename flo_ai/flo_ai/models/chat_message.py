@@ -31,6 +31,7 @@ class ImageMessageContent(MediaMessageContent):
 class DocumentMessageContent(MediaMessageContent):
     url: Optional[str] = None
     base64: Optional[str] = None
+    bytes: Optional[bytes] = None
     mime_type: Optional[str] = None
 
     def __post_init__(self):
