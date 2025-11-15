@@ -53,9 +53,7 @@ class Arium(BaseArium):
         if isinstance(inputs, str):
             inputs = [
                 UserMessage(
-                    TextMessageContent(
-                        type='text', text=resolve_variables(inputs, variables)
-                    )
+                    TextMessageContent(text=resolve_variables(inputs, variables))
                 )
             ]
 
@@ -372,13 +370,12 @@ class Arium(BaseArium):
                 # Resolve variables in text input
                 resolved_input = resolve_variables(input_item, variables)
                 resolved_inputs.append(
-                    UserMessage(TextMessageContent(type='text', text=resolved_input))
+                    UserMessage(TextMessageContent(text=resolved_input))
                 )
             elif isinstance(input_item, TextMessageContent):
                 resolved_inputs.append(
                     UserMessage(
                         TextMessageContent(
-                            type='text',
                             text=resolve_variables(input_item.text, variables),
                         )
                     )
@@ -601,7 +598,4 @@ class Arium(BaseArium):
         Store result in memory, converting strings to AssistantMessage if needed.
         Agent responses should be stored as AssistantMessage, not UserMessage.
         """
-        if result is None:
-            return
-
         self.memory.add(result)

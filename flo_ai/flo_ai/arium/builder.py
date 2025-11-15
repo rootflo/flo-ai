@@ -243,9 +243,7 @@ class AriumBuilder:
             if isinstance(input, str):
                 new_inputs.append(
                     UserMessage(
-                        TextMessageContent(
-                            type='text', text=resolve_variables(input, variables)
-                        )
+                        TextMessageContent(text=resolve_variables(input, variables))
                     )
                 )
             elif isinstance(input, BaseMessage):

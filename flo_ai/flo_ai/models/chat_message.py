@@ -1,5 +1,5 @@
 from typing import Literal, Optional, Dict, Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 class MessageType:
@@ -40,13 +40,13 @@ class DocumentMessageContent(MediaMessageContent):
 @dataclass
 class TextMessageContent:
     text: str
-    type: Literal['text'] = 'text'
+    type: str = 'text'
 
 
 @dataclass
 class BaseMessage:
     content: str | ImageMessageContent | DocumentMessageContent | TextMessageContent
-    role: Optional[Literal['system', 'user', 'assistant']] = None
+    role: Optional[Literal['system', 'user', 'assistant', 'function']] = None
     metadata: Optional[Dict[str, Any]] = None
 
 
@@ -77,3 +77,24 @@ class AssistantMessage(BaseMessage):
     def __post_init__(self):
         if self.role is None:
             self.role = MessageType.ASSISTANT
+
+
+@dataclass
+class FunctionMessage(BaseMessage):
+    """Message representing a function/tool call result.
+
+    According to OpenAI's API, function results should use:
+    {
+        "role": "function",
+        "name": "<function-name>",
+        "content": "<result>"
+    }
+    """
+
+    content: str  # Override parent's content (must come before fields with defaults)
+    name: str = field(
+        kw_only=True
+    )  # Function/tool name that was called (keyword-only to allow it after defaults)
+
+    def __post_init__(self):
+        self.role = MessageType.FUNCTION

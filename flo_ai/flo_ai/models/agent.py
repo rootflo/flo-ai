@@ -5,10 +5,10 @@ from flo_ai.llm.base_llm import BaseLLM
 from flo_ai.models.chat_message import (
     AssistantMessage,
     BaseMessage,
-    MediaMessageContent,
     MessageType,
     UserMessage,
     TextMessageContent,
+    FunctionMessage,
 )
 from flo_ai.tool.base_tool import Tool, ToolExecutionError
 from flo_ai.models.agent_error import AgentError
@@ -74,7 +74,7 @@ class Agent(BaseAgent):
     ) -> str:
         variables = variables or {}
         if isinstance(inputs, str):
-            inputs = [UserMessage(TextMessageContent(type='text', text=inputs))]
+            inputs = [UserMessage(TextMessageContent(text=inputs))]
 
         # Perform runtime variable validation if not already resolved (single agent usage)
         if not self.resolved_variables:
@@ -138,7 +138,8 @@ class Agent(BaseAgent):
                     else resolve_variables(self.system_prompt, variables)
                 )
                 system_message = AssistantMessage(
-                    role=MessageType.SYSTEM, content=system_content
+                    role=MessageType.SYSTEM,
+                    content=TextMessageContent(text=system_content),
                 )
                 self.add_to_history(system_message)
                 messages = await self._get_message_history(variables)
@@ -244,7 +245,9 @@ class Agent(BaseAgent):
                                     else MessageType.ASSISTANT
                                 )
                                 self.add_to_history(
-                                    AssistantMessage(content=assistant_message)
+                                    AssistantMessage(
+                                        role=role, content=assistant_message
+                                    )
                                 )
                                 return assistant_message
                             else:
@@ -264,20 +267,14 @@ class Agent(BaseAgent):
                                     else MessageType.ASSISTANT
                                 )
                                 self.add_to_history(
-                                    AssistantMessage(content=assistant_message)
+                                    AssistantMessage(
+                                        role=role, content=assistant_message
+                                    )
                                 )
-                                messages.append(
-                                    {
-                                        'role': role,
-                                        'content': assistant_message,
-                                    }
-                                )
-                                # Prompt the agent to take action
-                                messages.append(
-                                    {
-                                        'role': MessageType.USER,
-                                        'content': 'Based on your reasoning, please proceed with the necessary tool calls to complete the task.',
-                                    }
+                                self.add_to_history(
+                                    UserMessage(
+                                        content='Based on your reasoning, please proceed with the necessary tool calls to complete the task.',
+                                    )
                                 )
                                 continue
                         break
@@ -320,24 +317,17 @@ class Agent(BaseAgent):
 
                         tool_call_count += 1
 
-                        # Add function call to history
+                        # Add function call result to history using OpenAI's "function" role format
+                        # According to OpenAI API: {"role": "function", "name": "<function-name>", "content": "<result>"}
                         self.add_to_history(
-                            [
-                                AssistantMessage(
-                                    content=f'Tool response: {str(function_response)}',
-                                    name=function_name,
+                            FunctionMessage(
+                                content=str(
+                                    'Here is the result of the tool call: \n'
+                                    + str(function_response)
                                 ),
-                                AssistantMessage(
-                                    content=f'Here is the result of the tool call: \n {str(function_response)}',
-                                    role=MessageType.USER,
-                                ),
-                                UserMessage(
-                                    content='Continue with your reasoning based on this result. What should be done next?',
-                                    role=MessageType.USER,
-                                ),
-                            ]
+                                name=function_name,
+                            )
                         )
-
                     except (json.JSONDecodeError, KeyError, ToolExecutionError) as e:
                         # Record tool call failure
                         agent_metrics.record_tool_call(
@@ -369,7 +359,9 @@ class Agent(BaseAgent):
                 # Generate final response if we've hit the tool call limit or exited the loop
                 system_message = AssistantMessage(
                     role=MessageType.SYSTEM,
-                    content='Please provide a final answer based on all the tool results above.',
+                    content=TextMessageContent(
+                        text='Please provide a final answer based on all the tool results above.'
+                    ),
                 )
                 self.add_to_history(system_message)
                 messages = await self._get_message_history(variables)
@@ -388,7 +380,7 @@ class Agent(BaseAgent):
                         else MessageType.ASSISTANT
                     )
                     self.add_to_history(AssistantMessage(content=assistant_message))
-                    return await self.conversation_history
+                    return self.conversation_history
 
                 return f'The final result based on the tool executions is: {function_response}'
 
@@ -417,40 +409,6 @@ class Agent(BaseAgent):
                 )
 
         raise AgentError(f'Failed after maximum {self.max_retries} attempts.')
-
-    async def _get_message_history(self, variables: Optional[Dict[str, Any]] = None):
-        message_history = []
-        for input in self.conversation_history:
-            if isinstance(input, AssistantMessage):
-                message_history.append({'role': input.role, 'content': input.content})
-            elif isinstance(input.content, TextMessageContent):
-                resolved_content = resolve_variables(input.content.text, variables)
-                message_history.append(
-                    {'role': input.role, 'content': resolved_content}
-                )
-            elif isinstance(input.content, MediaMessageContent):
-                if input.content.type == 'image':
-                    # Format image message and add to history
-                    formatted_content = self.llm.format_image_in_message(input.content)
-                    message_history.append(
-                        {'role': input.role, 'content': formatted_content}
-                    )
-
-                elif input.content.type == 'document':
-                    # Format document message and add to history
-                    formatted_content = await self.llm.format_document_in_message(
-                        input.content
-                    )
-                    message_history.append(
-                        {'role': input.role, 'content': formatted_content}
-                    )
-                else:
-                    raise ValueError(
-                        f'Invalid media message content type: {input.content.type}'
-                    )
-            else:
-                raise ValueError(f'Invalid content type: {type(input.content)}')
-        return message_history
 
     def _get_react_prompt(self, variables: Optional[Dict[str, Any]] = None) -> str:
         """Get system prompt modified for ReACT pattern"""
