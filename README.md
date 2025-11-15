@@ -168,11 +168,11 @@ As part of the project, we plan to develop and open source the following major c
 
 | Quarter | Milestone | Features |
 |---------|-----------|----------|
-| **Nov 2025** | Public ReadMe | Publish readme and take in community feedback |
-| **Dec 2025** | Open source Beta | Beta release with working MVP in open-source |
-| **Q1 2026** | Enterprise Ready | Advanced RBAC, More Data source Integrations|
-| **Q1 2026** | Rootflo Wavefront Cloud | On-Device Agent Deployment, Multi-Model Orchestration |
-| **Q2 2026** | Advanced Features |  No-Code Agent Builder, Advanced Analytics & Dashboarding |
+| **Nov 2025** | Public README.md | Publish readme and take in community feedback |
+| **Dec 2025** | Open-source community edition | Community edition release with working MVP |
+| **Q1 2026** | Enterprise Edition | Advanced RBAC, More Data source Integrations|
+| **Q1 2026** | Rootflo Wavefront Cloud | One click deployable Wavefront Cloud
+| **Q2 2026** | Advanced Features |  No-Code App Builder, Advanced Analytics & Dashboards |
 
 See [ROADMAP.md](ROADMAP.md) for detailed feature plans and contribution opportunities.
 
