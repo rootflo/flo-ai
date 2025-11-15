@@ -4,7 +4,7 @@
 
 <h1 align="center">Wavefront AI</h1>
 
-<p align="center" style="font-size: 28px">
+<p align="center" style="font-size: 64px">
   <strong>Enterprise AI Middleware For Building Production Ready Full Stack Applications</strong>
   <p align="center" style="font-size: 25px" >Open source alternative to UnifyApps, LyzrAI, SuperAGI & AgentGPT</p>
 </p>
