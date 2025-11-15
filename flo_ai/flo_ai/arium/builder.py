@@ -1,3 +1,4 @@
+import os
 from typing import List, Optional, Callable, Union, Dict, Any
 from flo_ai.arium.arium import Arium
 from flo_ai.arium.memory import MessageMemory, BaseMemory
@@ -285,6 +286,7 @@ class AriumBuilder:
         tools: Optional[Dict[str, Tool]] = None,
         routers: Optional[Dict[str, Callable]] = None,
         base_llm: Optional[BaseLLM] = None,
+        **kwargs,
     ) -> 'AriumBuilder':
         """Create an AriumBuilder from a YAML configuration.
 
@@ -478,7 +480,7 @@ class AriumBuilder:
                 and 'yaml_file' not in agent_config
             ):
                 agent = cls._create_agent_from_direct_config(
-                    agent_config, base_llm, tools
+                    agent_config, base_llm, tools, **kwargs
                 )
 
             # Method 3: Inline YAML config
@@ -537,7 +539,7 @@ class AriumBuilder:
             router_llm = None
             if 'model' in router_config:
                 router_llm = cls._create_llm_from_config(
-                    router_config['model'], base_llm
+                    router_config['model'], base_llm, **kwargs
                 )
             else:
                 router_llm = base_llm  # Use base LLM if no specific model configured
@@ -832,7 +834,9 @@ class AriumBuilder:
 
     @staticmethod
     def _create_llm_from_config(
-        model_config: Dict[str, Any], base_llm: Optional[BaseLLM] = None
+        model_config: Dict[str, Any],
+        base_llm: Optional[BaseLLM] = None,
+        **kwargs,
     ) -> BaseLLM:
         """Create an LLM instance from model configuration.
 
@@ -843,25 +847,79 @@ class AriumBuilder:
         Returns:
             BaseLLM: Configured LLM instance
         """
-        from flo_ai.llm import OpenAI, Anthropic, Gemini, OllamaLLM
+        from flo_ai.llm import OpenAI, Anthropic, Gemini, OllamaLLM, RootFloLLM
 
         provider = model_config.get('provider', 'openai').lower()
         model_name = model_config.get('name')
         base_url = model_config.get('base_url')
 
-        if not model_name:
-            raise ValueError('Model name must be specified in model configuration')
+        if provider == 'rootflo':
+            model_id = model_config.get('model_id')
+            base_url = kwargs.get('base_url') or os.getenv('ROOTFLO_BASE_URL')
+            app_key = kwargs.get('app_key') or os.getenv('ROOTFLO_APP_KEY')
+            app_secret = kwargs.get('app_secret') or os.getenv('ROOTFLO_APP_SECRET')
+            issuer = kwargs.get('issuer') or os.getenv('ROOTFLO_ISSUER')
+            audience = kwargs.get('audience') or os.getenv('ROOTFLO_AUDIENCE')
+            access_token = kwargs.get('access_token')  # Optional, from kwargs only
 
-        if provider == 'openai':
-            llm = OpenAI(model=model_name, base_url=base_url)
-        elif provider == 'anthropic':
-            llm = Anthropic(model=model_name, base_url=base_url)
-        elif provider == 'gemini':
-            llm = Gemini(model=model_name, base_url=base_url)
-        elif provider == 'ollama':
-            llm = OllamaLLM(model=model_name, base_url=base_url)
+            if not model_id:
+                raise ValueError(
+                    'RootFlo provider requires model_id in model configuration'
+                )
+
+            # if access_token is not provided
+            if not access_token:
+                if not all([base_url, app_key, app_secret, issuer, audience]):
+                    missing = []
+                    if not base_url:
+                        missing.append('base_url')
+                    if not app_key:
+                        missing.append('app_key')
+                    if not app_secret:
+                        missing.append('app_secret')
+                    if not issuer:
+                        missing.append('issuer')
+                    if not audience:
+                        missing.append('audience')
+                    raise ValueError(
+                        f'RootFlo configuration incomplete. Missing required parameters: {", ".join(missing)}. '
+                        f'These can be provided via kwargs or environment variables (ROOTFLO_BASE_URL, ROOTFLO_APP_KEY, ROOTFLO_APP_SECRET, ROOTFLO_ISSUER, ROOTFLO_AUDIENCE).'
+                    )
+            else:
+                if not all([base_url, app_key]):
+                    missing = []
+                    if not base_url:
+                        missing.append('base_url')
+                    if not app_key:
+                        missing.append('app_key')
+                    raise ValueError(
+                        f'RootFlo configuration incomplete. Missing required parameters: {", ".join(missing)}. '
+                        f'These can be provided via kwargs or environment variables (ROOTFLO_BASE_URL, ROOTFLO_APP_KEY).'
+                    )
+
+            llm = RootFloLLM(
+                base_url=base_url,
+                model_id=model_id,
+                app_key=app_key,
+                app_secret=app_secret,
+                issuer=issuer,
+                audience=audience,
+                access_token=access_token,
+            )
         else:
-            raise ValueError(f'Unsupported model provider: {provider}')
+            if not model_name:
+                raise ValueError('Model name must be specified in model configuration')
+
+            if provider == 'openai':
+                llm = OpenAI(model=model_name, base_url=base_url)
+            elif provider == 'anthropic':
+                llm = Anthropic(model=model_name, base_url=base_url)
+            elif provider == 'gemini':
+                llm = Gemini(model=model_name, base_url=base_url)
+            elif provider == 'ollama':
+                llm = OllamaLLM(model=model_name, base_url=base_url)
+            else:
+                raise ValueError(f'Unsupported model provider: {provider}')
 
         return llm
 
@@ -870,6 +928,7 @@ class AriumBuilder:
         agent_config: Dict[str, Any],
         base_llm: Optional[BaseLLM] = None,
         available_tools: Optional[Dict[str, Tool]] = None,
+        **kwargs,
     ) -> Agent:
         """Create an Agent from direct YAML configuration.
 
@@ -891,7 +950,7 @@ class AriumBuilder:
 
         # Configure LLM
         if 'model' in agent_config and base_llm is None:
-            llm = AriumBuilder._create_llm_from_config(agent_config['model'])
+            llm = AriumBuilder._create_llm_from_config(agent_config['model'], **kwargs)
         elif base_llm:
             llm = base_llm
         else:

@@ -1,9 +1,18 @@
+import os
 from typing import List, Optional, Dict, Any, Union, Type
 from flo_ai.models import AssistantMessage
 import yaml
 from flo_ai.models.agent import Agent
 from flo_ai.models.base_agent import ReasoningPattern
-from flo_ai.llm import BaseLLM, OpenAI, Anthropic, Gemini, OllamaLLM, VertexAI
+from flo_ai.llm import (
+    BaseLLM,
+    OpenAI,
+    Anthropic,
+    Gemini,
+    OllamaLLM,
+    VertexAI,
+    RootFloLLM,
+)
 from flo_ai.tool.base_tool import Tool
 from flo_ai.tool.tool_config import ToolConfig, create_tool_config
 from flo_ai.formatter.yaml_format_parser import FloYamlParser
@@ -190,6 +199,7 @@ class AgentBuilder:
         tools: Optional[List[Tool]] = None,
         base_llm: Optional[BaseLLM] = None,
         tool_registry: Optional[Dict[str, Tool]] = None,
+        **kwargs,
     ) -> 'AgentBuilder':
         """Create an agent builder from a YAML configuration string
 
@@ -224,30 +234,88 @@ class AgentBuilder:
             provider = model_config.get('provider', 'openai').lower()
             model_name = model_config.get('name')
 
-            if not model_name:
-                raise ValueError('Model name must be specified in YAML configuration')
+            if provider == 'rootflo':
+                model_id = model_config.get('model_id')
+                base_url = kwargs.get('base_url') or os.getenv('ROOTFLO_BASE_URL')
+                app_key = kwargs.get('app_key') or os.getenv('ROOTFLO_APP_KEY')
+                app_secret = kwargs.get('app_secret') or os.getenv('ROOTFLO_APP_SECRET')
+                issuer = kwargs.get('issuer') or os.getenv('ROOTFLO_ISSUER')
+                audience = kwargs.get('audience') or os.getenv('ROOTFLO_AUDIENCE')
+                access_token = kwargs.get('access_token')  # Optional, from kwargs only
 
-            if provider == 'openai':
-                builder.with_llm(OpenAI(model=model_name, base_url=base_url))
-            elif provider == 'anthropic':
-                builder.with_llm(Anthropic(model=model_name, base_url=base_url))
-            elif provider == 'gemini':
-                builder.with_llm(Gemini(model=model_name, base_url=base_url))
-            elif provider == 'ollama':
-                builder.with_llm(OllamaLLM(model=model_name, base_url=base_url))
-            elif provider == 'vertexai':
-                project = model_config.get('project')
-                location = model_config.get('location', 'asia-south1')
+                if not model_id:
+                    raise ValueError(
+                        'RootFlo provider requires model_id in YAML configuration'
+                    )
+
+                # if access_token is not provided
+                if not access_token:
+                    if not all([base_url, app_key, app_secret, issuer, audience]):
+                        missing = []
+                        if not base_url:
+                            missing.append('base_url')
+                        if not app_key:
+                            missing.append('app_key')
+                        if not app_secret:
+                            missing.append('app_secret')
+                        if not issuer:
+                            missing.append('issuer')
+                        if not audience:
+                            missing.append('audience')
+                        raise ValueError(
+                            f'RootFlo configuration incomplete. Missing required parameters: {", ".join(missing)}. '
+                            f'These can be provided via kwargs or environment variables (ROOTFLO_BASE_URL, ROOTFLO_APP_KEY, ROOTFLO_APP_SECRET, ROOTFLO_ISSUER, ROOTFLO_AUDIENCE).'
+                        )
+                else:
+                    if not all([base_url, app_key]):
+                        missing = []
+                        if not base_url:
+                            missing.append('base_url')
+                        if not app_key:
+                            missing.append('app_key')
+                        raise ValueError(
+                            f'RootFlo configuration incomplete. Missing required parameters: {", ".join(missing)}. '
+                            f'These can be provided via kwargs or environment variables (ROOTFLO_BASE_URL, ROOTFLO_APP_KEY).'
+                        )
+
                 builder.with_llm(
-                    VertexAI(
-                        model=model_name,
-                        project=project,
-                        location=location,
+                    RootFloLLM(
                         base_url=base_url,
+                        model_id=model_id,
+                        app_key=app_key,
+                        app_secret=app_secret,
+                        issuer=issuer,
+                        audience=audience,
+                        access_token=access_token,
                     )
                 )
             else:
-                raise ValueError(f'Unsupported model provider: {provider}')
+                if not model_name:
+                    raise ValueError(
+                        'Model name must be specified in YAML configuration'
+                    )
+
+                if provider == 'openai':
+                    builder.with_llm(OpenAI(model=model_name, base_url=base_url))
+                elif provider == 'anthropic':
+                    builder.with_llm(Anthropic(model=model_name, base_url=base_url))
+                elif provider == 'gemini':
+                    builder.with_llm(Gemini(model=model_name, base_url=base_url))
+                elif provider == 'ollama':
+                    builder.with_llm(OllamaLLM(model=model_name, base_url=base_url))
+                elif provider == 'vertexai':
+                    project = model_config.get('project')
+                    location = model_config.get('location', 'asia-south1')
+                    builder.with_llm(
+                        VertexAI(
+                            model=model_name,
+                            project=project,
+                            location=location,
+                            base_url=base_url,
+                        )
+                    )
+                else:
+                    raise ValueError(f'Unsupported model provider: {provider}')
         else:
             if base_llm is None:
                 raise ValueError(
