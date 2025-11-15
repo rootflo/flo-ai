@@ -385,7 +385,7 @@ class TestAnthropic:
         llm = Anthropic()
 
         # This method is not implemented yet
-        image = ImageMessageContent(image_url='https://example.com/image.jpg')
+        image = ImageMessageContent(url='https://example.com/image.jpg')
 
         with pytest.raises(NotImplementedError):
             llm.format_image_in_message(image)

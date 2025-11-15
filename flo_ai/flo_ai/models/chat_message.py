@@ -22,6 +22,7 @@ class ImageMessageContent(MediaMessageContent):
     url: Optional[str] = None
     base64: Optional[str] = None
     mime_type: Optional[str] = None
+    bytes: Optional[bytes] = None
 
     def __post_init__(self):
         self.type = 'image'
