@@ -1,9 +1,13 @@
 import asyncio
 from typing import Any
 from flo_ai.builder.agent_builder import AgentBuilder
-from flo_ai.llm import OpenAI
+from flo_ai.llm import Gemini
 from flo_ai.models.agent import Agent
-from flo_ai.models import AssistantMessage, UserMessage, TextMessageContent
+from flo_ai.models import (
+    AssistantMessage,
+    UserMessage,
+    TextMessageContent,
+)
 from flo_ai.tool import flo_tool
 
 
@@ -25,7 +29,7 @@ async def main() -> None:
         AgentBuilder()
         .with_name('Math Tutor')
         .with_prompt('You are a helpful math tutor.')
-        .with_llm(OpenAI(model='gpt-4o-mini'))
+        .with_llm(Gemini(model='gemini-2.5-flash'))
         .add_tool(calculate.tool)
         .build()
     )
