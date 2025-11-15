@@ -251,8 +251,8 @@ class Gemini(BaseLLM):
                 mime_type=image.mime_type,
             )
         elif image.url:
-            return types.Part.from_url(
-                url=image.url,
+            return types.Part.from_uri(
+                file_uri=image.url,
                 mime_type=image.mime_type,
             )
         raise NotImplementedError(

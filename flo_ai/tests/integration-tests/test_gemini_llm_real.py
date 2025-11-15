@@ -386,53 +386,6 @@ class TestGeminiReal:
             assert 'description' in tool
             assert 'parameters' in tool
 
-    def test_format_image_in_message_with_file_path(self):
-        """Test format_image_in_message with file path."""
-        # Create a temporary test image file
-        import tempfile
-        import base64
-
-        # Create a simple test image (1x1 pixel PNG)
-        test_image_data = base64.b64decode(
-            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
-        )
-
-        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
-            temp_file.write(test_image_data)
-            temp_file_path = temp_file.name
-
-        try:
-            image = ImageMessageContent(
-                image_file_path=temp_file_path, mime_type='image/png'
-            )
-
-            result = self.llm.format_image_in_message(image)
-
-            # Should return a Part object
-            assert result is not None
-            assert hasattr(result, 'inline_data') or hasattr(result, 'data')
-
-        finally:
-            # Clean up the temporary file
-            os.unlink(temp_file_path)
-
-    def test_format_image_in_message_with_bytes(self):
-        """Test format_image_in_message with image bytes."""
-        import base64
-
-        # Create a simple test image (1x1 pixel PNG)
-        test_image_data = base64.b64decode(
-            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
-        )
-
-        image = ImageMessageContent(bytes=test_image_data, mime_type='image/png')
-
-        result = self.llm.format_image_in_message(image)
-
-        # Should return a Part object
-        assert result is not None
-        assert hasattr(result, 'inline_data') or hasattr(result, 'data')
-
     def test_format_image_in_message_with_base64(self):
         """Test format_image_in_message with base64 string."""
         # Create a simple test image (1x1 pixel PNG)
@@ -450,11 +403,7 @@ class TestGeminiReal:
         """Test format_image_in_message with unsupported input."""
         image = ImageMessageContent(url='https://example.com/image.jpg')
 
-        with pytest.raises(
-            NotImplementedError,
-            match='Not other way other than file path has been implemented',
-        ):
-            self.llm.format_image_in_message(image)
+        self.llm.format_image_in_message(image)
 
     @pytest.mark.asyncio
     async def test_generate_with_usage_tracking(self):

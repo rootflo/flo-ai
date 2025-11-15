@@ -182,7 +182,7 @@ class OpenAI(BaseLLM):
         """Format tools for OpenAI's API"""
         return [self.format_tool_for_llm(tool) for tool in tools]
 
-    def format_image_in_message(self, image: ImageMessageContent) -> str:
+    def format_image_in_message(self, image: ImageMessageContent) -> dict:
         """Format a image in the message"""
         if image.url:
             return {

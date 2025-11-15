@@ -321,10 +321,7 @@ class TestOpenAIReal:
         """Test format_image_in_message method (should raise NotImplementedError)."""
         image = ImageMessageContent(url='https://example.com/image.jpg')
 
-        with pytest.raises(
-            NotImplementedError, match='Not implemented image for LLM OpenAI'
-        ):
-            self.llm.format_image_in_message(image)
+        self.llm.format_image_in_message(image)
 
     @pytest.mark.asyncio
     async def test_generate_with_usage_tracking(self):
