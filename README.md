@@ -3,11 +3,9 @@
 </p>
 
 <h1 align="center">OFabric AI</h1>
+<h1 align="center">Enterprise AI Middleware For Building Production Ready Full Stack Applications</h1>
+<h2 align="center">Open source alternative to UnifyApps, LyzrAI, SuperAGI & AgentGPT</h2>
 
-<p align="center" style="font-size: 64px">
-  <strong>Enterprise AI Middleware For Building Production Ready Full Stack Applications</strong>
-  <p align="center" style="font-size: 25px" >Open source alternative to UnifyApps, LyzrAI, SuperAGI & AgentGPT</p>
-</p>
 <p align="center"><a href="https://github.com/rootflo/flo-ai/tree/develop/flo_ai">Built using flo-ai</a></p>
 
 <p align="center">
@@ -42,6 +40,10 @@ OFabric AI is an open-source middleware platform designed to seamlessly integrat
 **OFabric License**: GNU AFFERO GENERAL PUBLIC LICENSE 3.0  
 **FloAI License**: MIT LICENSE
 **Contributing**: We welcome early feedback! See [CONTRIBUTING.md](CONTRIBUTING.md)
+
+<p align="center">
+  <img src="./images/ofabric-home.png" alt="Rootflo" />
+</p>
 
 ---
 
