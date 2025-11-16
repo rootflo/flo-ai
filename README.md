@@ -1,10 +1,12 @@
 <p align="center">
   <img src="./images/rflo-icon.svg" alt="Rootflo" width="150" />
 </p>
-
+<p align="center">
+  presents
+</p>
 <h1 align="center">OneFabric</h1>
-<h1 align="center">Enterprise AI Middleware For Building Production Ready Full Stack Applications</h1>
-<h2 align="center">Open source alternative to UnifyApps, LyzrAI, SuperAGI & AgentGPT</h2>
+<h2 align="center">Enterprise AI Middleware For Building Production Ready Full Stack Applications</h1>
+<h3 align="center">Open source alternative to UnifyApps, LyzrAI, SuperAGI & AgentGPT</h2>
 
 <p align="center"><a href="https://github.com/rootflo/flo-ai/tree/develop/flo_ai">Built using flo-ai</a></p>
 
