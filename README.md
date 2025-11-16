@@ -4,7 +4,7 @@
 <p align="center">
   presents
 </p>
-<h1 align="center">OneFabric</h1>
+<h1 align="center">OneAIFabric</h1>
 <h2 align="center">Enterprise AI Middleware For Building Production Ready Full Stack Applications</h1>
 <h3 align="center">Open source alternative to UnifyApps, LyzrAI, SuperAGI & AgentGPT</h2>
 
