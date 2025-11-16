@@ -39,7 +39,7 @@
 Wavefront AI is an open-source middleware platform designed to seamlessly integrate AI-driven agents, workflows, and data sources across enterprise environments. It acts as a connective layer that bridges modular frontend applications with complex backend data pipelines, ensuring secure access, observability, and compatibility with modern AI and data infrastructures.
 
 **Status**: Pre-release (Open sourcing coming soon)  
-**License**: [Apache 2.0]  
+**License**: GNU AFFERO GENERAL PUBLIC LICENSE 3.0
 **Contributing**: We welcome early feedback! See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ---
@@ -153,15 +153,15 @@ As part of the project, we plan to develop and open source the following major c
 | Application Logs | ✅ Available | Structured logging |
 | AI Token Tracking | ✅ Available | Token tracking per agent |
 | Open Telemetry | ✅ Available | Full OTel support |
-| AI Audit Logging | 🔄 In Progress | Detailed decision trails (Q4 2024) |
-| AI Guardrails | 📋 Roadmap | Policy enforcement (Q2 2025) |
+| AI Audit Logging | 🔄 In Progress | Detailed decision trails (Q4 2025) |
+| AI Guardrails | 📋 Roadmap | Policy enforcement (Q1 2026) |
 
 ### Frontend SDK
 
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Component Library | ✅ Available | React components ready |
-| AI-Based No-Code Builder | 📋 Roadmap | Visual agent creation (Q2 2025) |
+| AI-Based No-Code Builder | 📋 Roadmap | Visual agent creation (Q1 2026) |
 | Low Code AI Agent Builder | ✅ Available | YAML based builder available |
 
 ### Release Timeline
