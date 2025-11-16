@@ -2,7 +2,7 @@
   <img src="./images/rootflo-logo.png" alt="Rootflo" width="150" />
 </p>
 
-<h1 align="center">OFabric AI</h1>
+<h1 align="center">OneFabric <a style="font-size:20px">by</a> <img src="./images/rflo-icon.svg" alt="Rootflo"/></h1>
 <h1 align="center">Enterprise AI Middleware For Building Production Ready Full Stack Applications</h1>
 <h2 align="center">Open source alternative to UnifyApps, LyzrAI, SuperAGI & AgentGPT</h2>
 
