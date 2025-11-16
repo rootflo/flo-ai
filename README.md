@@ -2,7 +2,7 @@
   <img src="./images/rootflo-logo.png" alt="Rootflo" width="150" />
 </p>
 
-<h1 align="center">Wavefront AI</h1>
+<h1 align="center">OFabric AI</h1>
 
 <p align="center" style="font-size: 64px">
   <strong>Enterprise AI Middleware For Building Production Ready Full Stack Applications</strong>
@@ -34,12 +34,13 @@
 
   <hr />
 
-# 🚀 Wavefront AI Middleware
+# 🚀 OFabric AI Middleware
 
-Wavefront AI is an open-source middleware platform designed to seamlessly integrate AI-driven agents, workflows, and data sources across enterprise environments. It acts as a connective layer that bridges modular frontend applications with complex backend data pipelines, ensuring secure access, observability, and compatibility with modern AI and data infrastructures.
+OFabric AI is an open-source middleware platform designed to seamlessly integrate AI-driven agents, workflows, and data sources across enterprise environments. It acts as a connective layer that bridges modular frontend applications with complex backend data pipelines, ensuring secure access, observability, and compatibility with modern AI and data infrastructures.
 
 **Status**: Pre-release (Open sourcing coming soon)  
-**License**: GNU AFFERO GENERAL PUBLIC LICENSE 3.0
+**OFabric License**: GNU AFFERO GENERAL PUBLIC LICENSE 3.0  
+**FloAI License**: MIT LICENSE
 **Contributing**: We welcome early feedback! See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ---
@@ -102,9 +103,9 @@ Wavefront AI is an open-source middleware platform designed to seamlessly integr
 As part of the project, we plan to develop and open source the following major components.
 
 - [FloAI](https://github.com/rootflo/flo-ai/tree/develop/flo_ai) library for Agent Building & A2A Orchestraction
-- **Wavefront Core** Middleware Service
-- **Wavefront Control Panel** Unified frontend for configuring agents, workflows, AI models, Gaurdrails, RBAC etc.
-- **Wavefront cli** for configuring through cli
+- **OFabric Core** Middleware Service
+- **OFabric Control Panel** Unified frontend for configuring agents, workflows, AI models, Gaurdrails, RBAC etc.
+- **OFabric cli** for configuring through cli
 
 ## 🛣️ Current Support & Roadmap
 
@@ -171,7 +172,7 @@ As part of the project, we plan to develop and open source the following major c
 | **Nov 2025** | Public README.md | Publish readme and take in community feedback |
 | **Dec 2025** | Open-source community edition | Community edition release with working MVP |
 | **Q1 2026** | Enterprise Edition | Advanced RBAC, More Data source Integrations|
-| **Q1 2026** | Rootflo Wavefront Cloud | One click deployable Wavefront Cloud
+| **Q1 2026** | Rootflo OFabric Cloud | One click deployable OFabric Cloud
 | **Q2 2026** | Advanced Features |  No-Code App Builder, Advanced Analytics & Dashboards |
 
 See [ROADMAP.md](ROADMAP.md) for detailed feature plans and contribution opportunities.
@@ -192,21 +193,16 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ---
 
-## 📄 License
-
-Wavefront AI is licensed under the Apache License 2.0. See [LICENSE](LICENSE) for details.
-
----
 
 ## 🙏 Acknowledgments
 
-Wavefront AI was built with inspiration from leading open-source projects in the AI infrastructure space. Special thanks to our early adopters and community contributors.
+OFabric AI was built with inspiration from leading open-source projects in the AI infrastructure space. Special thanks to our early adopters and community contributors.
 
 ---
 
 ## ⭐ Show Your Support
 
-If you find Wavefront AI useful, please consider:
+If you find OFabric AI useful, please consider:
 
 - Starring this repository ⭐
 - Sharing with your network
@@ -215,7 +211,7 @@ If you find Wavefront AI useful, please consider:
 
 ---
 
-**Ready to transform your enterprise AI infrastructure?** Get started with [Wavefront AI today](GETTING_STARTED.md).
+**Ready to transform your enterprise AI infrastructure?** Get started with [OFabric AI today](GETTING_STARTED.md).
 
 
 
