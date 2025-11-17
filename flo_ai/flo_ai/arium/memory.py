@@ -19,6 +19,22 @@ class StepStatus(Enum):
     SKIPPED = 'skipped'
 
 
+class MessageMemoryItem:
+    def __init__(
+        self, node: str, occurrence: int = 0, result: BaseMessage | str = None
+    ):
+        self.node: str = node
+        self.occurrence: int = occurrence
+        self.result: BaseMessage | str = result
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'node': self.node,
+            'occurrence': self.occurrence,
+            'result': self.result,
+        }
+
+
 @dataclass
 class PlanStep:
     """Represents a single step in an execution plan"""
@@ -115,16 +131,27 @@ class BaseMemory(ABC, Generic[T]):
         return None
 
 
-class MessageMemory(BaseMemory[BaseMessage]):
+class MessageMemory(BaseMemory[MessageMemoryItem]):
     def __init__(self):
-        self.messages: List[Dict[str, Any]] = []
+        self.messages: List[MessageMemoryItem] = []
         self._node_occurrences: Dict[str, int] = {}
 
-    def add(self, message: BaseMessage):
+    def _next_occurrence(self, node: str) -> int:
+        current = self._node_occurrences.get(node, 0) + 1
+        self._node_occurrences[node] = current
+        return current
+
+    def add(self, message: MessageMemoryItem):
+        # Update occurrence count for the node
+        occurrence = self._next_occurrence(message.node)
+        message.occurrence = occurrence
         self.messages.append(message)
 
-    def get(self) -> List[BaseMessage]:
-        return self.messages
+    def get(self, include_nodes: Optional[List[str]] = None) -> List[MessageMemoryItem]:
+        if not include_nodes:
+            return self.messages
+        include = set[str](include_nodes)
+        return [m for m in self.messages if m.node in include]
 
 
 class PlanAwareMemory(BaseMemory[Dict[str, Any]]):
@@ -141,63 +168,11 @@ class PlanAwareMemory(BaseMemory[Dict[str, Any]]):
         self._node_occurrences[node] = current
         return current
 
-    def _normalize(self, message: Any) -> Optional[Dict[str, Any]]:
-        if message is None:
-            return None
-        if isinstance(message, dict) and {'node', 'occurrence', 'output'}.issubset(
-            message.keys()
-        ):
-            return message
-        # New schema without occurrence: { 'node': str, 'output': Any }
-        if (
-            isinstance(message, dict)
-            and {'node', 'output'}.issubset(message.keys())
-            and 'occurrence' not in message
-        ):
-            node = (
-                str(message['node']) if message.get('node') is not None else 'unknown'
-            )
-            occurrence = self._next_occurrence(node)
-            return {
-                'node': node,
-                'occurrence': occurrence,
-                'output': message.get('output'),
-            }
-        if isinstance(message, dict) and {'node_name', 'result'}.issubset(
-            message.keys()
-        ):
-            node = (
-                str(message['node_name'])
-                if message.get('node_name') is not None
-                else 'unknown'
-            )
-            occurrence = self._next_occurrence(node)
-            return {
-                'node': node,
-                'occurrence': occurrence,
-                'output': message.get('result'),
-            }
-        if isinstance(message, str):
-            node = 'input'
-            occurrence = self._next_occurrence(node)
-            return {'node': node, 'occurrence': occurrence, 'output': message}
-        if hasattr(message, 'to_dict') and callable(getattr(message, 'to_dict')):
-            node = 'input'
-            occurrence = self._next_occurrence(node)
-            try:
-                data = message.to_dict()
-            except Exception:
-                data = str(message)
-            return {'node': node, 'occurrence': occurrence, 'output': data}
-        node = 'input'
-        occurrence = self._next_occurrence(node)
-        return {'node': node, 'occurrence': occurrence, 'output': message}
-
-    def add(self, message: Any):
-        """Add a message to memory"""
-        normalized = self._normalize(message)
-        if normalized is not None:
-            self.messages.append(normalized)
+    def add(self, message: MessageMemoryItem):
+        # Update occurrence count for the node
+        occurrence = self._next_occurrence(message.node)
+        message.occurrence = occurrence
+        self.messages.append(message)
 
     def get(self, include_nodes: Optional[List[str]] = None) -> List[Dict[str, Any]]:
         """Get all messages"""

@@ -1,5 +1,5 @@
 from flo_ai.arium.base import BaseArium
-from flo_ai.arium.memory import MessageMemory, BaseMemory
+from flo_ai.arium.memory import MessageMemory, BaseMemory, MessageMemoryItem
 from flo_ai.models import BaseMessage, UserMessage, TextMessageContent
 from typing import List, Dict, Any, Optional, Callable
 from flo_ai.models.agent import Agent
@@ -204,7 +204,10 @@ class Arium(BaseArium):
         events_filter: Optional[List[AriumEventType]] = None,
         variables: Optional[Dict[str, Any]] = None,
     ):
-        [self.memory.add(msg) for msg in inputs]
+        [
+            self.memory.add(MessageMemoryItem(node='input', occurrence=0, result=msg))
+            for msg in inputs
+        ]
 
         current_node = self.nodes[self.start_node_name]
         current_edge = self.edges[self.start_node_name]
@@ -251,11 +254,15 @@ class Arium(BaseArium):
             )
 
             if isinstance(result, List):  # for each node will give results array
-                self._add_to_memory(result[-1])
+                self._add_to_memory(
+                    MessageMemoryItem(node=current_node.name, result=result[-1])
+                )
             else:
                 # update results to memory
                 if result:
-                    self._add_to_memory(result)
+                    self._add_to_memory(
+                        MessageMemoryItem(node=current_node.name, result=result)
+                    )
 
             # find next node post current node
             # Prepare execution context for router functions
@@ -448,7 +455,7 @@ class Arium(BaseArium):
             if getattr(node, 'input_filter', None)
             else self.memory.get()
         )
-        inputs = [item['output'] for item in memory_items]
+        inputs = [item.result for item in memory_items]
 
         if tracer and node_type not in ['start', 'end']:
             with tracer.start_as_current_span(
@@ -595,9 +602,8 @@ class Arium(BaseArium):
                 # Re-raise the exception
                 raise e
 
-    def _add_to_memory(self, result: BaseMessage):
+    def _add_to_memory(self, message: MessageMemoryItem):
         """
-        Store result in memory, converting strings to AssistantMessage if needed.
-        Agent responses should be stored as AssistantMessage, not UserMessage.
+        Store message in memory
         """
-        self.memory.add(result)
+        self.memory.add(message)

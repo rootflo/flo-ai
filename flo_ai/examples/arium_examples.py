@@ -8,7 +8,9 @@ from flo_ai.llm import OpenAI
 from flo_ai.models import TextMessageContent, UserMessage
 from flo_ai.models.agent import Agent
 from flo_ai.arium.nodes import ToolNode
-from flo_ai.arium.memory import MessageMemory
+from flo_ai.arium.memory import MessageMemory, MessageMemoryItem
+from flo_ai.models import BaseMessage
+from typing import List
 
 
 async def print_result(result: str) -> str:
@@ -199,22 +201,19 @@ async def example_tool_nodes_with_filters():
     """Workflow of only ToolNodes; each uses input_filter to read from specific nodes."""
 
     # Define simple tool functions
-    async def pass_through(inputs=None, variables=None, **kwargs):
-        return inputs
+    async def pass_through(inputs: List[BaseMessage] | str, variables=None, **kwargs):
+        return inputs[-1].content
 
-    async def capitalize_last(inputs=None, variables=None, **kwargs):
-        if not inputs:
-            return 'No inputs'
-        last = str(inputs[-1])
-        return last.capitalize()
+    async def capitalize_last(
+        inputs: List[BaseMessage] | str, variables=None, **kwargs
+    ):
+        return str(inputs[-1].content).capitalize()
 
-    async def uppercase_all(inputs=None, variables=None, **kwargs):
-        if not inputs:
-            return 'No inputs'
-        return ' '.join([str(x).upper() for x in inputs])
+    async def uppercase_all(inputs: List[BaseMessage] | str, variables=None, **kwargs):
+        return ' '.join([str(x.content).upper() for x in inputs])
 
-    async def summarize(inputs=None, variables=None, **kwargs):
-        return f"count={len(inputs or [])} last={(str(inputs[-1]) if inputs else '')}"
+    async def summarize(inputs: List[BaseMessage] | str, variables=None, **kwargs):
+        return f"count={len(inputs or [])} last={(str(inputs[-1].content) if inputs else '')}"
 
     # Create four ToolNodes with input filters
     t1 = ToolNode(
@@ -243,14 +242,25 @@ async def example_tool_nodes_with_filters():
     )
 
     # Build and run: tool1 -> tool2 -> tool3 -> tool4
+    state = 1
+
+    def router(memory: MessageMemory) -> Literal['tool2', 'tool4']:
+        nonlocal state
+        if state == 1:
+            state = 2
+            return 'tool2'
+        else:
+            state = 1
+            return 'tool4'
+
     result = await (
         AriumBuilder()
         .with_memory(MessageMemory())
         .add_tool_nodes([t1, t2, t3, t4])
         .start_with(t1)
-        .connect(t1, t2)
+        .add_edge(t1, [t2, t4], router=router)
         .connect(t2, t3)
-        .connect(t3, t4)
+        .connect(t3, t1)
         .end_with(t4)
         .build_and_run(['hello world'])
     )
@@ -271,9 +281,9 @@ if __name__ == '__main__':
         # result3 = await example_complex_workflow()
         # result4 = await example_convenience_function()
         # result5 = await example_build_and_reuse()
-        result6 = await example_tool_nodes_with_filters()
+        result6: List[MessageMemoryItem] = await example_tool_nodes_with_filters()
 
-        print(result6)
+        print(result6[-1].result.content)
 
         print('Examples completed!')
 

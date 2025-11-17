@@ -3,7 +3,7 @@ from flo_ai.arium.arium import Arium
 from flo_ai.arium.memory import MessageMemory, BaseMemory
 from flo_ai.arium.protocols import ExecutableNode
 from flo_ai.arium.nodes import AriumNode, ForEachNode
-from flo_ai.models import BaseMessage, TextMessageContent, UserMessage
+from flo_ai.models import BaseMessage, UserMessage
 from flo_ai.models.agent import Agent, resolve_variables
 from flo_ai.tool.base_tool import Tool
 import yaml
@@ -250,11 +250,7 @@ class AriumBuilder:
         new_inputs = []
         for input in inputs:
             if isinstance(input, str):
-                new_inputs.append(
-                    UserMessage(
-                        TextMessageContent(text=resolve_variables(input, variables))
-                    )
-                )
+                new_inputs.append(UserMessage(resolve_variables(input, variables)))
             elif isinstance(input, BaseMessage):
                 new_inputs.append(input)
             else:

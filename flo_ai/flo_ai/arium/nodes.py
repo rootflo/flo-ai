@@ -2,6 +2,7 @@ from flo_ai.arium.protocols import ExecutableNode
 from typing import List, Any, Dict, Optional, TYPE_CHECKING, Callable
 from flo_ai.utils.logger import logger
 from flo_ai.arium.memory import MessageMemory
+from flo_ai.models import BaseMessage, UserMessage
 import asyncio
 
 if TYPE_CHECKING:  # need to have an optional import else will get circular dependency error as arium also has AriumNode reference
@@ -13,7 +14,13 @@ class AriumNode:
     Wrapper to use an Arium as a node in another Arium workflow.
     """
 
-    def __init__(self, name: str, arium: 'Arium', inherit_variables: bool = True, input_filter: Optional[List[str]] = None):
+    def __init__(
+        self,
+        name: str,
+        arium: 'Arium',
+        inherit_variables: bool = True,
+        input_filter: Optional[List[str]] = None,
+    ):
         """
         Args:
             name: Name for this node in the parent workflow
@@ -50,7 +57,12 @@ class ForEachNode:
     Supports only sequential execution for now. (parallel execution would be supported in future)
     """
 
-    def __init__(self, name: str, execute_node: ExecutableNode, input_filter: Optional[List[str]] = None):
+    def __init__(
+        self,
+        name: str,
+        execute_node: ExecutableNode,
+        input_filter: Optional[List[str]] = None,
+    ):
         """
         Args:
             name: Node name
@@ -144,6 +156,7 @@ class ForEachNode:
             return result[-1]
         return result
 
+
 class ToolNode:
     """
     Lightweight tool-as-node wrapper that conforms to ExecutableNode.
@@ -165,7 +178,7 @@ class ToolNode:
 
     async def run(
         self,
-        inputs: List[Any] = None,
+        inputs: List[BaseMessage] | str,
         variables: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> Any:
@@ -174,9 +187,11 @@ class ToolNode:
         )
 
         if asyncio.iscoroutinefunction(self.function):
-            return await self.function(inputs=inputs, variables=variables, **kwargs)
+            result = await self.function(inputs=inputs, variables=variables, **kwargs)
+            return UserMessage(content=result)
 
         result = self.function(inputs=inputs, variables=variables, **kwargs)
         if asyncio.iscoroutine(result):
-            return await result
-        return result
+            content = await result
+            return UserMessage(content=content)
+        return UserMessage(content=result)
