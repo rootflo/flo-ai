@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar, Generic, List, Dict, Optional, Any
-import json
 from dataclasses import dataclass, field
 from enum import Enum
+
+from flo_ai.models import BaseMessage
 
 # Define the generic type variable
 T = TypeVar('T')
@@ -114,66 +115,16 @@ class BaseMemory(ABC, Generic[T]):
         return None
 
 
-class MessageMemory(BaseMemory[Dict[str, Any]]):
+class MessageMemory(BaseMemory[BaseMessage]):
     def __init__(self):
         self.messages: List[Dict[str, Any]] = []
         self._node_occurrences: Dict[str, int] = {}
 
-    def _next_occurrence(self, node: str) -> int:
-        current = self._node_occurrences.get(node, 0) + 1
-        self._node_occurrences[node] = current
-        return current
+    def add(self, message: BaseMessage):
+        self.messages.append(message)
 
-    def _normalize(self, message: Any) -> Optional[Dict[str, Any]]:
-        if message is None:
-            return None    
-
-        # New schema without occurrence: { 'node': str, 'output': Any }
-        if isinstance(message, dict) and {"node", "output"}.issubset(message.keys()) and "occurrence" not in message:
-            node = str(message["node"]) if message.get("node") is not None else "unknown"
-            occurrence = self._next_occurrence(node)
-            return {"node": node, "occurrence": occurrence, "output": message.get("output")}
-
-        # Legacy schema produced by Arium: { 'node_name': str, 'result': Any }
-        if isinstance(message, dict) and {
-            "node_name",
-            "result",
-        }.issubset(message.keys()):
-            node = str(message["node_name"]) if message.get("node_name") is not None else "unknown"
-            occurrence = self._next_occurrence(node)
-            return {"node": node, "occurrence": occurrence, "output": message.get("result")}
-
-        # Raw string input
-        if isinstance(message, str):
-            node = "input"
-            occurrence = self._next_occurrence(node)    
-            return {"node": node, "occurrence": occurrence, "output": message}
-
-        # Generic object: try to_dict, else str
-        if hasattr(message, "to_dict") and callable(getattr(message, "to_dict")):
-            node = "input"
-            occurrence = self._next_occurrence(node)
-            try:
-                data = message.to_dict()
-            except Exception:
-                data = str(message)
-            return {"node": node, "occurrence": occurrence, "output": data}
-
-        # Fallback
-        node = "input"
-        occurrence = self._next_occurrence(node)
-        return {"node": node, "occurrence": occurrence, "output": message}
-
-    def add(self, message: Any):
-        normalized = self._normalize(message)
-        if normalized is not None:
-            self.messages.append(normalized)
-
-    def get(self, include_nodes: Optional[List[str]] = None) -> List[Dict[str, Any]]:
-        if not include_nodes:
-            return self.messages
-        include = set(include_nodes)
-        return [m for m in self.messages if isinstance(m, dict) and m.get('node') in include]
+    def get(self) -> List[BaseMessage]:
+        return self.messages
 
 
 class PlanAwareMemory(BaseMemory[Dict[str, Any]]):
@@ -193,32 +144,54 @@ class PlanAwareMemory(BaseMemory[Dict[str, Any]]):
     def _normalize(self, message: Any) -> Optional[Dict[str, Any]]:
         if message is None:
             return None
-        if isinstance(message, dict) and {"node", "occurrence", "output"}.issubset(message.keys()):
+        if isinstance(message, dict) and {'node', 'occurrence', 'output'}.issubset(
+            message.keys()
+        ):
             return message
         # New schema without occurrence: { 'node': str, 'output': Any }
-        if isinstance(message, dict) and {"node", "output"}.issubset(message.keys()) and "occurrence" not in message:
-            node = str(message["node"]) if message.get("node") is not None else "unknown"
+        if (
+            isinstance(message, dict)
+            and {'node', 'output'}.issubset(message.keys())
+            and 'occurrence' not in message
+        ):
+            node = (
+                str(message['node']) if message.get('node') is not None else 'unknown'
+            )
             occurrence = self._next_occurrence(node)
-            return {"node": node, "occurrence": occurrence, "output": message.get("output")}
-        if isinstance(message, dict) and {"node_name", "result"}.issubset(message.keys()):
-            node = str(message["node_name"]) if message.get("node_name") is not None else "unknown"
+            return {
+                'node': node,
+                'occurrence': occurrence,
+                'output': message.get('output'),
+            }
+        if isinstance(message, dict) and {'node_name', 'result'}.issubset(
+            message.keys()
+        ):
+            node = (
+                str(message['node_name'])
+                if message.get('node_name') is not None
+                else 'unknown'
+            )
             occurrence = self._next_occurrence(node)
-            return {"node": node, "occurrence": occurrence, "output": message.get("result")}
+            return {
+                'node': node,
+                'occurrence': occurrence,
+                'output': message.get('result'),
+            }
         if isinstance(message, str):
-            node = "input"
+            node = 'input'
             occurrence = self._next_occurrence(node)
-            return {"node": node, "occurrence": occurrence, "output": message}
-        if hasattr(message, "to_dict") and callable(getattr(message, "to_dict")):
-            node = "input"
+            return {'node': node, 'occurrence': occurrence, 'output': message}
+        if hasattr(message, 'to_dict') and callable(getattr(message, 'to_dict')):
+            node = 'input'
             occurrence = self._next_occurrence(node)
             try:
                 data = message.to_dict()
             except Exception:
                 data = str(message)
-            return {"node": node, "occurrence": occurrence, "output": data}
-        node = "input"
+            return {'node': node, 'occurrence': occurrence, 'output': data}
+        node = 'input'
         occurrence = self._next_occurrence(node)
-        return {"node": node, "occurrence": occurrence, "output": message}
+        return {'node': node, 'occurrence': occurrence, 'output': message}
 
     def add(self, message: Any):
         """Add a message to memory"""
@@ -231,7 +204,9 @@ class PlanAwareMemory(BaseMemory[Dict[str, Any]]):
         if not include_nodes:
             return self.messages
         include = set(include_nodes)
-        return [m for m in self.messages if isinstance(m, dict) and m.get('node') in include]
+        return [
+            m for m in self.messages if isinstance(m, dict) and m.get('node') in include
+        ]
 
     # Plan management methods
     def add_plan(self, plan: ExecutionPlan):

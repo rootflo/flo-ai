@@ -4,9 +4,16 @@ Examples demonstrating how to use the AriumBuilder pattern for creating and runn
 
 from typing import Literal
 from flo_ai.arium import AriumBuilder, create_arium
+from flo_ai.llm import OpenAI
+from flo_ai.models import TextMessageContent, UserMessage
 from flo_ai.models.agent import Agent
 from flo_ai.arium.nodes import ToolNode
 from flo_ai.arium.memory import MessageMemory
+
+
+async def print_result(result: str) -> str:
+    print(f'Result: {result}')
+    return result
 
 
 # Example 1: Simple Linear Workflow
@@ -14,9 +21,19 @@ async def example_linear_workflow():
     """Example of a simple linear workflow: Agent -> Tool -> Agent"""
 
     # Create some example agents and tools (these would be your actual implementations)
-    analyzer_agent = Agent(name='analyzer', prompt='Analyze the input')
-    processing_tool_node = ToolNode(name='processor', description='Process the input', function=lambda x: x)
-    summarizer_agent = Agent(name='summarizer', prompt='Summarize the results')
+    analyzer_agent = Agent(
+        name='analyzer',
+        system_prompt='Analyze the input',
+        llm=OpenAI(model='gpt-4o-mini'),
+    )
+    summarizer_agent = Agent(
+        name='summarizer',
+        system_prompt='Summarize the results',
+        llm=OpenAI(model='gpt-4o-mini'),
+    )
+    processing_tool_node = ToolNode(
+        name='processor', description='Process the input', function=print_result
+    )
 
     # Build and run the workflow
     result = await (
@@ -28,7 +45,7 @@ async def example_linear_workflow():
         .connect(analyzer_agent, processing_tool_node)
         .connect(processing_tool_node, summarizer_agent)
         .end_with(summarizer_agent)
-        .build_and_run(['Analyze this text'])
+        .build_and_run([UserMessage(TextMessageContent(text='Analyze this text'))])
     )
 
     return result
@@ -40,8 +57,12 @@ async def example_branching_workflow():
 
     # Create agents and tools
     classifier_agent = Agent(name='classifier', prompt='Classify the input type')
-    text_processor_node = ToolNode(name='text_processor', description='Process text', function=lambda x: x)
-    image_processor_node = ToolNode(name='image_processor', description='Process image', function=lambda x: x)
+    text_processor_node = ToolNode(
+        name='text_processor', description='Process text', function=lambda x: x
+    )
+    image_processor_node = ToolNode(
+        name='image_processor', description='Process image', function=lambda x: x
+    )
     final_agent = Agent(name='final', prompt='Provide final response')
 
     # Router function for conditional branching
@@ -57,16 +78,31 @@ async def example_branching_workflow():
         AriumBuilder()
         .add_agent(classifier_agent)
         .add_agent(final_agent)
-        .add_tool_node(ToolNode(name='text_processor', description='Process text', function=lambda x: x))
-        .add_tool_node(ToolNode(name='image_processor', description='Process image', function=lambda x: x))
+        .add_tool_node(
+            ToolNode(
+                name='text_processor', description='Process text', function=lambda x: x
+            )
+        )
+        .add_tool_node(
+            ToolNode(
+                name='image_processor',
+                description='Process image',
+                function=lambda x: x,
+            )
+        )
         .start_with(classifier_agent)
-        .add_edge(classifier_agent, [text_processor_node, image_processor_node], content_router)
+        .add_edge(
+            classifier_agent,
+            [text_processor_node, image_processor_node],
+            content_router,
+        )
         .connect(text_processor_node, final_agent)
         .connect(image_processor_node, final_agent)
         .end_with(final_agent)
         .build_and_run(['Process this content'])
     )
     return result
+
 
 # Example 3: Complex Multi-Agent Workflow
 async def example_complex_workflow():
@@ -78,8 +114,12 @@ async def example_complex_workflow():
     analyzer_agent = Agent(name='analyzer', prompt='Analyze findings')
     writer_agent = Agent(name='writer', prompt='Write the final report')
 
-    search_tool_node = ToolNode(name='search_tool', description='Search the web', function=lambda x: x)
-    data_tool_node = ToolNode(name='data_processor', description='Process the data', function=lambda x: x)
+    search_tool_node = ToolNode(
+        name='search_tool', description='Search the web', function=lambda x: x
+    )
+    data_tool_node = ToolNode(
+        name='data_processor', description='Process the data', function=lambda x: x
+    )
 
     # Router for deciding next step after analysis
     def analysis_router(memory) -> Literal['writer', 'researcher']:
@@ -117,9 +157,14 @@ async def example_complex_workflow():
 async def example_convenience_function():
     """Example using the create_arium convenience function"""
 
-    agent1 = Agent(name='agent1', prompt='First agent')
-    agent2 = Agent(name='agent2', prompt='Second agent')
+    agent1 = Agent(
+        name='agent1', system_prompt='First agent', llm=OpenAI(model='gpt-4o-mini')
+    )
+    agent2 = Agent(
+        name='agent2', system_prompt='Second agent', llm=OpenAI(model='gpt-4o-mini')
+    )
 
+    # Fix: Use proper InputMessage format for consistency
     result = await (
         create_arium()
         .add_agent(agent1)
@@ -127,7 +172,7 @@ async def example_convenience_function():
         .start_with(agent1)
         .connect(agent1, agent2)
         .end_with(agent2)
-        .build_and_run(['Hello'])
+        .build_and_run([UserMessage(TextMessageContent(text='Hello'))])
     )
 
     return result
@@ -172,10 +217,30 @@ async def example_tool_nodes_with_filters():
         return f"count={len(inputs or [])} last={(str(inputs[-1]) if inputs else '')}"
 
     # Create four ToolNodes with input filters
-    t1 = ToolNode(name='tool1', description='reads initial inputs', function=pass_through, input_filter=['input'])
-    t2 = ToolNode(name='tool2', description='reads tool1 only', function=capitalize_last, input_filter=['tool1'])
-    t3 = ToolNode(name='tool3', description='reads tool2 only', function=uppercase_all, input_filter=['tool2'])
-    t4 = ToolNode(name='tool4', description='reads tool1 & tool3', function=summarize, input_filter=['tool1', 'tool3'])
+    t1 = ToolNode(
+        name='tool1',
+        description='reads initial inputs',
+        function=pass_through,
+        input_filter=['input'],
+    )
+    t2 = ToolNode(
+        name='tool2',
+        description='reads tool1 only',
+        function=capitalize_last,
+        input_filter=['tool1'],
+    )
+    t3 = ToolNode(
+        name='tool3',
+        description='reads tool2 only',
+        function=uppercase_all,
+        input_filter=['tool2'],
+    )
+    t4 = ToolNode(
+        name='tool4',
+        description='reads tool1 & tool3',
+        function=summarize,
+        input_filter=['tool1', 'tool3'],
+    )
 
     # Build and run: tool1 -> tool2 -> tool3 -> tool4
     result = await (
@@ -191,6 +256,7 @@ async def example_tool_nodes_with_filters():
     )
 
     return result
+
 
 if __name__ == '__main__':
     import asyncio

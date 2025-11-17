@@ -20,7 +20,6 @@ dependencies = [
     "opentelemetry-sdk>=1.28.2,<2",
     "opentelemetry-exporter-otlp>=1.28.2,<2",
     "opentelemetry-instrumentation>=0.49b2,<0.50",
-    "pillow>=10.3.0,<11",
     "pydantic>=2.9.2,<3",
     "pyjwt>=2.10.1",
     "pypdf>=4.2.0,<5",
@@ -66,6 +65,10 @@ include = ["flo_ai"]
 
 [tool.hatch.build.targets.wheel]
 include = ["flo_ai"]
+
+
+[tool.poetry.group.dev.dependencies]
+reportlab = "^4.4.4"
 
 [build-system]
 requires = ["hatchling"]

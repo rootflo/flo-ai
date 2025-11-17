@@ -2,15 +2,15 @@ from typing import List, Optional, Callable, Union, Dict, Any
 from flo_ai.arium.arium import Arium
 from flo_ai.arium.memory import MessageMemory, BaseMemory
 from flo_ai.arium.protocols import ExecutableNode
-from flo_ai.arium.nodes import AriumNode, ForEachNode, ToolNode
-from flo_ai.models.agent import Agent
+from flo_ai.arium.nodes import AriumNode, ForEachNode
+from flo_ai.models import BaseMessage, TextMessageContent, UserMessage
+from flo_ai.models.agent import Agent, resolve_variables
 from flo_ai.tool.base_tool import Tool
-from flo_ai.llm.base_llm import ImageMessage
-from flo_ai.models.document import DocumentMessage
 import yaml
 from flo_ai.builder.agent_builder import AgentBuilder
 from flo_ai.llm import BaseLLM
 from flo_ai.arium.llm_router import create_llm_router
+from flo_ai.arium.nodes import ToolNode
 
 
 class AriumBuilder:
@@ -112,7 +112,9 @@ class AriumBuilder:
         # Resolve node reference if string name provided
         if isinstance(execute_node, str):
             # Search across all node types
-            all_nodes = self._agents + self._tool_nodes + self._ariums + self._foreach_nodes
+            all_nodes = (
+                self._agents + self._tool_nodes + self._ariums + self._foreach_nodes
+            )
             resolved_node = next((n for n in all_nodes if n.name == execute_node), None)
             if not resolved_node:
                 raise ValueError(f"Node '{execute_node}' not found")
@@ -130,7 +132,9 @@ class AriumBuilder:
         """Set the starting node for the Arium."""
         if isinstance(node, str):
             # Search across all node types
-            all_nodes = self._agents + self._tool_nodes + self._ariums + self._foreach_nodes
+            all_nodes = (
+                self._agents + self._tool_nodes + self._ariums + self._foreach_nodes
+            )
             resolved_node = next((n for n in all_nodes if n.name == node), None)
             if not resolved_node:
                 raise ValueError(f"Node '{node}' not found")
@@ -163,7 +167,9 @@ class AriumBuilder:
 
         if isinstance(from_node, str):
             # Search across all node types
-            all_nodes = self._agents + self._tool_nodes + self._ariums + self._foreach_nodes
+            all_nodes = (
+                self._agents + self._tool_nodes + self._ariums + self._foreach_nodes
+            )
             resolved_from_node = next(
                 (n for n in all_nodes if n.name == from_node), None
             )
@@ -173,7 +179,9 @@ class AriumBuilder:
 
         if isinstance(to_node, str):
             # Search across all node types
-            all_nodes = self._agents + self._tool_nodes + self._ariums + self._foreach_nodes
+            all_nodes = (
+                self._agents + self._tool_nodes + self._ariums + self._foreach_nodes
+            )
             resolved_to_node = next((n for n in all_nodes if n.name == to_node), None)
             if not resolved_to_node:
                 raise ValueError(f"Node '{to_node}' not found")
@@ -234,12 +242,24 @@ class AriumBuilder:
 
     async def build_and_run(
         self,
-        inputs: List[Union[str, ImageMessage, DocumentMessage]],
+        inputs: List[BaseMessage] | str,
         variables: Optional[Dict[str, Any]] = None,
     ) -> List[dict]:
         """Build the Arium and run it with the given inputs and optional runtime variables."""
         arium = self.build()
-        return await arium.run(inputs, variables=variables)
+        new_inputs = []
+        for input in inputs:
+            if isinstance(input, str):
+                new_inputs.append(
+                    UserMessage(
+                        TextMessageContent(text=resolve_variables(input, variables))
+                    )
+                )
+            elif isinstance(input, BaseMessage):
+                new_inputs.append(input)
+            else:
+                raise ValueError(f'Invalid input type: {type(input)}')
+        return await arium.run(new_inputs, variables=variables)
 
     def visualize(
         self, output_path: str = 'arium_graph.png', title: str = 'Arium Workflow'
@@ -457,15 +477,16 @@ class AriumBuilder:
                         f'Either provide the agent in the agents parameter or add configuration fields.'
                     )
 
+            elif agents and agent_name in agents:
+                agent = agents[agent_name]
+
             # Method 2: Direct agent definition
             elif (
                 'job' in agent_config
                 and 'yaml_config' not in agent_config
                 and 'yaml_file' not in agent_config
             ):
-                agent = cls._create_agent_from_direct_config(
-                    agent_config, base_llm
-                )
+                agent = cls._create_agent_from_direct_config(agent_config, base_llm)
 
             # Method 3: Inline YAML config
             elif 'yaml_config' in agent_config:
@@ -500,22 +521,23 @@ class AriumBuilder:
         for tool_node_config in tool_nodes_config:
             tool_node_name = tool_node_config['name']
 
-            #Add a tool node from a pre-built tool node
+            # Add a tool node from a pre-built tool node
             if len(tool_node_config) == 1 and 'name' in tool_node_config:
                 if tool_nodes and tool_node_name in tool_nodes:
                     tool_node = tool_nodes[tool_node_name]
                 else:
                     raise ValueError(
-                        f"ToolNode {tool_node_name} not found in provided tool_nodes dictionary. "
-                        f"Available tool_nodes: {list(tool_nodes.keys()) if tool_nodes else []}. "
-                        f"Either provide the ToolNode in the tool_nodes parameter or add configuration fields."
+                        f'ToolNode {tool_node_name} not found in provided tool_nodes dictionary. '
+                        f'Available tool_nodes: {list(tool_nodes.keys()) if tool_nodes else []}. '
+                        f'Either provide the ToolNode in the tool_nodes parameter or add configuration fields.'
                     )
             else:
                 # Add a tool node from a direct ToolNode definition (function must be provided in code, YAML cannot define callables)
                 function = tool_node_config.get('function')
                 if function is None:
-                    # Fallback: identity passthrough if not provided
-                    function = (lambda inputs=None, variables=None, **kwargs: inputs)
+                    ValueError(
+                        f'Function for ToolNode {tool_node_name} is not provided'
+                    )
 
                 tool_node = ToolNode(
                     name=tool_node_name,
