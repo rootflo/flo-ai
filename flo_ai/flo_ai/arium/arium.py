@@ -5,7 +5,7 @@ from typing import List, Dict, Any, Optional, Callable
 from flo_ai.models.agent import Agent
 from flo_ai.arium.models import StartNode, EndNode
 from flo_ai.arium.events import AriumEventType, AriumEvent
-from flo_ai.arium.nodes import AriumNode, ForEachNode, ToolNode
+from flo_ai.arium.nodes import AriumNode, ForEachNode, FunctionNode
 from flo_ai.utils.logger import logger
 from flo_ai.utils.variable_extractor import (
     extract_variables_from_inputs,
@@ -404,7 +404,7 @@ class Arium(BaseArium):
 
     async def _execute_node(
         self,
-        node: Agent | ToolNode | ForEachNode | AriumNode | StartNode | EndNode,
+        node: Agent | FunctionNode | ForEachNode | AriumNode | StartNode | EndNode,
         event_callback: Optional[Callable[[AriumEvent], None]] = None,
         events_filter: Optional[List[AriumEventType]] = None,
         variables: Optional[Dict[str, Any]] = None,
@@ -423,8 +423,8 @@ class Arium(BaseArium):
         # Determine node type for events
         if isinstance(node, Agent):
             node_type = 'agent'
-        elif isinstance(node, ToolNode):
-            node_type = 'tool'
+        elif isinstance(node, FunctionNode):
+            node_type = 'function'
         elif isinstance(node, ForEachNode):
             node_type = 'foreach'
         elif isinstance(node, AriumNode):
@@ -472,7 +472,7 @@ class Arium(BaseArium):
                     if isinstance(node, Agent):
                         # Variables are already resolved, pass empty dict to avoid re-processing
                         result = await node.run(inputs, variables={})
-                    elif isinstance(node, ToolNode):
+                    elif isinstance(node, FunctionNode):
                         result = await node.run(inputs, variables=None)
                     elif isinstance(node, ForEachNode):
                         result = await node.run(
@@ -553,7 +553,7 @@ class Arium(BaseArium):
                 # Execute the node based on its type
                 if isinstance(node, Agent):
                     result = await node.run(inputs, variables={})
-                elif isinstance(node, ToolNode):
+                elif isinstance(node, FunctionNode):
                     result = await node.run(inputs, variables=None)
                 elif isinstance(node, ForEachNode):
                     result = await node.run(

@@ -10,7 +10,7 @@ import yaml
 from flo_ai.builder.agent_builder import AgentBuilder
 from flo_ai.llm import BaseLLM
 from flo_ai.arium.llm_router import create_llm_router
-from flo_ai.arium.nodes import ToolNode
+from flo_ai.arium.nodes import FunctionNode
 
 
 class AriumBuilder:
@@ -21,10 +21,10 @@ class AriumBuilder:
         result = (AriumBuilder()
                   .with_memory(my_memory)
                   .add_agent(agent1)
-                  .add_tool_node(tool_node1)
+                  .add_function_node(function_node1)
                   .start_with(agent1)
-                  .add_edge(agent1, [tool_node1], router_fn)
-                  .end_with(tool_node1)
+                  .add_edge(agent1, [function_node1], router_fn)
+                  .end_with(function_node1)
                   .build_and_run(["Hello, world!"]))
     """
 
@@ -37,7 +37,7 @@ class AriumBuilder:
         self._foreach_nodes: List[ForEachNode] = []
         self._start_node: Optional[ExecutableNode] = None
         self._end_nodes: List[ExecutableNode] = []
-        self._tool_nodes: List[ToolNode] = []
+        self._function_nodes: List[FunctionNode] = []
         self._edges: List[tuple] = []  # (from_node, to_nodes, router)
         self._arium: Optional[Arium] = None
         self._all_ariums: List[
@@ -59,14 +59,14 @@ class AriumBuilder:
         self._agents.extend(agents)
         return self
 
-    def add_tool_node(self, tool_node: ToolNode) -> 'AriumBuilder':
+    def add_function_node(self, function_node: FunctionNode) -> 'AriumBuilder':
         """Add a tool node to the Arium."""
-        self._tool_nodes.append(tool_node)
+        self._function_nodes.append(function_node)
         return self
 
-    def add_tool_nodes(self, tool_nodes: List[ToolNode]) -> 'AriumBuilder':
+    def add_function_nodes(self, function_nodes: List[FunctionNode]) -> 'AriumBuilder':
         """Add multiple tool nodes to the Arium."""
-        self._tool_nodes.extend(tool_nodes)
+        self._function_nodes.extend(function_nodes)
         return self
 
     def add_arium(
@@ -113,7 +113,7 @@ class AriumBuilder:
         if isinstance(execute_node, str):
             # Search across all node types
             all_nodes = (
-                self._agents + self._tool_nodes + self._ariums + self._foreach_nodes
+                self._agents + self._function_nodes + self._ariums + self._foreach_nodes
             )
             resolved_node = next((n for n in all_nodes if n.name == execute_node), None)
             if not resolved_node:
@@ -133,7 +133,7 @@ class AriumBuilder:
         if isinstance(node, str):
             # Search across all node types
             all_nodes = (
-                self._agents + self._tool_nodes + self._ariums + self._foreach_nodes
+                self._agents + self._function_nodes + self._ariums + self._foreach_nodes
             )
             resolved_node = next((n for n in all_nodes if n.name == node), None)
             if not resolved_node:
@@ -168,7 +168,7 @@ class AriumBuilder:
         if isinstance(from_node, str):
             # Search across all node types
             all_nodes = (
-                self._agents + self._tool_nodes + self._ariums + self._foreach_nodes
+                self._agents + self._function_nodes + self._ariums + self._foreach_nodes
             )
             resolved_from_node = next(
                 (n for n in all_nodes if n.name == from_node), None
@@ -180,7 +180,7 @@ class AriumBuilder:
         if isinstance(to_node, str):
             # Search across all node types
             all_nodes = (
-                self._agents + self._tool_nodes + self._ariums + self._foreach_nodes
+                self._agents + self._function_nodes + self._ariums + self._foreach_nodes
             )
             resolved_to_node = next((n for n in all_nodes if n.name == to_node), None)
             if not resolved_to_node:
@@ -201,12 +201,12 @@ class AriumBuilder:
         # Add all nodes
         all_nodes = []
         all_nodes.extend(self._agents)
-        all_nodes.extend(self._tool_nodes)
+        all_nodes.extend(self._function_nodes)
         all_nodes.extend(self._ariums)
         all_nodes.extend(self._foreach_nodes)
 
         if not all_nodes:
-            raise ValueError('No agents or tool nodes added to the Arium')
+            raise ValueError('No agents or function nodes added to the Arium')
 
         arium.add_nodes(all_nodes)
 
@@ -271,7 +271,7 @@ class AriumBuilder:
         """Reset the builder to start fresh."""
         self._memory = None
         self._agents = []
-        self._tool_nodes = []
+        self._function_nodes = []
         self._ariums = []
         self._foreach_nodes = []
         self._start_node = None
@@ -287,7 +287,7 @@ class AriumBuilder:
         yaml_file: Optional[str] = None,
         memory: Optional[BaseMemory] = None,
         agents: Optional[Dict[str, Agent]] = None,
-        tool_nodes: Optional[Dict[str, ToolNode]] = None,
+        function_nodes: Optional[Dict[str, FunctionNode]] = None,
         routers: Optional[Dict[str, Callable]] = None,
         base_llm: Optional[BaseLLM] = None,
     ) -> 'AriumBuilder':
@@ -298,7 +298,7 @@ class AriumBuilder:
             yaml_file: Path to YAML file containing arium configuration
             memory: Memory instance to use for the workflow (defaults to MessageMemory)
             agents: Dictionary mapping agent names to pre-built Agent instances
-            tool_nodes: Dictionary mapping tool names to ToolNode instances
+            function_nodes: Dictionary mapping function names to FunctionNode instances
             routers: Dictionary mapping router names to router functions
             base_llm: Base LLM to use for all agents if not specified in individual agent configs
 
@@ -341,9 +341,9 @@ class AriumBuilder:
                 - name: reporter
                   yaml_file: "path/to/reporter.yaml"
 
-              tool_nodes:
-                - name: tool1
-                - name: tool2
+              function_nodes:
+                - name: function1
+                - name: function2
 
               # LLM Router definitions (NEW)
               routers:
@@ -511,39 +511,39 @@ class AriumBuilder:
             builder.add_agent(agent)
 
         # Process tool nodes
-        tool_nodes_config = arium_config.get('tool_nodes', [])
-        tool_nodes_dict = {}
+        function_nodes_config = arium_config.get('function_nodes', [])
+        function_nodes_dict = {}
 
-        for tool_node_config in tool_nodes_config:
-            tool_node_name = tool_node_config['name']
+        for function_node_config in function_nodes_config:
+            function_node_name = function_node_config['name']
 
-            # Add a tool node from a pre-built tool node
-            if len(tool_node_config) == 1 and 'name' in tool_node_config:
-                if tool_nodes and tool_node_name in tool_nodes:
-                    tool_node = tool_nodes[tool_node_name]
+            # Add a function node from pre-built function nodes
+            if len(function_node_config) == 1 and 'name' in function_node_config:
+                if function_nodes and function_node_name in function_nodes:
+                    function_node = function_nodes[function_node_name]
                 else:
                     raise ValueError(
-                        f'ToolNode {tool_node_name} not found in provided tool_nodes dictionary. '
-                        f'Available tool_nodes: {list(tool_nodes.keys()) if tool_nodes else []}. '
-                        f'Either provide the ToolNode in the tool_nodes parameter or add configuration fields.'
+                        f'FunctionNode {function_node_name} not found in provided function_nodes dictionary. '
+                        f'Available function_nodes: {list(function_nodes.keys()) if function_nodes else []}. '
+                        f'Either provide the FunctionNode in the function_nodes parameter or add configuration fields.'
                     )
             else:
-                # Add a tool node from a direct ToolNode definition (function must be provided in code, YAML cannot define callables)
-                function = tool_node_config.get('function')
+                # Add a function node from a direct FunctionNode definition (function must be provided in code, YAML cannot define callables)
+                function = function_node_config.get('function')
                 if function is None:
                     ValueError(
-                        f'Function for ToolNode {tool_node_name} is not provided'
+                        f'Function for FunctionNode {function_node_name} is not provided'
                     )
 
-                tool_node = ToolNode(
-                    name=tool_node_name,
-                    description=tool_node_config.get('description', ''),
+                function_node = FunctionNode(
+                    name=function_node_name,
+                    description=function_node_config.get('description', ''),
                     function=function,
-                    input_filter=tool_node_config.get('input_filter', None),
+                    input_filter=function_node_config.get('input_filter', None),
                 )
 
-            tool_nodes_dict[tool_node_name] = tool_node
-            builder.add_tool_node(tool_node)
+            function_nodes_dict[function_node_name] = function_node
+            builder.add_function_node(function_node)
 
         # Process LLM routers (if defined in YAML)
         routers_config = arium_config.get('routers', [])
@@ -664,7 +664,7 @@ class AriumBuilder:
                     yaml_file=yaml_file_path,
                     memory=None,
                     agents=None,
-                    tool_nodes=None,
+                    function_nodes=None,
                     routers=None,
                     base_llm=base_llm,
                 )
@@ -676,7 +676,7 @@ class AriumBuilder:
                 sub_config = {
                     'arium': {
                         'agents': arium_node_config.get('agents', []),
-                        'tool_nodes': arium_node_config.get('tool_nodes', []),
+                        'function_nodes': arium_node_config.get('function_nodes', []),
                         'routers': arium_node_config.get('routers', []),
                         'ariums': arium_node_config.get(
                             'ariums', []
@@ -690,7 +690,7 @@ class AriumBuilder:
                     yaml_str=yaml.dump(sub_config),
                     memory=None,
                     agents=None,
-                    tool_nodes=None,
+                    function_nodes=None,
                     routers=None,
                     base_llm=base_llm,
                 )
@@ -725,7 +725,7 @@ class AriumBuilder:
             # Find execute_node from ALL node types
             execute_node = (
                 agents_dict.get(execute_node_name)
-                or tool_nodes_dict.get(execute_node_name)
+                or function_nodes_dict.get(execute_node_name)
                 or arium_nodes_dict.get(execute_node_name)
                 or foreach_nodes_dict.get(execute_node_name)
             )
@@ -733,7 +733,7 @@ class AriumBuilder:
             if not execute_node:
                 all_nodes = (
                     list(agents_dict.keys())
-                    + list(tool_nodes_dict.keys())
+                    + list(function_nodes_dict.keys())
                     + list(arium_nodes_dict.keys())
                     + list(foreach_nodes_dict.keys())
                 )
@@ -755,7 +755,7 @@ class AriumBuilder:
         def _find_node(node_name: str):
             return (
                 agents_dict.get(node_name)
-                or tool_nodes_dict.get(node_name)
+                or function_nodes_dict.get(node_name)
                 or arium_nodes_dict.get(node_name)
                 or foreach_nodes_dict.get(node_name)
             )
@@ -769,7 +769,7 @@ class AriumBuilder:
         if not start_node:
             all_available = (
                 list(agents_dict.keys())
-                + list(tool_nodes_dict.keys())
+                + list(function_nodes_dict.keys())
                 + list(arium_nodes_dict.keys())
                 + list(foreach_nodes_dict.keys())
             )

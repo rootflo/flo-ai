@@ -157,9 +157,9 @@ class ForEachNode:
         return result
 
 
-class ToolNode:
+class FunctionNode:
     """
-    Lightweight tool-as-node wrapper that conforms to ExecutableNode.
+    Lightweight function-as-node wrapper that conforms to ExecutableNode.
 
     Forwards inputs and variables to the provided function along with any kwargs.
     """
@@ -183,15 +183,16 @@ class ToolNode:
         **kwargs,
     ) -> Any:
         logger.info(
-            f"Executing ToolNode '{self.name}' with inputs: {inputs} variables: {variables} kwargs: {kwargs}"
+            f"Executing FunctionNode '{self.name}' with inputs: {inputs} variables: {variables} kwargs: {kwargs}"
         )
 
         if asyncio.iscoroutinefunction(self.function):
             result = await self.function(inputs=inputs, variables=variables, **kwargs)
             return UserMessage(content=result)
 
-        result = self.function(inputs=inputs, variables=variables, **kwargs)
         if asyncio.iscoroutine(result):
             content = await result
             return UserMessage(content=content)
+
+        result = self.function(inputs=inputs, variables=variables, **kwargs)
         return UserMessage(content=result)
