@@ -213,7 +213,7 @@ class AgentBuilder:
 
         # Configure LLM based on model settings
         if 'model' in agent_config and base_llm is None:
-            from flo_ai.utils import create_llm_from_config
+            from flo_ai.utils.llm_factory import create_llm_from_config
 
             model_config: dict = agent_config['model']
             # Merge base_url from agent_config if present and not in model_config
