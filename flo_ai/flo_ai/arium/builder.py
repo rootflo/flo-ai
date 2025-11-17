@@ -832,7 +832,7 @@ class AriumBuilder:
         Returns:
             BaseLLM: Configured LLM instance
         """
-        from flo_ai.utils.llm_factory import create_llm_from_config
+        from flo_ai.helpers.llm_factory import create_llm_from_config
 
         return create_llm_from_config(model_config, **kwargs)
 
