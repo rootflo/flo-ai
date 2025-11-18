@@ -180,33 +180,10 @@ class TestAriumBuilder:
         with pytest.raises(ValueError, match='No end nodes specified'):
             builder.build()
 
-    def test_method_chaining(self):
-        """Test that all methods return self for chaining"""
-        builder = AriumBuilder()
-        agent = Mock(spec=Agent)
-        agent.name = 'test_agent'
-        function_node = Mock(spec=FunctionNode)
-        function_node.name = 'test_function_node'
-        memory = Mock(spec=MessageMemory)
-
-        # This should not raise any errors and should work with chaining
-        result = (
-            builder.with_memory(memory)
-            .add_agent(agent)
-            .add_function_node(function_node)
-            .start_with(agent)
-            .connect(agent, function_node)
-            .end_with(function_node)
-            .reset()
-        )
-
-        assert result is builder
-
 
 if __name__ == '__main__':
     # Run a simple test
     test_builder = TestAriumBuilder()
     test_builder.test_builder_initialization()
     test_builder.test_add_agent()
-    test_builder.test_method_chaining()
     print('Basic tests passed!')

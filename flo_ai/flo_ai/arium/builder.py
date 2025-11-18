@@ -1,6 +1,6 @@
 from typing import List, Optional, Callable, Union, Dict, Any
 from flo_ai.arium.arium import Arium
-from flo_ai.arium.memory import MessageMemory, BaseMemory
+from flo_ai.arium.memory import MessageMemory, BaseMemory, MessageMemoryItem
 from flo_ai.arium.protocols import ExecutableNode
 from flo_ai.arium.nodes import AriumNode, ForEachNode
 from flo_ai.models import BaseMessage, UserMessage
@@ -60,12 +60,12 @@ class AriumBuilder:
         return self
 
     def add_function_node(self, function_node: FunctionNode) -> 'AriumBuilder':
-        """Add a tool node to the Arium."""
+        """Add a function node to the Arium."""
         self._function_nodes.append(function_node)
         return self
 
     def add_function_nodes(self, function_nodes: List[FunctionNode]) -> 'AriumBuilder':
-        """Add multiple tool nodes to the Arium."""
+        """Add multiple function nodes to the Arium."""
         self._function_nodes.extend(function_nodes)
         return self
 
@@ -244,7 +244,7 @@ class AriumBuilder:
         self,
         inputs: List[BaseMessage] | str,
         variables: Optional[Dict[str, Any]] = None,
-    ) -> List[dict]:
+    ) -> List[MessageMemoryItem]:
         """Build the Arium and run it with the given inputs and optional runtime variables."""
         arium = self.build()
         new_inputs = []
@@ -287,9 +287,10 @@ class AriumBuilder:
         yaml_file: Optional[str] = None,
         memory: Optional[BaseMemory] = None,
         agents: Optional[Dict[str, Agent]] = None,
-        function_nodes: Optional[Dict[str, FunctionNode]] = None,
         routers: Optional[Dict[str, Callable]] = None,
         base_llm: Optional[BaseLLM] = None,
+        function_registry: Optional[Dict[str, Callable]] = None,
+        tool_registry: Optional[Dict[str, Tool]] = None,
     ) -> 'AriumBuilder':
         """Create an AriumBuilder from a YAML configuration.
 
@@ -298,10 +299,10 @@ class AriumBuilder:
             yaml_file: Path to YAML file containing arium configuration
             memory: Memory instance to use for the workflow (defaults to MessageMemory)
             agents: Dictionary mapping agent names to pre-built Agent instances
-            function_nodes: Dictionary mapping function names to FunctionNode instances
             routers: Dictionary mapping router names to router functions
             base_llm: Base LLM to use for all agents if not specified in individual agent configs
-
+            function_registry: Dictionary mapping function names to function objects
+            tool_registry: Dictionary mapping tool names to Tool objects
         Returns:
             AriumBuilder: Configured builder instance
 
@@ -482,19 +483,25 @@ class AriumBuilder:
                 and 'yaml_config' not in agent_config
                 and 'yaml_file' not in agent_config
             ):
-                agent = cls._create_agent_from_direct_config(agent_config, base_llm)
+                agent = cls._create_agent_from_direct_config(
+                    agent_config, base_llm, tool_registry
+                )
 
             # Method 3: Inline YAML config
             elif 'yaml_config' in agent_config:
                 agent_builder = AgentBuilder.from_yaml(
-                    yaml_str=agent_config['yaml_config'], base_llm=base_llm
+                    yaml_str=agent_config['yaml_config'],
+                    base_llm=base_llm,
+                    tool_registry=tool_registry,
                 )
                 agent = agent_builder.build()
 
             # Method 4: External file reference
             elif 'yaml_file' in agent_config:
                 agent_builder: AgentBuilder = AgentBuilder.from_yaml(
-                    yaml_file=agent_config['yaml_file'], base_llm=base_llm
+                    yaml_file=agent_config['yaml_file'],
+                    base_llm=base_llm,
+                    tool_registry=tool_registry,
                 )
                 agent = agent_builder.build()
 
@@ -510,37 +517,28 @@ class AriumBuilder:
             agents_dict[agent_name] = agent
             builder.add_agent(agent)
 
-        # Process tool nodes
+        # Process function nodes
         function_nodes_config = arium_config.get('function_nodes', [])
         function_nodes_dict = {}
 
         for function_node_config in function_nodes_config:
             function_node_name = function_node_config['name']
+            function_name = function_node_config['function_name']
+            function = function_registry.get(function_name)
 
-            # Add a function node from pre-built function nodes
-            if len(function_node_config) == 1 and 'name' in function_node_config:
-                if function_nodes and function_node_name in function_nodes:
-                    function_node = function_nodes[function_node_name]
-                else:
-                    raise ValueError(
-                        f'FunctionNode {function_node_name} not found in provided function_nodes dictionary. '
-                        f'Available function_nodes: {list(function_nodes.keys()) if function_nodes else []}. '
-                        f'Either provide the FunctionNode in the function_nodes parameter or add configuration fields.'
-                    )
-            else:
-                # Add a function node from a direct FunctionNode definition (function must be provided in code, YAML cannot define callables)
-                function = function_node_config.get('function')
-                if function is None:
-                    ValueError(
-                        f'Function for FunctionNode {function_node_name} is not provided'
-                    )
-
-                function_node = FunctionNode(
-                    name=function_node_name,
-                    description=function_node_config.get('description', ''),
-                    function=function,
-                    input_filter=function_node_config.get('input_filter', None),
+            if function is None:
+                raise ValueError(
+                    f'Function {function_name} not found in provided function_registry dictionary. '
+                    f'Available functions: {list[str](function_registry.keys()) if function_registry else []}. '
+                    f'Either provide the function in the function_registry parameter or add configuration fields.'
                 )
+
+            function_node = FunctionNode(
+                name=function_node_name,
+                description=function_node_config.get('description', ''),
+                function=function,
+                input_filter=function_node_config.get('input_filter', None),
+            )
 
             function_nodes_dict[function_node_name] = function_node
             builder.add_function_node(function_node)

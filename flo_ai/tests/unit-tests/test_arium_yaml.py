@@ -8,7 +8,6 @@ from unittest.mock import Mock, patch
 from flo_ai.arium.builder import AriumBuilder
 from flo_ai.arium.memory import MessageMemory, BaseMemory
 from flo_ai.models.agent import Agent
-from flo_ai.arium.nodes import FunctionNode
 from flo_ai.llm import OpenAI
 
 
@@ -157,7 +156,7 @@ class TestAriumYamlBuilder:
             assert isinstance(builder._memory, MessageMemory)
 
     def test_from_yaml_with_function_nodes(self):
-        """Test YAML configuration with function nodes."""
+        """Test YAML configuration with function nodes using function_registry."""
         yaml_config = """
         arium:
           agents:
@@ -172,6 +171,8 @@ class TestAriumYamlBuilder:
                     
           function_nodes:
             - name: test_function_node
+              function_name: test_function
+              description: "Test function node"
             
           workflow:
             start: test_agent
@@ -183,10 +184,11 @@ class TestAriumYamlBuilder:
             end: [test_function_node]
         """
 
-        # Create mock function node
-        mock_function_node = Mock(spec=FunctionNode)
-        mock_function_node.name = 'test_function_node'
-        function_nodes = {'test_function_node': mock_function_node}
+        # Create mock function
+        async def test_function(inputs):
+            return 'processed'
+
+        function_registry = {'test_function': test_function}
 
         with patch('flo_ai.arium.builder.AgentBuilder') as mock_agent_builder:
             mock_agent = Mock(spec=Agent)
@@ -197,12 +199,13 @@ class TestAriumYamlBuilder:
             mock_agent_builder.from_yaml.return_value = mock_builder_instance
 
             builder = AriumBuilder.from_yaml(
-                yaml_str=yaml_config, function_nodes=function_nodes
+                yaml_str=yaml_config, function_registry=function_registry
             )
 
             # Verify function nodes were added
             assert len(builder._function_nodes) == 1
-            assert builder._function_nodes[0] == mock_function_node
+            assert builder._function_nodes[0].name == 'test_function_node'
+            assert builder._function_nodes[0].function == test_function
 
     def test_from_yaml_with_routers(self):
         """Test YAML configuration with custom routers."""
@@ -262,8 +265,8 @@ class TestAriumYamlBuilder:
             assert to_nodes == [mock_agent2]
             assert router == test_router
 
-    def test_from_yaml_missing_function_node_error(self):
-        """Test error when referenced function node is not provided."""
+    def test_from_yaml_missing_function_in_registry_error(self):
+        """Test error when referenced function is not in function_registry."""
         yaml_config = """
         arium:
           agents:
@@ -278,6 +281,7 @@ class TestAriumYamlBuilder:
                     
           function_nodes:
             - name: missing_function_node
+              function_name: missing_function
             
           workflow:
             start: test_agent
@@ -292,9 +296,9 @@ class TestAriumYamlBuilder:
         with patch('flo_ai.arium.builder.AgentBuilder'):
             with pytest.raises(
                 ValueError,
-                match='FunctionNode missing_function_node not found in provided function_nodes dictionary',
+                match='Function missing_function not found in provided function_registry dictionary',
             ):
-                AriumBuilder.from_yaml(yaml_str=yaml_config, function_nodes={})
+                AriumBuilder.from_yaml(yaml_str=yaml_config, function_registry={})
 
     def test_from_yaml_missing_router_error(self):
         """Test error when referenced router is not provided."""
@@ -434,7 +438,7 @@ class TestAriumYamlBuilder:
 
             # Verify AgentBuilder.from_yaml was called with yaml_file
             mock_agent_builder.from_yaml.assert_called_with(
-                yaml_file='path/to/agent.yaml', base_llm=None
+                yaml_file='path/to/agent.yaml', base_llm=None, tool_registry=None
             )
 
     def test_from_yaml_with_base_llm(self):
@@ -519,7 +523,9 @@ class TestAriumYamlBuilder:
                     
           function_nodes:
             - name: data_function_node
+              function_name: data_function
             - name: analysis_function_node
+              function_name: analysis_function
             
           workflow:
             start: dispatcher
@@ -542,14 +548,15 @@ class TestAriumYamlBuilder:
         def dispatch_router(memory: BaseMemory) -> str:
             return 'processor'
 
-        mock_data_function_node = Mock(spec=FunctionNode)
-        mock_data_function_node.name = 'data_function_node'
-        mock_analysis_function_node = Mock(spec=FunctionNode)
-        mock_analysis_function_node.name = 'analysis_function_node'
+        async def data_function(inputs):
+            return 'data processed'
 
-        function_nodes = {
-            'data_function_node': mock_data_function_node,
-            'analysis_function_node': mock_analysis_function_node,
+        async def analysis_function(inputs):
+            return 'analysis done'
+
+        function_registry = {
+            'data_function': data_function,
+            'analysis_function': analysis_function,
         }
         routers = {'dispatch_router': dispatch_router}
 
@@ -570,7 +577,9 @@ class TestAriumYamlBuilder:
             mock_agent_builder.from_yaml.return_value = mock_builder_instance
 
             builder = AriumBuilder.from_yaml(
-                yaml_str=yaml_config, function_nodes=function_nodes, routers=routers
+                yaml_str=yaml_config,
+                function_registry=function_registry,
+                routers=routers,
             )
 
             # Verify all components were configured
@@ -675,7 +684,9 @@ class TestAriumYamlBuilder:
                 
           function_nodes:
             - name: calculator_function_node
+              function_name: calculator
             - name: web_search_function_node
+              function_name: web_search
             
           workflow:
             start: test_agent
@@ -685,15 +696,16 @@ class TestAriumYamlBuilder:
             end: [test_agent]
         """
 
-        # Create mock function nodes
-        mock_calculator_function_node = Mock(spec=FunctionNode)
-        mock_calculator_function_node.name = 'calculator_function_node'
-        mock_web_search_function_node = Mock(spec=FunctionNode)
-        mock_web_search_function_node.name = 'web_search_function_node'
+        # Create mock functions
+        async def calculator(inputs):
+            return 'calculated'
 
-        function_nodes = {
-            'calculator_function_node': mock_calculator_function_node,
-            'web_search_function_node': mock_web_search_function_node,
+        async def web_search(inputs):
+            return 'searched'
+
+        function_registry = {
+            'calculator': calculator,
+            'web_search': web_search,
         }
 
         with patch('flo_ai.llm.OpenAI') as mock_openai:
@@ -701,14 +713,15 @@ class TestAriumYamlBuilder:
             mock_openai.return_value = mock_llm
 
             builder = AriumBuilder.from_yaml(
-                yaml_str=yaml_config, function_nodes=function_nodes
+                yaml_str=yaml_config, function_registry=function_registry
             )
 
             # Verify agent was configured with function nodes
             assert len(builder._agents) == 1
             assert len(builder._function_nodes) == 2
-            assert mock_calculator_function_node in builder._function_nodes
-            assert mock_web_search_function_node in builder._function_nodes
+            function_node_names = [fn.name for fn in builder._function_nodes]
+            assert 'calculator_function_node' in function_node_names
+            assert 'web_search_function_node' in function_node_names
 
     def test_from_yaml_direct_config_with_parser(self):
         """Test direct agent configuration with structured output parser."""
@@ -1127,6 +1140,7 @@ class TestAriumYamlBuilder:
             
           function_nodes:
             - name: calculator_function_node
+              function_name: calculator
             
           workflow:
             start: dispatcher
@@ -1147,20 +1161,20 @@ class TestAriumYamlBuilder:
         mock_processor = Mock(spec=Agent)
         mock_processor.name = 'processor'
 
-        mock_calculator_function_node = Mock(spec=FunctionNode)
-        mock_calculator_function_node.name = 'calculator_function_node'
+        async def calculator(inputs):
+            return 'calculated'
 
         def smart_router(memory):
             return 'processor'
 
         prebuilt_agents = {'dispatcher': mock_dispatcher, 'processor': mock_processor}
-        function_nodes = {'calculator_function_node': mock_calculator_function_node}
+        function_registry = {'calculator': calculator}
         routers = {'smart_router': smart_router}
 
         builder = AriumBuilder.from_yaml(
             yaml_str=yaml_config,
             agents=prebuilt_agents,
-            function_nodes=function_nodes,
+            function_registry=function_registry,
             routers=routers,
         )
 
@@ -1170,7 +1184,7 @@ class TestAriumYamlBuilder:
         assert len(builder._edges) == 2
         assert mock_dispatcher in builder._agents
         assert mock_processor in builder._agents
-        assert mock_calculator_function_node in builder._function_nodes
+        assert builder._function_nodes[0].name == 'calculator_function_node'
 
 
 if __name__ == '__main__':

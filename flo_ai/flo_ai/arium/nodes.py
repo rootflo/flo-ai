@@ -187,12 +187,15 @@ class FunctionNode:
         )
 
         if asyncio.iscoroutinefunction(self.function):
+            logger.info(f"Executing FunctionNode '{self.name}' as a coroutine function")
             result = await self.function(inputs=inputs, variables=variables, **kwargs)
             return UserMessage(content=result)
 
         if asyncio.iscoroutine(result):
+            logger.info(f"Executing FunctionNode '{self.name}' as a coroutine")
             content = await result
             return UserMessage(content=content)
 
+        logger.info(f"Executing FunctionNode '{self.name}' as a regular function")
         result = self.function(inputs=inputs, variables=variables, **kwargs)
         return UserMessage(content=result)
