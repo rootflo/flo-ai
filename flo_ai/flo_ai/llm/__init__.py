@@ -1,4 +1,4 @@
-from .base_llm import BaseLLM, ImageMessage
+from .base_llm import BaseLLM
 from .anthropic_llm import Anthropic
 from .openai_llm import OpenAI
 from .ollama_llm import OllamaLLM
@@ -14,7 +14,6 @@ __all__ = [
     'OllamaLLM',
     'Gemini',
     'OpenAIVLLM',
-    'ImageMessage',
     'VertexAI',
     'RootFloLLM',
 ]
