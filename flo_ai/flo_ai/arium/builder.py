@@ -345,7 +345,11 @@ class AriumBuilder:
 
               function_nodes:
                 - name: function1
+                  function_name: function1
                 - name: function2
+                  function_name: function2
+                  description: "Function 2"
+                  input_filter: ["input1", "input2"]
 
               # LLM Router definitions (NEW)
               routers:
@@ -663,9 +667,10 @@ class AriumBuilder:
                     yaml_file=yaml_file_path,
                     memory=None,
                     agents=None,
-                    function_nodes=None,
                     routers=None,
                     base_llm=base_llm,
+                    function_registry=None,
+                    tool_registry=None,
                 )
                 nested_arium = nested_builder.build()
 
@@ -689,9 +694,10 @@ class AriumBuilder:
                     yaml_str=yaml.dump(sub_config),
                     memory=None,
                     agents=None,
-                    function_nodes=None,
                     routers=None,
                     base_llm=base_llm,
+                    function_registry=None,
+                    tool_registry=None,
                 )
                 nested_arium = nested_builder.build()
 
