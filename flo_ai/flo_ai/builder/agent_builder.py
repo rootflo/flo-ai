@@ -1,8 +1,9 @@
 from typing import List, Optional, Dict, Any, Union, Type
+from flo_ai.models import AssistantMessage
 import yaml
 from flo_ai.models.agent import Agent
 from flo_ai.models.base_agent import ReasoningPattern
-from flo_ai.llm import BaseLLM, OpenAI, Anthropic, Gemini, OllamaLLM, VertexAI
+from flo_ai.llm import BaseLLM
 from flo_ai.tool.base_tool import Tool
 from flo_ai.tool.tool_config import ToolConfig, create_tool_config
 from flo_ai.formatter.yaml_format_parser import FloYamlParser
@@ -16,22 +17,28 @@ class AgentBuilder:
 
     def __init__(self):
         self._name = 'AI Assistant'
-        self._system_prompt = 'You are a helpful AI assistant.'
+        self._system_prompt: str | AssistantMessage = 'You are a helpful AI assistant.'
         self._llm: Optional[BaseLLM] = None
         self._tools: List[Tool] = []
         self._max_retries = 3
         self._reasoning_pattern = ReasoningPattern.DIRECT
         self._output_schema: Optional[Dict[str, Any]] = None
         self._role: Optional[str] = None
-        self._act_as: Optional[str] = None
+        self._act_as: Optional[str] = (
+            'assistant'  # Default to 'assistant' instead of None
+        )
 
     def with_name(self, name: str) -> 'AgentBuilder':
         """Set the agent's name"""
         self._name = name
         return self
 
-    def with_prompt(self, system_prompt: str) -> 'AgentBuilder':
-        """Set the system prompt"""
+    def with_prompt(self, system_prompt: str | AssistantMessage) -> 'AgentBuilder':
+        """Set the system prompt
+
+        Args:
+            system_prompt: Either a string prompt or a list of InputMessage objects
+        """
         self._system_prompt = system_prompt
         return self
 
@@ -183,6 +190,7 @@ class AgentBuilder:
         tools: Optional[List[Tool]] = None,
         base_llm: Optional[BaseLLM] = None,
         tool_registry: Optional[Dict[str, Tool]] = None,
+        **kwargs,
     ) -> 'AgentBuilder':
         """Create an agent builder from a YAML configuration string
 
@@ -212,35 +220,15 @@ class AgentBuilder:
 
         # Configure LLM based on model settings
         if 'model' in agent_config and base_llm is None:
-            base_url = agent_config.get('base_url', None)
+            from flo_ai.helpers.llm_factory import create_llm_from_config
+
             model_config: dict = agent_config['model']
-            provider = model_config.get('provider', 'openai').lower()
-            model_name = model_config.get('name')
+            # Merge base_url from agent_config if present and not in model_config
+            if 'base_url' in agent_config and 'base_url' not in model_config:
+                model_config = {**model_config, 'base_url': agent_config['base_url']}
 
-            if not model_name:
-                raise ValueError('Model name must be specified in YAML configuration')
-
-            if provider == 'openai':
-                builder.with_llm(OpenAI(model=model_name, base_url=base_url))
-            elif provider == 'anthropic':
-                builder.with_llm(Anthropic(model=model_name, base_url=base_url))
-            elif provider == 'gemini':
-                builder.with_llm(Gemini(model=model_name, base_url=base_url))
-            elif provider == 'ollama':
-                builder.with_llm(OllamaLLM(model=model_name, base_url=base_url))
-            elif provider == 'vertexai':
-                project = model_config.get('project')
-                location = model_config.get('location', 'asia-south1')
-                builder.with_llm(
-                    VertexAI(
-                        model=model_name,
-                        project=project,
-                        location=location,
-                        base_url=base_url,
-                    )
-                )
-            else:
-                raise ValueError(f'Unsupported model provider: {provider}')
+            llm = create_llm_from_config(model_config, **kwargs)
+            builder.with_llm(llm)
         else:
             if base_llm is None:
                 raise ValueError(
