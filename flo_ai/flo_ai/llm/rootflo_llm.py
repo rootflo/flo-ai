@@ -1,9 +1,10 @@
 from enum import Enum
 from typing import AsyncIterator, Dict, Any, List, Optional
 from datetime import datetime, timedelta
+from flo_ai.models.chat_message import ImageMessageContent
 import jwt
 import httpx
-from .base_llm import BaseLLM, ImageMessage
+from .base_llm import BaseLLM
 from .openai_llm import OpenAI
 from .gemini_llm import Gemini
 from .anthropic_llm import Anthropic
@@ -244,6 +245,6 @@ class RootFloLLM(BaseLLM):
         """Format a list of tools for the specific LLM's API"""
         return self._llm.format_tools_for_llm(tools)
 
-    def format_image_in_message(self, image: ImageMessage) -> str:
+    def format_image_in_message(self, image: ImageMessageContent) -> str:
         """Format a image in the message"""
         return self._llm.format_image_in_message(image)
