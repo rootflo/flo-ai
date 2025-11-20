@@ -68,12 +68,12 @@ class PartialTool(Tool):
         """Get the pre-filled parameters."""
         return self.prefilled_params.copy()
 
-    def add_pre_filled_param(self, key: str, value: Any) -> 'PartialTool':
+    def add_prefilled_param(self, key: str, value: Any) -> 'PartialTool':
         """Add or update a pre-filled parameter."""
         self.prefilled_params[key] = value
         return self
 
-    def remove_pre_filled_param(self, key: str) -> 'PartialTool':
+    def remove_prefilled_param(self, key: str) -> 'PartialTool':
         """Remove a pre-filled parameter."""
         if key in self.prefilled_params:
             del self.prefilled_params[key]

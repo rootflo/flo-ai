@@ -486,8 +486,8 @@ class PartialTool(Tool):
 
 - `get_original_tool() -> Tool`: Get the original tool
 - `get_prefilled_params() -> Dict[str, Any]`: Get pre-filled parameters
-- `add_pre_filled_param(key: str, value: Any) -> PartialTool`: Add parameter
-- `remove_pre_filled_param(key: str) -> PartialTool`: Remove parameter
+- `add_prefilled_param(key: str, value: Any) -> PartialTool`: Add parameter
+- `remove_prefilled_param(key: str) -> PartialTool`: Remove parameter
 
 ### AgentBuilder Methods
 

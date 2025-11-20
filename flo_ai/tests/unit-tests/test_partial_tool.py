@@ -173,18 +173,18 @@ class TestPartialTool:
         )
 
         # Test adding a parameter
-        partial_tool.add_pre_filled_param('param2', 'value2')
+        partial_tool.add_prefilled_param('param2', 'value2')
         assert partial_tool.get_prefilled_params() == {
             'param1': 'value1',
             'param2': 'value2',
         }
 
         # Test removing a parameter
-        partial_tool.remove_pre_filled_param('param1')
+        partial_tool.remove_prefilled_param('param1')
         assert partial_tool.get_prefilled_params() == {'param2': 'value2'}
 
         # Test removing non-existent parameter (should not raise error)
-        partial_tool.remove_pre_filled_param('non_existent')
+        partial_tool.remove_prefilled_param('non_existent')
         assert partial_tool.get_prefilled_params() == {'param2': 'value2'}
 
     def test_create_partial_tool_helper_function(self):

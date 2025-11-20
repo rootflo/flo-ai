@@ -189,13 +189,13 @@ agent:
     # 7. Tool parameter management
     print('7. Tool parameter management...')
 
-    if hasattr(partial_tool, 'add_pre_filled_param'):
+    if hasattr(partial_tool, 'add_prefilled_param'):
         # Add a new pre-filled parameter
-        partial_tool.add_pre_filled_param('retry_count', 3)
+        partial_tool.add_prefilled_param('retry_count', 3)
         print(f'Added retry_count parameter: {partial_tool.get_prefilled_params()}')
 
         # Remove a parameter
-        partial_tool.remove_pre_filled_param('retry_count')
+        partial_tool.remove_prefilled_param('retry_count')
         print(f'Removed retry_count parameter: {partial_tool.get_prefilled_params()}')
     print()
 

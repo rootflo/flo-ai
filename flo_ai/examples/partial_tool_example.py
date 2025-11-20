@@ -171,11 +171,11 @@ async def main():
     print('5. Demonstrating parameter management...')
 
     # Add a new pre-filled parameter
-    bigquery_partial.add_pre_filled_param('timeout', 30)
+    bigquery_partial.add_prefilled_param('timeout', 30)
     print(f'Added timeout parameter: {bigquery_partial.get_prefilled_params()}')
 
     # Remove a parameter
-    bigquery_partial.remove_pre_filled_param('timeout')
+    bigquery_partial.remove_prefilled_param('timeout')
     print(f'Removed timeout parameter: {bigquery_partial.get_prefilled_params()}')
     print()
 
