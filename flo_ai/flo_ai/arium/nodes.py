@@ -169,11 +169,13 @@ class FunctionNode:
         name: str,
         description: str,
         function: Callable[..., Any],
+        prefilled_params: Optional[Dict[str, Any]] = None,
         input_filter: Optional[List[str]] = None,
     ) -> None:
         self.name = name
         self.description = description
         self.function = function
+        self.prefilled_params = prefilled_params or {}
         self.input_filter: Optional[List[str]] = input_filter
 
     async def run(
@@ -188,7 +190,9 @@ class FunctionNode:
 
         if asyncio.iscoroutinefunction(self.function):
             logger.info(f"Executing FunctionNode '{self.name}' as a coroutine function")
-            result = await self.function(inputs=inputs, variables=variables, **kwargs)
+            result = await self.function(
+                inputs=inputs, variables=variables, **self.prefilled_params, **kwargs
+            )
             return UserMessage(content=result)
 
         if asyncio.iscoroutine(result):
@@ -197,5 +201,7 @@ class FunctionNode:
             return UserMessage(content=content)
 
         logger.info(f"Executing FunctionNode '{self.name}' as a regular function")
-        result = self.function(inputs=inputs, variables=variables, **kwargs)
+        result = self.function(
+            inputs=inputs, variables=variables, **self.prefilled_params, **kwargs
+        )
         return UserMessage(content=result)
