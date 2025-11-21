@@ -1,10 +1,6 @@
 <p align="center">
-  <img src="./images/rflo-icon.svg" alt="Rootflo" width="150" />
+  <img src="./images/wavefront-dark.png" alt="Wavefront" width="300" /><a href="https://rootflo.ai">by rootflo.ai</a>
 </p>
-<p align="center">
-  presents
-</p>
-<h1 align="center">OneAIFabric</h1>
 <h2 align="center">Enterprise AI Middleware For Building Production Ready Full Stack Applications</h1>
 <h3 align="center">Open source alternative to UnifyApps, LyzrAI, SuperAGI & AgentGPT</h2>
 
@@ -34,17 +30,17 @@
 
   <hr />
 
-# 🚀 OFabric AI Middleware
+# 🚀 Wavefront AI Middleware
 
-OFabric AI is an open-source middleware platform designed to seamlessly integrate AI-driven agents, workflows, and data sources across enterprise environments. It acts as a connective layer that bridges modular frontend applications with complex backend data pipelines, ensuring secure access, observability, and compatibility with modern AI and data infrastructures.
+Wavefront AI is an open-source middleware platform designed to seamlessly integrate AI-driven agents, workflows, and data sources across enterprise environments. It acts as a connective layer that bridges modular frontend applications with complex backend data pipelines, ensuring secure access, observability, and compatibility with modern AI and data infrastructures.
 
 **Status**: Pre-release (Open sourcing coming soon)  
-**OFabric License**: GNU AFFERO GENERAL PUBLIC LICENSE 3.0  
+**Wavefront License**: GNU AFFERO GENERAL PUBLIC LICENSE 3.0  
 **FloAI License**: MIT LICENSE
 **Contributing**: We welcome early feedback! See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 <p align="center">
-  <img src="./images/ofabric-home.png" alt="Rootflo" />
+  <img src="./images/wavefront-home.png" alt="Rootflo" />
 </p>
 
 ---
@@ -54,7 +50,7 @@ OFabric AI is an open-source middleware platform designed to seamlessly integrat
 - **🎯 Modular AI Application Integration**  
   Deploy diverse AI agents for auditing, underwriting, contact center supervision, and business process automation without rebuilding infrastructure.
 
-- **🔌 Unified SDK and API Layer**  
+- **🔌 Unified API Layer**  
   Standardized APIs for developing, deploying, and managing AI workflows across multiple use cases and frameworks.
 
 - **🔐 Enterprise-Grade Authentication & Authorization**  
@@ -86,7 +82,7 @@ OFabric AI is an open-source middleware platform designed to seamlessly integrat
 ## 🏗️ Architecture Overview
 
 <p align="center">
-  <img src="./images/middleware-stack.png" alt="Rootflo" />
+  <img src="./images/wavefront-arc.png" alt="Rootflo" />
 </p>
 
 ### Layer Descriptions
@@ -94,22 +90,22 @@ OFabric AI is an open-source middleware platform designed to seamlessly integrat
 | Layer | Purpose | Components |
 |-------|---------|------------|
 | **Frontend Applications** | User-facing AI interfaces | Supervisors, Audit Agents, Underwriters, Copilots |
-| **SDK & API Layer** | Standardized communication | Frontend SDK, REST/GraphQL APIs |
+| **API Layer** | Standardized communication | Frontend SDK, REST/GraphQL APIs |
 | **Authentication** | Identity verification & SSO | Google Auth, LDAP, Auth0, Okta, Microsoft AD |
 | **Authorization (Agents)** | Agent-level access policies | Role definitions, permission mapping |
 | **AI Workflows** | Intelligent automation | Agentic flows, Voice agents, LLM integrations, RAG |
 | **Data Processing** | ETL and API management | Pipelines, transformations, HTTP endpoints |
 | **Authorization (Data)** | Data source access control | Fine-grained permissions, audit logging |
-| **Data Sources** | Enterprise data systems | Databases, APIs, Cloud storage, Data warehouses |
+| **Data Sources** | Enterprise data systems/Services | Databases, APIs, Cloud storage, Data warehouses, Servics like Salesforce, SAP etc. |
 
 ## Platform Components
 
-As part of the project, we plan to develop and open source the following major components.
+As part of the project, we are building the following components
 
 - [FloAI](https://github.com/rootflo/flo-ai/tree/develop/flo_ai) library for Agent Building & A2A Orchestraction
-- **OFabric Core** Middleware Service
-- **OFabric Control Panel** Unified frontend for configuring agents, workflows, AI models, Gaurdrails, RBAC etc.
-- **OFabric cli** for configuring through cli
+- **Wavefront Core** Middleware Service, which connects multiple frontend applications with complex backend ai pipelines, provides authentication, authorization, observability, monitoring & evaluation
+- **Wavefront Control Panel** Unified frontend for configuring agents, workflows, AI models, Gaurdrails, RBAC etc.
+- **Wavefront cli** for configuring through cli (Yet to Build), for full developer friendly control
 
 ## 🛣️ Current Support & Roadmap
 
@@ -176,8 +172,7 @@ As part of the project, we plan to develop and open source the following major c
 | **Nov 2025** | Public README.md | Publish readme and take in community feedback |
 | **Dec 2025** | Open-source community edition | Community edition release with working MVP |
 | **Q1 2026** | Enterprise Edition | Advanced RBAC, More Data source Integrations|
-| **Q1 2026** | Rootflo OFabric Cloud | One click deployable OFabric Cloud
-| **Q2 2026** | Advanced Features |  No-Code App Builder, Advanced Analytics & Dashboards |
+| **Q1 2026** | Rootflo Wavefront Cloud | One click deployable Wavefront Cloud
 
 See [ROADMAP.md](ROADMAP.md) for detailed feature plans and contribution opportunities.
 
@@ -200,13 +195,13 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## 🙏 Acknowledgments
 
-OFabric AI was built with inspiration from leading open-source projects in the AI infrastructure space. Special thanks to our early adopters and community contributors.
+Wavefront AI was built with inspiration from leading open-source projects in the AI infrastructure space. Special thanks to our early adopters and community contributors.
 
 ---
 
 ## ⭐ Show Your Support
 
-If you find OFabric AI useful, please consider:
+If you find Wavefront AI useful, please consider:
 
 - Starring this repository ⭐
 - Sharing with your network
@@ -215,8 +210,11 @@ If you find OFabric AI useful, please consider:
 
 ---
 
-**Ready to transform your enterprise AI infrastructure?** Get started with [OFabric AI today](GETTING_STARTED.md).
+**Ready to transform your enterprise AI infrastructure?**
 
+Get in touch for production-grade support and SLA-driven deployments that ensure uptime, stability, and performance at scale.
+
+📧 sales@rootflo.ai
 
 
 

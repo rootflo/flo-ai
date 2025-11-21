@@ -30,7 +30,6 @@ The roadmap is organized by component and priority, with clear timelines and sta
 | **Dec 2025** | Community Edition MVP | Open-source community edition with working MVP |
 | **Q1 2026** | Enterprise Edition | Advanced RBAC, additional data source integrations |
 | **Q1 2026** | Wavefront Cloud | One-click deployable Wavefront Cloud |
-| **Q2 2026** | Advanced Features | No-Code App Builder, Advanced Analytics & Dashboards |
 
 ---
 

@@ -50,12 +50,12 @@ Before you begin, ensure you have:
 1. **Fork the repository** on GitHub
 2. **Clone your fork**:
    ```bash
-   git clone https://github.com/your-username/flo-ai.git
-   cd flo-ai
+   git clone https://github.com/your-username/wavefront.git
+   cd wavefront
    ```
 3. **Add upstream remote**:
    ```bash
-   git remote add upstream https://github.com/rootflo/flo-ai.git
+   git remote add upstream https://github.com/rootflo/wavefront.git
    ```
 
 ---
@@ -65,6 +65,8 @@ Before you begin, ensure you have:
 ### Python Environment
 
 We recommend using `uv` for dependency management:
+
+#### For contributing to flo-ai:
 
 ```bash
 # Install uv if you haven't already
@@ -94,25 +96,29 @@ pip install -e .
 # Install development dependencies
 pip install -e ".[dev]"
 ```
+For contributing to wavefront:
+
+```bash
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Navigate to flo_ai directory
+cd wavefront
+
+# Sync dependencies (installs all dependencies including dev dependencies)
+uv sync --all-packages
+
+# Activate the virtual environment
+source .venv/bin/activate  # On macOS/Linux
+# or
+.venv\Scripts\activate  # On Windows
+```
 
 ### Environment Variables
 
 Set up your API keys for testing (create a `.env` file or export them):
 
-```bash
-# OpenAI (optional)
-export OPENAI_API_KEY="your-openai-key"
-
-# Anthropic (optional)
-export ANTHROPIC_API_KEY="your-anthropic-key"
-
-# Google Gemini (optional)
-export GOOGLE_API_KEY="your-google-key"
-
-# For Google Vertex AI (optional)
-export GOOGLE_APPLICATION_CREDENTIALS="path/to/service-account.json"
-export GOOGLE_CLOUD_PROJECT="your-project-id"
-```
+[Documentation to be added soon]
 
 ### Verify Installation
 
@@ -126,51 +132,11 @@ pytest tests/unit-tests/
 pytest tests/unit-tests/test_agent_builder_tools.py
 ```
 
-### Flo AI Studio Setup (Optional)
-
-If you're contributing to the Studio frontend:
-
-```bash
-cd studio
-
-# Install dependencies
-pnpm install
-
-# Start development server
-pnpm dev
-
-# The studio will be available at http://localhost:5173
-```
-
----
-
 ## 📁 Project Structure
 
 Understanding the project structure will help you navigate the codebase:
 
-```
-flo/
-├── flo_ai/                    # Flo AI Python library
-│   ├── flo_ai/                # Core package
-│   │   ├── builder/           # Agent builder components
-│   │   ├── llm/               # LLM provider integrations
-│   │   ├── tool/              # Tool framework
-│   │   ├── arium/             # Workflow orchestration
-│   │   ├── models/            # Data models
-│   │   ├── telemetry/         # Observability
-│   │   └── utils/             # Utility functions
-│   ├── examples/              # Example implementations
-│   ├── tests/                 # Test suite
-│   │   ├── unit-tests/        # Unit tests
-│   │   └── integration-tests/  # Integration tests
-│   └── docs/                  # Documentation
-├── studio/                    # Flo AI Studio (React/TypeScript)
-│   ├── src/                   # Source code
-│   └── package.json           # Dependencies
-├── documentation/             # Project documentation (MDX)
-├── flo_ai_tools/              # Community tools and connectors
-└── README.md                  # Main project README
-```
+[To be added]
 
 ---
 
@@ -314,38 +280,6 @@ pre-commit run --all-files
    ```
 4. **Async/Await** - Use async/await for I/O operations
 5. **Error Handling** - Use appropriate exception types and provide clear error messages
-
-### TypeScript/JavaScript (Studio)
-
-For Studio contributions:
-
-- Use **TypeScript** for all new code
-- Follow existing component structure
-- Use functional components with hooks
-- Add proper error handling
-- Follow the existing naming conventions
-
-### Code Formatting
-
-The pre-commit hooks will automatically format your code using:
-- **Black** - Python code formatter
-- **isort** - Import sorting
-- **flake8** - Linting
-
-You can also run these manually:
-
-```bash
-# Format Python code
-black flo_ai/
-
-# Sort imports
-isort flo_ai/
-
-# Lint
-flake8 flo_ai/
-```
-
----
 
 ## 🧪 Testing Guidelines
 
