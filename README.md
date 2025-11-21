@@ -1,6 +1,7 @@
 <p align="center">
-  <img src="./images/wavefront-dark.png" alt="Wavefront" width="300" /><a href="https://rootflo.ai">by rootflo.ai</a>
+  <img src="./images/wavefront-dark.png" alt="Wavefront" width="300" /><a href="https://rootflo.ai" target="_blank">by rootflo.ai</a>
 </p>
+</br>
 <h2 align="center">Enterprise AI Middleware For Building Production Ready Full Stack Applications</h1>
 <h3 align="center">Open source alternative to UnifyApps, LyzrAI, SuperAGI & AgentGPT</h2>
 
