@@ -1,5 +1,5 @@
 Source code in this repository is variously licensed under the GNU Affero General Public License (AGPL), or the MIT License or Commercial License.
 
-* Within the the top-level "ofabric" directory, source code in a given file is licensed under the AGPL.
+* Within the the top-level "wavefront" directory, source code in a given file is licensed under the AGPL.
 
 * Within the the top-level "flo_ai" directory, source code in a given file is licensed MIT, unless otherwise noted.
