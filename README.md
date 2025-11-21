@@ -35,9 +35,9 @@
 
 Wavefront AI is an open-source middleware platform designed to seamlessly integrate AI-driven agents, workflows, and data sources across enterprise environments. It acts as a connective layer that bridges modular frontend applications with complex backend data pipelines, ensuring secure access, observability, and compatibility with modern AI and data infrastructures.
 
-**Status**: Pre-release (Open sourcing coming soon)  
+**Status**: Pre-release (Under active development)  
 **Wavefront License**: GNU AFFERO GENERAL PUBLIC LICENSE 3.0  
-**FloAI License**: MIT LICENSE
+**FloAI License**: MIT LICENSE  
 **Contributing**: We welcome early feedback! See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 <p align="center">
