@@ -6,7 +6,7 @@ to make dynamic routing decisions based on conversation context and history.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Optional, Callable, Any, Union, get_args, List
+from typing import Dict, Optional, Callable, Any, Union, get_args, List, Awaitable
 from functools import wraps
 from flo_ai.arium.memory import (
     ExecutionPlan,
@@ -829,7 +829,9 @@ Next route:"""
         return prompt
 
 
-def create_llm_router(router_type: str, **config) -> Callable[[MessageMemory], str]:
+def create_llm_router(
+    router_type: str, **config
+) -> Callable[[MessageMemory, Optional[dict]], Awaitable[str]]:
     """
     Factory function to create LLM-powered routers with different configurations.
 
@@ -1038,7 +1040,7 @@ def create_research_analysis_router(
     analysis_agent: str = 'analyst',
     summary_agent: str = 'summarizer',
     llm: Optional[BaseLLM] = None,
-) -> Callable[[MessageMemory], str]:
+) -> Callable[[MessageMemory, Optional[dict]], Awaitable[str]]:
     """
     Create a router for common research -> analysis -> summary workflows.
 
@@ -1113,7 +1115,7 @@ def create_main_critic_reflection_router(
     final_agent: str = 'final_agent',
     allow_early_exit: bool = False,
     llm: Optional[BaseLLM] = None,
-) -> Callable[[MessageMemory], str]:
+) -> Callable[[MessageMemory, Optional[dict]], Awaitable[str]]:
     """
     Create a router for the A -> B -> A -> C reflection pattern (main -> critic -> main -> final).
 
@@ -1141,7 +1143,7 @@ def create_plan_execute_router(
     reviewer_agent: Optional[str] = None,
     additional_agents: Optional[Dict[str, str]] = None,
     llm: Optional[BaseLLM] = None,
-) -> Callable[[MessageMemory], str]:
+) -> Callable[[MessageMemory, Optional[dict]], Awaitable[str]]:
     """
     Create a router for plan-and-execute workflows like Cursor.
 
@@ -1183,7 +1185,7 @@ def create_main_critic_flow_router(
     final_agent: str = 'final_agent',
     allow_early_exit: bool = False,
     llm: Optional[BaseLLM] = None,
-) -> Callable[[MessageMemory], str]:
+) -> Callable[[MessageMemory, Optional[dict]], Awaitable[str]]:
     """
     DEPRECATED: Use create_main_critic_reflection_router instead.
     Create a router for the A -> B -> A -> C reflection pattern (main -> critic -> main -> final).
