@@ -100,7 +100,7 @@ class RootFloLLM(BaseLLM):
         # Lazy initialization state
         self._llm = None
         self._initialized = False
-        self._init_lock = asyncio.Lock()
+        self._init_lock = None
 
         # Will be set during initialization
         self.base_url = base_url
@@ -178,6 +178,10 @@ class RootFloLLM(BaseLLM):
         # Fast path: already initialized
         if self._initialized:
             return
+
+        # Lazily create the lock in an async context
+        if self._init_lock is None:
+            self._init_lock = asyncio.Lock()
 
         # Acquire lock for initialization
         async with self._init_lock:
@@ -265,6 +269,7 @@ class RootFloLLM(BaseLLM):
                     base_url=full_url,
                     api_key=api_token,
                     temperature=self._temperature,
+                    custom_headers=custom_headers,
                     **self._kwargs,
                 )
             else:
@@ -299,6 +304,10 @@ class RootFloLLM(BaseLLM):
 
     def get_message_content(self, response: Any) -> str:
         """Extract message content from response"""
+        if not getattr(self, '_initialized', False) or self._llm is None:
+            raise RuntimeError(
+                'RootFloLLM is not initialized yet; call generate() or stream() first.'
+            )
         return self._llm.get_message_content(response)
 
     def format_tool_for_llm(self, tool: 'Tool') -> Dict[str, Any]:
