@@ -948,7 +948,10 @@ def create_llm_router(
         return await router_instance.route(memory, execution_context)
 
     # Add proper type annotations for validation
-    router_function.__annotations__ = {'memory': MessageMemory, 'return': literal_type}
+    router_function.__annotations__ = {
+        'memory': MessageMemory,
+        'return': Awaitable[literal_type],
+    }
 
     # Transfer router instance attributes to the function for validation
     router_function.supports_self_reference = getattr(
