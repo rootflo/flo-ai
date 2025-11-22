@@ -25,7 +25,7 @@ class LLMProvider(Enum):
 class RootFloLLM(BaseLLM):
     """
     Proxy LLM class that routes to different SDK implementations based on type.
-    Acts as a unified interface to OpenAI, Gemini, and Anthropic SDKs via a proxy URL.
+    Acts as a unified interface to OpenAI, Gemini, Anthropic SDKs and VLLM via a proxy URL.
     """
 
     def __init__(
