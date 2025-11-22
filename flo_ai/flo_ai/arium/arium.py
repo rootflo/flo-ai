@@ -50,11 +50,7 @@ class Arium(BaseArium):
             List of workflow execution results
         """
         if isinstance(inputs, str):
-            inputs = [
-                UserMessage(
-                    TextMessageContent(text=resolve_variables(inputs, variables))
-                )
-            ]
+            inputs = [UserMessage(content=resolve_variables(inputs, variables))]
 
         if not self.is_compiled:
             raise ValueError('Arium is not compiled')
@@ -475,13 +471,29 @@ class Arium(BaseArium):
                     elif isinstance(node, FunctionNode):
                         result = await node.run(inputs, variables=None)
                     elif isinstance(node, ForEachNode):
-                        result = await node.run(
+                        foreach_results: List[
+                            MessageMemoryItem | BaseMessage
+                        ] = await node.run(
                             inputs,
                             variables=variables,
                         )
+                        result = [
+                            item.result
+                            if (isinstance(item, MessageMemoryItem))
+                            else item
+                            for item in foreach_results
+                        ]
                     elif isinstance(node, AriumNode):
                         # AriumNode execution
-                        result = await node.run(inputs, variables=variables)
+                        arium_result: List[MessageMemoryItem] = await node.run(
+                            inputs, variables=variables
+                        )
+                        result = [
+                            item.result
+                            if (isinstance(item, MessageMemoryItem))
+                            else item
+                            for item in arium_result
+                        ]
                     elif isinstance(node, StartNode):
                         result = None
                     elif isinstance(node, EndNode):
@@ -556,12 +568,24 @@ class Arium(BaseArium):
                 elif isinstance(node, FunctionNode):
                     result = await node.run(inputs, variables=None)
                 elif isinstance(node, ForEachNode):
-                    result = await node.run(
+                    foreach_results: List[
+                        MessageMemoryItem | BaseMessage
+                    ] = await node.run(
                         inputs,
                         variables=variables,
                     )
+                    result = [
+                        item.result if (isinstance(item, MessageMemoryItem)) else item
+                        for item in foreach_results
+                    ]
                 elif isinstance(node, AriumNode):
-                    result = await node.run(inputs, variables=variables)
+                    arium_result: List[MessageMemoryItem] = await node.run(
+                        inputs, variables=variables
+                    )
+                    result = [
+                        item.result if (isinstance(item, MessageMemoryItem)) else item
+                        for item in arium_result
+                    ]
                 elif isinstance(node, StartNode):
                     result = None
                 elif isinstance(node, EndNode):
