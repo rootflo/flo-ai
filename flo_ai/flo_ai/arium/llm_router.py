@@ -192,9 +192,7 @@ class SmartRouter(BaseLLMRouter):
         conversation: List[MessageMemoryItem] = memory.get()
 
         conversation_text = self._truncate_conversation_for_tokens(
-            '\n'.join(
-                [f'{item.node}: {item.result.content}' for item in conversation[-5:]]
-            )
+            [f'{item.node}: {item.result.content}' for item in conversation[-5:]]
         )
 
         # Format options
@@ -248,7 +246,7 @@ Agent to route to:"""
         return prompt
 
     def _truncate_conversation_for_tokens(
-        self, messages: List[Any], max_tokens: int = 128000
+        self, messages: List[str], max_tokens: int = 128000
     ) -> str:
         """
         Intelligently truncate conversation to fit within token limits.

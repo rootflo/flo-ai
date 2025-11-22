@@ -140,9 +140,7 @@ class Agent(BaseAgent):
                     if self.reasoning_pattern == ReasoningPattern.COT
                     else resolve_variables(self.system_prompt, variables)
                 )
-                system_message = SystemMessage(
-                    content=TextMessageContent(text=system_content)
-                )
+                system_message = SystemMessage(content=system_content)
                 self.add_to_history(system_message)
                 messages = await self._get_message_history(variables)
 

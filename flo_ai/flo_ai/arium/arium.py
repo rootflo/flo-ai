@@ -477,23 +477,13 @@ class Arium(BaseArium):
                             inputs,
                             variables=variables,
                         )
-                        result = [
-                            item.result
-                            if (isinstance(item, MessageMemoryItem))
-                            else item
-                            for item in foreach_results
-                        ]
+                        result = self._flatten_results(foreach_results)
                     elif isinstance(node, AriumNode):
                         # AriumNode execution
                         arium_result: List[MessageMemoryItem] = await node.run(
                             inputs, variables=variables
                         )
-                        result = [
-                            item.result
-                            if (isinstance(item, MessageMemoryItem))
-                            else item
-                            for item in arium_result
-                        ]
+                        result = self._flatten_results(arium_result)
                     elif isinstance(node, StartNode):
                         result = None
                     elif isinstance(node, EndNode):
@@ -574,18 +564,12 @@ class Arium(BaseArium):
                         inputs,
                         variables=variables,
                     )
-                    result = [
-                        item.result if (isinstance(item, MessageMemoryItem)) else item
-                        for item in foreach_results
-                    ]
+                    result = self._flatten_results(foreach_results)
                 elif isinstance(node, AriumNode):
                     arium_result: List[MessageMemoryItem] = await node.run(
                         inputs, variables=variables
                     )
-                    result = [
-                        item.result if (isinstance(item, MessageMemoryItem)) else item
-                        for item in arium_result
-                    ]
+                    result = self._flatten_results(arium_result)
                 elif isinstance(node, StartNode):
                     result = None
                 elif isinstance(node, EndNode):
@@ -625,6 +609,23 @@ class Arium(BaseArium):
 
                 # Re-raise the exception
                 raise e
+
+    def _flatten_results(
+        self, sequence: List[MessageMemoryItem | BaseMessage | str]
+    ) -> List[BaseMessage | str]:
+        """
+        Flatten a sequence of results by extracting .result from MessageMemoryItem instances.
+
+        Args:
+            sequence: List of items that may be MessageMemoryItem, BaseMessage, or str
+
+        Returns:
+            List of BaseMessage or str with MessageMemoryItem layers removed
+        """
+        return [
+            item.result if isinstance(item, MessageMemoryItem) else item
+            for item in sequence
+        ]
 
     def _add_to_memory(self, message: MessageMemoryItem):
         """
