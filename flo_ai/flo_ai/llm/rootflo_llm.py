@@ -108,8 +108,8 @@ class RootFloLLM(BaseLLM):
         # Call parent __init__ with minimal parameters
         # Actual model will be set during lazy initialization
         super().__init__(
-            model='placeholder',  # Will be updated during lazy init
-            api_key='placeholder',  # Will be updated during lazy init
+            model='',
+            api_key='',
             temperature=temperature,
             **kwargs,
         )
