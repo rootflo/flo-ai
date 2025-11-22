@@ -100,7 +100,7 @@ class RootFloLLM(BaseLLM):
         # Lazy initialization state
         self._llm = None
         self._initialized = False
-        self._init_lock = None
+        self._init_lock = asyncio.Lock()
 
         # Will be set during initialization
         self.base_url = base_url
@@ -178,10 +178,6 @@ class RootFloLLM(BaseLLM):
         # Fast path: already initialized
         if self._initialized:
             return
-
-        # Lazily create the lock in an async context
-        if self._init_lock is None:
-            self._init_lock = asyncio.Lock()
 
         # Acquire lock for initialization
         async with self._init_lock:

@@ -166,7 +166,10 @@ class LLMFactory:
 
         # Optional parameters
         api_key = kwargs.get('api_key') or model_config.get('api_key')
-        temperature = kwargs.get('temperature') or model_config.get('temperature', 0.7)
+        temperature = kwargs.get(
+            'temperature',
+            model_config.get('temperature', 0.7),
+        )
 
         return OpenAIVLLM(
             model=model_name,
