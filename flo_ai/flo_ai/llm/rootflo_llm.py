@@ -9,6 +9,7 @@ from .base_llm import BaseLLM
 from .openai_llm import OpenAI
 from .gemini_llm import Gemini
 from .anthropic_llm import Anthropic
+from .openai_vllm import OpenAIVLLM
 from flo_ai.tool.base_tool import Tool
 
 
@@ -18,6 +19,7 @@ class LLMProvider(Enum):
     OPENAI = 'openai'
     GEMINI = 'gemini'
     ANTHROPIC = 'anthropic'
+    VLLM = 'vllm'
 
 
 class RootFloLLM(BaseLLM):
@@ -254,6 +256,15 @@ class RootFloLLM(BaseLLM):
                     temperature=self._temperature,
                     base_url=full_url,
                     custom_headers=custom_headers,
+                    **self._kwargs,
+                )
+            elif llm_provider == LLMProvider.VLLM:
+                # vLLM via OpenAI-compatible API
+                self._llm = OpenAIVLLM(
+                    model=llm_model,
+                    base_url=full_url,
+                    api_key=api_token,
+                    temperature=self._temperature,
                     **self._kwargs,
                 )
             else:
