@@ -140,8 +140,8 @@ class RootFloLLM(BaseLLM):
             'Authorization': f'Bearer {api_token}',
         }
 
-        # Only add X-Rootflo-Key header if app_key is provided and access_token is not used
-        if app_key and self._access_token is None:
+        # Only add X-Rootflo-Key header if app_key is provided
+        if app_key:
             headers['X-Rootflo-Key'] = app_key
 
         try:
@@ -231,11 +231,7 @@ class RootFloLLM(BaseLLM):
             full_url = f'{self._base_url}/v1/llm-inference/{self._model_id}'
 
             # Prepare custom headers for proxy authentication (only if app_key is provided)
-            custom_headers = (
-                {'X-Rootflo-Key': self._app_key}
-                if (self._app_key and self._access_token is None)
-                else {}
-            )
+            custom_headers = {'X-Rootflo-Key': self._app_key} if self._app_key else {}
 
             # Instantiate appropriate SDK wrapper based on llm_provider
             if llm_provider == LLMProvider.OPENAI:

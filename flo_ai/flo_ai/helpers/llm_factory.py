@@ -230,10 +230,10 @@ class LLMFactory:
         return RootFloLLM(
             base_url=base_url,
             model_id=model_id,
-            app_key=None if access_token else app_key,
-            app_secret=None if access_token else app_secret,
-            issuer=None if access_token else issuer,
-            audience=None if access_token else audience,
+            app_key=app_key,
+            app_secret=app_secret,
+            issuer=issuer,
+            audience=audience,
             access_token=access_token,
         )
 
