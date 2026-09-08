@@ -1,4 +1,5 @@
 import base64
+import dataclasses
 from typing import List, Optional, Tuple
 import uuid
 
@@ -88,7 +89,10 @@ class DocumentPayload(BaseModel):
 
 
 def convert_uuids_to_str(data):
-    """Recursively converts UUID objects in a dictionary or list to strings."""
+    """Recursively converts UUID objects (and dataclasses, e.g. ImageMatch)
+    in a dictionary or list into JSON-safe structures."""
+    if dataclasses.is_dataclass(data) and not isinstance(data, type):
+        data = dataclasses.asdict(data)
     if isinstance(data, dict):
         return {key: convert_uuids_to_str(value) for key, value in data.items()}
     elif isinstance(data, list):
@@ -224,6 +228,95 @@ async def retrieve_query(
         None, description='Number of results to return (overrides top_k)'
     ),
     query_filter: str | None = Query(None, alias='$filter'),
+    exact_match: bool = Query(
+        False,
+        description=(
+            'If true, run an exact (non-ANN) DINO match instead of the '
+            'default top_k ANN/hybrid search. Requires image input, '
+            'threshold, filter1, document_date_start, and document_date_end '
+            '(filter1/document_date are optional narrowing filters on the '
+            'other search modes, but required for exact_match). The '
+            'underlying query never touches the HNSW index (see '
+            'QueryGenerator.get_image_embedding_dino_exact_match) so results '
+            'are exact, not approximate.'
+        ),
+    ),
+    document_date_start: Optional[datetime] = Query(
+        None,
+        description=(
+            'Start of the document_date window (inclusive), applied on '
+            'knowledge_base_documents.document_date. Works with any search '
+            'mode (text query, image ANN, or exact_match); must be provided '
+            'together with document_date_end. Required when exact_match=true.'
+        ),
+    ),
+    document_date_end: Optional[datetime] = Query(
+        None,
+        description=(
+            'End of the document_date window (inclusive). Works with any '
+            'search mode; must be provided together with document_date_start. '
+            'Required when exact_match=true.'
+        ),
+    ),
+    created_at_start: Optional[datetime] = Query(
+        None,
+        description=(
+            'Start of the created_at window (inclusive), applied on '
+            'knowledge_base_documents.created_at. Works with any search '
+            'mode (text query, image ANN, or exact_match); must be provided '
+            'together with created_at_end.'
+        ),
+    ),
+    created_at_end: Optional[datetime] = Query(
+        None,
+        description=(
+            'End of the created_at window (inclusive). Works with any '
+            'search mode; must be provided together with created_at_start.'
+        ),
+    ),
+    filter1: Optional[str] = Query(
+        None,
+        description=(
+            'Equality filter on knowledge_base_documents.filter1. Works with '
+            'any search mode (text query, image ANN, or exact_match). '
+            'Required when exact_match=true.'
+        ),
+    ),
+    filter2: Optional[str] = Query(
+        None,
+        description=(
+            'Equality filter on knowledge_base_documents.filter2. Works with '
+            'any search mode (text query, image ANN, or exact_match).'
+        ),
+    ),
+    filter3: Optional[str] = Query(
+        None,
+        description=(
+            'Equality filter on knowledge_base_documents.filter3. Works with '
+            'any search mode (text query, image ANN, or exact_match).'
+        ),
+    ),
+    filter4: Optional[str] = Query(
+        None,
+        description=(
+            'Equality filter on knowledge_base_documents.filter4. Works with '
+            'any search mode (text query, image ANN, or exact_match).'
+        ),
+    ),
+    filter5: Optional[str] = Query(
+        None,
+        description=(
+            'Equality filter on knowledge_base_documents.filter5. Works with '
+            'any search mode (text query, image ANN, or exact_match).'
+        ),
+    ),
+    filter6: Optional[str] = Query(
+        None,
+        description=(
+            'Equality filter on knowledge_base_documents.filter6. Works with '
+            'any search mode (text query, image ANN, or exact_match).'
+        ),
+    ),
     response_formatter: ResponseFormatter = Depends(
         Provide[CommonContainer.response_formatter]
     ),
@@ -248,6 +341,43 @@ async def retrieve_query(
                 'Query or Image data should not be empty'
             ),
         )
+    if exact_match and not payload:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=response_formatter.buildErrorResponse(
+                'Image data is required when exact_match=true'
+            ),
+        )
+    has_document_date_window = (
+        document_date_start is not None and document_date_end is not None
+    )
+    has_created_at_window = created_at_start is not None and created_at_end is not None
+    if exact_match and (
+        threshold is None or not (has_document_date_window or has_created_at_window)
+    ):
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=response_formatter.buildErrorResponse(
+                'threshold and either a document_date window '
+                '(document_date_start + document_date_end) or a created_at '
+                'window (created_at_start + created_at_end) are required '
+                'when exact_match=true'
+            ),
+        )
+    if (document_date_start is None) != (document_date_end is None):
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=response_formatter.buildErrorResponse(
+                'document_date_start and document_date_end must be provided together'
+            ),
+        )
+    if (created_at_start is None) != (created_at_end is None):
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=response_formatter.buildErrorResponse(
+                'created_at_start and created_at_end must be provided together'
+            ),
+        )
     existing_kb = await knowledge_base_repository.find_one(id=kb_id)
     if not existing_kb:
         return JSONResponse(
@@ -256,7 +386,34 @@ async def retrieve_query(
                 'Knowledge Base with the mentioned id doesnt exist'
             ),
         )
-    if query:
+
+    match_count = None
+    if exact_match:
+        image_data, error_response = await _resolve_image_data(
+            payload, cloud_storage, config, response_formatter
+        )
+        if error_response is not None:
+            return error_response
+        inference_url = config['model']['inference_service_url']
+        retrieved_docs = await image_rag_retrieval.exact_match_dino(
+            image_data,
+            inference_url,
+            kb_id,
+            filter1,
+            document_date_start,
+            document_date_end,
+            threshold,
+            filter2,
+            filter3,
+            filter4,
+            filter5,
+            filter6,
+            created_at_start,
+            created_at_end,
+        )
+        retrieved_docs = convert_uuids_to_str(retrieved_docs)
+        match_count = len(retrieved_docs)
+    elif query:
         retrieved_docs = await rag_retrieval.retrieve_documents(
             query,
             kb_id,
@@ -266,6 +423,16 @@ async def retrieve_query(
             query_filter,
             offset,
             limit,
+            filter1,
+            filter2,
+            filter3,
+            filter4,
+            filter5,
+            filter6,
+            document_date_start,
+            document_date_end,
+            created_at_start,
+            created_at_end,
         )
     else:
         image_data, error_response = await _resolve_image_data(
@@ -278,24 +445,35 @@ async def retrieve_query(
             image_data,
             inference_url,
             kb_id,
-            threshold,
             top_k,
             query_filter,
-            offset,
-            limit,
+            filter1,
+            filter2,
+            filter3,
+            filter4,
+            filter5,
+            filter6,
+            document_date_start,
+            document_date_end,
+            created_at_start,
+            created_at_end,
         )
         retrieved_docs = convert_uuids_to_str(retrieved_docs)
     if not retrieved_docs:
+        empty_data = {'documents': []}
+        if match_count is not None:
+            empty_data['match_count'] = 0
         return JSONResponse(
             status_code=status.HTTP_200_OK,
-            content=response_formatter.buildSuccessResponse(data={'documents': []}),
+            content=response_formatter.buildSuccessResponse(data=empty_data),
         )
 
+    data = {'documents': retrieved_docs}
+    if match_count is not None:
+        data['match_count'] = match_count
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content=response_formatter.buildSuccessResponse(
-            data={'documents': retrieved_docs}
-        ),
+        content=response_formatter.buildSuccessResponse(data=data),
     )
 
 

@@ -30,6 +30,13 @@ const navItems = [
     description: 'Manage authentication provider configurations',
   },
   {
+    id: 'configurations',
+    name: 'Configurations',
+    icon: ModelRepositoryIcon,
+    link: `/apps/:appId/configurations`,
+    description: 'Static reference data workflows read at runtime',
+  },
+  {
     id: 'datasources',
     name: 'Datasources',
     icon: DatasourcesIcon,
@@ -67,7 +74,7 @@ const navItems = [
   },
   {
     id: 'knowledge-bases',
-    name: 'RAG Service',
+    name: 'Knowledgebases',
     icon: RagIcon,
     link: `/apps/:appId/knowledge-bases`,
     description: 'Manage and configure knowledge bases for this application',

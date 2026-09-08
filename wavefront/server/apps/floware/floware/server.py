@@ -55,7 +55,11 @@ from floware.di.application_container import ApplicationContainer
 from floware.middleware.security_headers import SecurityHeadersMiddleware
 from floware.services.scheduler_manager import SchedulerManager
 from plugins_module.plugins_container import PluginsContainer
+from plugins_module.controllers.configuration_controller import configuration_router
 from plugins_module.controllers.datasource_controller import datasource_router
+from plugins_module.controllers.datasource_audit_controller import (
+    datasource_audit_router,
+)
 from plugins_module.controllers.authenticator_controller import authenticator_router
 from floware.controllers.config_controller import config_router
 from floware.controllers.scheduled_job_controller import scheduled_job_router
@@ -123,6 +127,7 @@ user_module_container = UserContainer(
 )
 application_container = ApplicationContainer(
     db_client=db_repo_container.db_client,
+    cache_manager=db_repo_container.cache_manager,
     cloud_storage_manager=common_container.cloud_storage_manager,
     email_repository=db_repo_container.email_repository,
     oauth_credential_repository=db_repo_container.oauth_credential_repository,
@@ -139,9 +144,10 @@ application_container = ApplicationContainer(
     user_service=user_module_container.user_service,
     role_repository=user_module_container.role_repository,
     user_role_repository=user_module_container.user_role_repository,
+    knowledge_base_repository=db_repo_container.knowledge_base_repository,
 )
 
-email_rag_container = KnowledgeBaseContainer(
+knowledge_base_container = KnowledgeBaseContainer(
     db_client=db_repo_container.db_client, cache_manager=db_repo_container.cache_manager
 )
 
@@ -152,6 +158,9 @@ plugins_container = PluginsContainer(
     cloud_storage_manager=common_container.cloud_storage_manager,
     dynamic_query_repository=db_repo_container.dynamic_query_repository,
     cache_manager=db_repo_container.cache_manager,
+    namespace_repository=db_repo_container.namespace_repository,
+    agentic_configuration_repository=db_repo_container.agentic_configuration_repository,
+    datasource_audit_log_repository=db_repo_container.datasource_audit_log_repository,
 )
 
 product_analysis_container = ProductAnalysisContainer()
@@ -429,6 +438,7 @@ app.include_router(rag_retrieval_router, prefix='/floware')
 app.include_router(gold_router, prefix='/floware')
 app.include_router(subscription_controller, prefix='/floware')
 app.include_router(datasource_router, prefix='/floware')
+app.include_router(datasource_audit_router, prefix='/floware')
 app.include_router(hmac_router, prefix='/floware')
 app.include_router(authenticator_router, prefix='/floware')
 app.include_router(config_router, prefix='/floware')
@@ -451,6 +461,7 @@ app.include_router(stt_config_router, prefix='/floware')
 app.include_router(voice_agent_router, prefix='/floware')
 app.include_router(tool_router, prefix='/floware')
 app.include_router(message_processor_router, prefix='/floware')
+app.include_router(configuration_router, prefix='/floware')
 app.include_router(cloud_storage_router, prefix='/floware')
 app.include_router(trigger_router, prefix='/floware')
 
@@ -502,6 +513,10 @@ user_module_container.wire(
         'plugins_module.controllers',
         'user_management_module.controllers',
         'user_management_module.authorization',
+        # Helpers in utils (check_is_admin and its callers) resolve container
+        # providers themselves, so the package needs wiring too — otherwise only
+        # the copies imported into wired controller modules get patched.
+        'user_management_module.utils',
         'plugins_module.controllers',
     ],
 )
@@ -545,7 +560,7 @@ common_container.wire(
     ],
 )
 
-email_rag_container.wire(
+knowledge_base_container.wire(
     modules=[__name__],
     packages=[
         'knowledge_base_module.controllers',

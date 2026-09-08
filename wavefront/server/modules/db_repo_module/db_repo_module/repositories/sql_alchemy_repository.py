@@ -213,15 +213,36 @@ class SQLAlchemyRepository(Generic[T]):
                 query = query.where(getattr(self.model, key) == value)
             return await session.scalar(query)
 
-    async def execute_query(self, query: str, params={}, model_class=None) -> list:
+    async def execute_query(
+        self, query: str, params={}, model_class=None, ef_search: int | None = None
+    ) -> list:
         """
         Execute a raw SQL query or an SQLAlchemy query asynchronously and return the results.
 
         :param query: The SQLAlchemy `select` query or raw SQL string.
+        :param ef_search: Optional pgvector `hnsw.ef_search` value to apply
+            for the duration of this query's transaction via `SET LOCAL`.
+            pgvector's HNSW index caps the number of candidates it can
+            return at this value (default 40, max 1000) regardless of the
+            query's own `LIMIT`, so vector-search callers should pass this
+            whenever their query params include a computed `ef_search`.
         :return: A list of matching records.
         """
         async with self.session() as session:
             session: AsyncSession
+            if ef_search is not None:
+                await session.execute(
+                    text(f'SET LOCAL hnsw.ef_search = {int(ef_search)}')
+                )
+                # HNSW applies WHERE-clause filtering after the index scan,
+                # so a filter that eliminates most of the ef_search
+                # candidates can otherwise return fewer than the query's
+                # LIMIT. Iterative scans keep expanding the search until
+                # enough post-filter matches are found (or hnsw.max_scan_tuples
+                # is hit), instead of a fixed one-shot candidate set.
+                await session.execute(
+                    text("SET LOCAL hnsw.iterative_scan = 'relaxed_order'")
+                )
             result = await session.execute(text(query), params)
             columns = result.keys()
             rows = [dict(zip(columns, row)) for row in result.all()]

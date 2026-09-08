@@ -18,6 +18,8 @@ from db_repo_module.models.user import User
 from db_repo_module.models.user_role import UserRole
 from db_repo_module.models.product_analytics import ProductAnalytics
 from db_repo_module.models.session import Session
+from db_repo_module.models.agentic_configuration import AgenticConfiguration
+from db_repo_module.models.datasource_audit_log import DatasourceAuditLog
 from db_repo_module.models.config import Config
 from db_repo_module.models.dynamic_query_yaml import DynamicQueryYaml
 from db_repo_module.models.model_schema import ModelSchema
@@ -201,6 +203,12 @@ class DatabaseModuleContainer(containers.DeclarativeContainer):
         db_client=db_client,
     )
 
+    agentic_configuration_repository = providers.Singleton(
+        SQLAlchemyRepository[AgenticConfiguration],
+        model=AgenticConfiguration,
+        db_client=db_client,
+    )
+
     agent_repository = providers.Singleton(
         SQLAlchemyRepository[Agent],
         model=Agent,
@@ -234,6 +242,11 @@ class DatabaseModuleContainer(containers.DeclarativeContainer):
     datasource_repository = providers.Singleton(
         SQLAlchemyRepository[Datasource],
         model=Datasource,
+        db_client=db_client,
+    )
+    datasource_audit_log_repository = providers.Singleton(
+        SQLAlchemyRepository[DatasourceAuditLog],
+        model=DatasourceAuditLog,
         db_client=db_client,
     )
     scheduled_job_repository = providers.Singleton(

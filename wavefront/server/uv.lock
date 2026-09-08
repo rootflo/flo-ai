@@ -86,7 +86,7 @@ requires-dist = [
     { name = "api-services-module", editable = "modules/api_services_module" },
     { name = "celery", extras = ["redis"], specifier = ">=5.4.0,<6.0.0" },
     { name = "common-module", editable = "modules/common_module" },
-    { name = "flo-ai", specifier = "==1.1.9" },
+    { name = "flo-ai", specifier = "==1.1.10" },
     { name = "flo-cloud", editable = "packages/flo_cloud" },
     { name = "flo-utils", editable = "packages/flo_utils" },
     { name = "llm-inference-config-module", editable = "modules/llm_inference_config_module" },
@@ -769,7 +769,7 @@ dependencies = [
 requires-dist = [
     { name = "agents-module", editable = "modules/agents_module" },
     { name = "api-services-module", editable = "modules/api_services_module" },
-    { name = "celery", extras = ["redis"], specifier = ">=5.4.0,<6.0.0" },
+    { name = "celery", extras = ["redis"], specifier = ">=5.5.3,<6.0.0" },
     { name = "common-module", editable = "modules/common_module" },
     { name = "db-repo-module", editable = "modules/db_repo_module" },
     { name = "flo-cloud", editable = "packages/flo_cloud" },
@@ -1474,7 +1474,7 @@ wheels = [
 
 [[package]]
 name = "flo-ai"
-version = "1.1.9"
+version = "1.1.10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1495,9 +1495,9 @@ dependencies = [
     { name = "pymupdf" },
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/06/91/780fa7dd81a22463765fb24fdb625cf6dcbb0fa42d19f3ef3a439fdb724e/flo_ai-1.1.9.tar.gz", hash = "sha256:29f67cc490844d3fe21522531b42ef130983b9092105acaf8734f1e98b073fd0", size = 116268, upload-time = "2026-07-31T12:14:02.573Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/28/b9/97bfae1b4fe278ba26a9b2013ea3c5dea7182f8032addd92587cf7c4aaf8/flo_ai-1.1.10.tar.gz", hash = "sha256:fa7ef47d2b3c36a7cb4502a276f7503c947de4a6c7ced10c6c75af607ddcc9de", size = 117034, upload-time = "2026-08-27T13:55:02.364Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b0/0e/c353459cfd290404753b63cf3ccfa94c8a92145b30607fd3a2c8c7a4ecc2/flo_ai-1.1.9-py3-none-any.whl", hash = "sha256:bcf67b9931971f6c6e614bbba305369d57d30639105ef57c26b316db397b06fa", size = 202159, upload-time = "2026-07-31T12:14:00.96Z" },
+    { url = "https://files.pythonhosted.org/packages/ce/27/e2c8a51ba98ead6c637d5abed6409000ced7384fdfcb34e68e57c23cbb1c/flo_ai-1.1.10-py3-none-any.whl", hash = "sha256:80a0cfb68ba40f27c3d300e6a155a4c7ba4fb64b676d6ecd3fc7027faa382eea", size = 203031, upload-time = "2026-08-27T13:55:00.765Z" },
 ]
 
 [[package]]
@@ -2666,7 +2666,7 @@ dev = [
 requires-dist = [
     { name = "boto3", specifier = "<=1.38.40" },
     { name = "datasource", editable = "plugins/datasource" },
-    { name = "flo-ai", specifier = "==1.1.9" },
+    { name = "flo-ai", specifier = "==1.1.10" },
     { name = "flo-cloud", editable = "packages/flo_cloud" },
     { name = "google-cloud-pubsub", specifier = "~=2.30.0" },
     { name = "numpy", specifier = ">=1.24,<2.0" },
@@ -5578,6 +5578,7 @@ dependencies = [
     { name = "datasource" },
     { name = "flo-ai" },
     { name = "flo-cloud" },
+    { name = "httpx" },
     { name = "knowledge-base-module" },
     { name = "plugins-module" },
 ]
@@ -5592,8 +5593,9 @@ dev = [
 requires-dist = [
     { name = "common-module", editable = "modules/common_module" },
     { name = "datasource", editable = "plugins/datasource" },
-    { name = "flo-ai", specifier = "==1.1.9" },
+    { name = "flo-ai", specifier = "==1.1.10" },
     { name = "flo-cloud", editable = "packages/flo_cloud" },
+    { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
     { name = "knowledge-base-module", editable = "modules/knowledge_base_module" },
     { name = "plugins-module", editable = "modules/plugins_module" },
 ]
@@ -5609,13 +5611,13 @@ name = "torch"
 version = "2.13.0+cpu"
 source = { registry = "https://download.pytorch.org/whl/cpu" }
 dependencies = [
-    { name = "filelock", marker = "sys_platform != 'darwin'" },
-    { name = "fsspec", marker = "sys_platform != 'darwin'" },
-    { name = "jinja2", marker = "sys_platform != 'darwin'" },
-    { name = "networkx", marker = "sys_platform != 'darwin'" },
-    { name = "setuptools", marker = "sys_platform != 'darwin'" },
-    { name = "sympy", marker = "sys_platform != 'darwin'" },
-    { name = "typing-extensions", marker = "sys_platform != 'darwin'" },
+    { name = "filelock" },
+    { name = "fsspec" },
+    { name = "jinja2" },
+    { name = "networkx" },
+    { name = "setuptools" },
+    { name = "sympy" },
+    { name = "typing-extensions" },
 ]
 wheels = [
     { url = "https://download-r2.pytorch.org/whl/cpu/torch-2.13.0%2Bcpu-cp311-cp311-linux_s390x.whl", hash = "sha256:6e9817dbdf5ea76789babd46e457eac5bf14ff566cf85f8addbfdff2d56601ce", upload-time = "2026-07-08T19:27:52Z" },
@@ -5655,10 +5657,10 @@ resolution-markers = [
     "python_full_version < '3.12' and platform_machine == 'aarch64' and sys_platform == 'linux'",
 ]
 dependencies = [
-    { name = "numpy", marker = "python_full_version < '3.12' and platform_machine == 'aarch64' and sys_platform == 'linux'" },
-    { name = "pillow", marker = "python_full_version < '3.12' and platform_machine == 'aarch64' and sys_platform == 'linux'" },
-    { name = "requests", marker = "python_full_version < '3.12' and platform_machine == 'aarch64' and sys_platform == 'linux'" },
-    { name = "torch", marker = "python_full_version < '3.12' and platform_machine == 'aarch64' and sys_platform == 'linux'" },
+    { name = "numpy" },
+    { name = "pillow" },
+    { name = "requests" },
+    { name = "torch" },
 ]
 wheels = [
     { url = "https://download-r2.pytorch.org/whl/torchvision-0.16.0-cp311-cp311-linux_aarch64.whl", hash = "sha256:9ed5f21e5a56e466667c6f9f6f93dba2a75e29921108bd70043eaf8e9ba0a7cc", upload-time = "2023-10-06T21:47:32Z" },
@@ -5675,9 +5677,9 @@ resolution-markers = [
     "python_full_version < '3.12' and sys_platform == 'darwin'",
 ]
 dependencies = [
-    { name = "numpy", marker = "sys_platform == 'darwin'" },
-    { name = "pillow", marker = "sys_platform == 'darwin'" },
-    { name = "requests", marker = "sys_platform == 'darwin'" },
+    { name = "numpy" },
+    { name = "pillow" },
+    { name = "requests" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/23/84/46481327771d4f63feb59dd0d9e1cd6a42e985dbd371965f486a5bf9f323/torchvision-0.16.0-cp311-cp311-macosx_10_13_x86_64.whl", hash = "sha256:31fdf289bdfb2976f65a14f79f6ddd1ee60113db34622674918e61521c2dc41f", size = 1705744, upload-time = "2023-10-04T17:02:41.079Z" },
@@ -5698,10 +5700,10 @@ resolution-markers = [
     "(python_full_version < '3.12' and platform_machine != 'aarch64' and sys_platform == 'linux') or (python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'linux')",
 ]
 dependencies = [
-    { name = "numpy", marker = "(python_full_version >= '3.12' and sys_platform == 'linux') or (platform_machine != 'aarch64' and sys_platform == 'linux') or (sys_platform != 'darwin' and sys_platform != 'linux')" },
-    { name = "pillow", marker = "(python_full_version >= '3.12' and sys_platform == 'linux') or (platform_machine != 'aarch64' and sys_platform == 'linux') or (sys_platform != 'darwin' and sys_platform != 'linux')" },
-    { name = "requests", marker = "(python_full_version >= '3.12' and sys_platform == 'linux') or (platform_machine != 'aarch64' and sys_platform == 'linux') or (sys_platform != 'darwin' and sys_platform != 'linux')" },
-    { name = "torch", marker = "(python_full_version >= '3.12' and sys_platform == 'linux') or (platform_machine != 'aarch64' and sys_platform == 'linux') or (sys_platform != 'darwin' and sys_platform != 'linux')" },
+    { name = "numpy" },
+    { name = "pillow" },
+    { name = "requests" },
+    { name = "torch" },
 ]
 wheels = [
     { url = "https://download-r2.pytorch.org/whl/cpu/torchvision-0.16.0%2Bcpu-cp311-cp311-linux_x86_64.whl", hash = "sha256:be317c0b0b32d008309a1de6018e77b500d1cf966e158a5db1070da5c0cfea88", upload-time = "2023-10-06T00:36:02Z" },

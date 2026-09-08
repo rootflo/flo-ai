@@ -23,7 +23,6 @@ import { useDashboardStore, useNotifyStore } from '@app/store';
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router';
 import { z } from 'zod';
 
 const createKnowledgeBaseSchema = z.object({
@@ -48,7 +47,6 @@ const CreateKnowledgeBaseDialog: React.FC<CreateKnowledgeBaseDialogProps> = ({
   appId,
   onSuccess,
 }) => {
-  const navigate = useNavigate();
   const { notifySuccess, notifyError } = useNotifyStore();
   const { selectedApp } = useDashboardStore();
 
@@ -91,18 +89,9 @@ const CreateKnowledgeBaseDialog: React.FC<CreateKnowledgeBaseDialogProps> = ({
       const response = await floConsoleService.knowledgeBaseService.createKnowledgeBase(payload);
 
       if (response.data?.data) {
-        notifySuccess(`Knowledge Base '${response.data.data.data.name}' created successfully`);
-
-        if (onSuccess) {
-          onSuccess();
-        }
-
+        notifySuccess(`Knowledge Base '${response.data.data.name}' created successfully`);
+        onSuccess?.();
         onOpenChange(false);
-
-        // Navigate to the created knowledge base
-        if (response.data.data.data.id) {
-          navigate(`/apps/${appId}/knowledge-bases/${response.data.data.data.id}`);
-        }
       } else {
         notifyError('Failed to get knowledge base ID after creation.');
       }

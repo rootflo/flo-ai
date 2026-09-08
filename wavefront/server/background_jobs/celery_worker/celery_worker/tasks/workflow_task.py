@@ -1,17 +1,17 @@
-import asyncio
 from typing import Dict
 
 from common_module.log.logger import logger
 
 from celery_worker.celery_app import app
-from celery_worker.env import MAX_RETRIES, RETRY_DELAY, STREAM_NAME
+from celery_worker.env import MAX_RETRIES, RETRY_DELAY
 from celery_worker.tasks.agent_task import (
     _build_history,
     _now,
+    _publish,
     _reconstruct_inputs,
     _save_json,
 )
-from celery_worker.worker_setup import get_services
+from celery_worker.worker_setup import get_event_loop, get_services
 
 
 async def _run(task, payload: Dict) -> None:
@@ -19,8 +19,9 @@ async def _run(task, payload: Dict) -> None:
     execution_id = payload['execution_id']
 
     # Signal in_progress — floware consumer updates DB
-    services.cache.xadd(
-        STREAM_NAME,
+    _publish(
+        services.cache,
+        execution_id,
         {
             'execution_id': execution_id,
             'status': 'in_progress',
@@ -32,7 +33,11 @@ async def _run(task, payload: Dict) -> None:
     try:
         inputs = _reconstruct_inputs(payload, services.cloud_storage)
 
-        result, exec_time = await services.workflow_inference.perform_inference_v2(
+        (
+            result,
+            exec_time,
+            trace,
+        ) = await services.workflow_inference.perform_inference_v2(
             workflow_data={
                 'id': payload['entity_id'],
                 'name': payload['workflow_name'],
@@ -65,12 +70,13 @@ async def _run(task, payload: Dict) -> None:
             services.cloud_storage,
             bucket,
             history_key,
-            _build_history(payload, result, exec_time),
+            _build_history(payload, result, exec_time, trace),
         )
 
         # Signal completed — floware consumer updates DB
-        services.cache.xadd(
-            STREAM_NAME,
+        _publish(
+            services.cache,
+            execution_id,
             {
                 'execution_id': execution_id,
                 'status': 'completed',
@@ -88,8 +94,9 @@ async def _run(task, payload: Dict) -> None:
         logger.error(f'Workflow execution failed: {execution_id} — {error_msg}')
 
         # Signal failed — floware consumer updates DB
-        services.cache.xadd(
-            STREAM_NAME,
+        _publish(
+            services.cache,
+            execution_id,
             {
                 'execution_id': execution_id,
                 'status': 'failed',
@@ -107,11 +114,5 @@ async def _run(task, payload: Dict) -> None:
     default_retry_delay=RETRY_DELAY,
 )
 def execute_workflow_task(self, payload: Dict) -> None:
-    loop = asyncio.new_event_loop()
-    try:
-        loop.run_until_complete(_run(self, payload))
-    finally:
-        pending = asyncio.all_tasks(loop)
-        if pending:
-            loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
-        loop.close()
+    # Shared process-lifetime loop — see get_event_loop().
+    get_event_loop().run_until_complete(_run(self, payload))

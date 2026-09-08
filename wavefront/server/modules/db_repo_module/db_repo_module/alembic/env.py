@@ -37,6 +37,7 @@ from db_repo_module.models.scheduled_job import ScheduledJob
 from db_repo_module.models.scheduled_job_execution import ScheduledJobExecution
 from db_repo_module.models.async_agentic_execution import AsyncAgenticExecution
 from db_repo_module.models.agentic_trigger_credential import AgenticTriggerCredential
+from db_repo_module.models.agentic_configuration import AgenticConfiguration
 from db_repo_module.models.agentic_trigger import AgenticTrigger
 from db_repo_module.models.agentic_trigger_event import AgenticTriggerEvent
 from db_repo_module.models.agent import Agent
@@ -45,6 +46,7 @@ from db_repo_module.models.workflow import Workflow
 from db_repo_module.models.workflow_version import WorkflowVersion
 from db_repo_module.models.workflow_pipeline import WorkflowPipeline
 from db_repo_module.models.workflow_runs import WorkflowRuns
+from db_repo_module.models.datasource_audit_log import DatasourceAuditLog
 from dotenv import load_dotenv
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -91,6 +93,7 @@ models = [
     ScheduledJob,
     ScheduledJobExecution,
     AsyncAgenticExecution,
+    AgenticConfiguration,
     AgenticTriggerCredential,
     AgenticTrigger,
     AgenticTriggerEvent,
@@ -100,6 +103,7 @@ models = [
     WorkflowVersion,
     WorkflowPipeline,
     WorkflowRuns,
+    DatasourceAuditLog,
 ]
 target_metadata = Base.metadata
 
