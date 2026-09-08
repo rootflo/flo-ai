@@ -1,0 +1,224 @@
+"""
+Pytest tests for forwarding generation params (top_p, seed, penalties, token
+limits) from a wrapper's constructor through to the provider's request.
+"""
+
+from unittest.mock import AsyncMock, Mock
+
+import pytest
+from anthropic import AsyncAnthropic
+from openai import AsyncOpenAI
+
+from flo_ai.llm import Anthropic, AzureOpenAI, Gemini, OpenAI, OpenAIVLLM
+from flo_ai.llm.base_llm import split_client_kwargs
+
+
+def azure_llm(**kwargs) -> AzureOpenAI:
+    return AzureOpenAI(
+        model='gpt-4.1-mini',
+        api_key='test-key-123',
+        azure_endpoint='https://example.cognitiveservices.azure.com',
+        api_version='2024-10-21',
+        **kwargs,
+    )
+
+
+class TestSplitClientKwargs:
+    """Test cases for splitting client options from generation params."""
+
+    def test_generation_params_go_to_the_request(self):
+        client_kwargs, request_kwargs = split_client_kwargs(
+            AsyncOpenAI, {'top_p': 0.9, 'seed': 42}
+        )
+
+        assert client_kwargs == {}
+        assert request_kwargs == {'top_p': 0.9, 'seed': 42}
+
+    def test_client_options_go_to_the_client(self):
+        client_kwargs, request_kwargs = split_client_kwargs(
+            AsyncOpenAI, {'timeout': 30, 'max_retries': 2, 'top_p': 0.9}
+        )
+
+        assert client_kwargs == {'timeout': 30, 'max_retries': 2}
+        assert request_kwargs == {'top_p': 0.9}
+
+    def test_reserved_names_are_dropped(self):
+        """Passing them again would be a duplicate keyword argument."""
+        client_kwargs, request_kwargs = split_client_kwargs(
+            AsyncAnthropic,
+            {'default_headers': {'x': '1'}, 'top_p': 0.9},
+            reserved=('default_headers',),
+        )
+
+        assert client_kwargs == {}
+        assert request_kwargs == {'top_p': 0.9}
+
+
+class TestConstructorsAcceptGenerationParams:
+    """The SDK clients declare no **kwargs, so a stray param raises TypeError."""
+
+    def test_openai(self):
+        llm = OpenAI(
+            model='gpt-4o-mini',
+            api_key='test-key-123',
+            temperature=0.3,
+            top_p=0.9,
+            seed=42,
+            max_completion_tokens=100,
+            frequency_penalty=0.5,
+            presence_penalty=0.25,
+            service_tier='auto',
+        )
+
+        assert llm.temperature == 0.3
+        assert llm.kwargs == {
+            'top_p': 0.9,
+            'seed': 42,
+            'max_completion_tokens': 100,
+            'frequency_penalty': 0.5,
+            'presence_penalty': 0.25,
+            'service_tier': 'auto',
+        }
+
+    def test_azure_openai(self):
+        llm = azure_llm(temperature=0.3, top_p=0.9, seed=42, frequency_penalty=0.5)
+
+        assert llm.temperature == 0.3
+        assert llm.kwargs == {'top_p': 0.9, 'seed': 42, 'frequency_penalty': 0.5}
+
+    def test_anthropic(self):
+        llm = Anthropic(
+            model='claude-3-5-sonnet-20240620',
+            api_key='test-key-123',
+            temperature=0.3,
+            top_p=0.9,
+            top_k=5,
+            max_tokens=100,
+        )
+
+        assert llm.kwargs == {'top_p': 0.9, 'top_k': 5, 'max_tokens': 100}
+
+    def test_openai_vllm(self):
+        llm = OpenAIVLLM(
+            base_url='http://localhost:8000/v1',
+            model='mistral',
+            api_key='test-key-123',
+            temperature=0.3,
+            top_p=0.9,
+            presence_penalty=0.25,
+        )
+
+        assert llm.kwargs == {'top_p': 0.9, 'presence_penalty': 0.25}
+
+    def test_client_options_still_configure_the_client(self):
+        llm = OpenAI(model='gpt-4o-mini', api_key='test-key-123', max_retries=7)
+
+        assert llm.client.max_retries == 7
+        assert 'max_retries' not in llm.kwargs
+
+    def test_no_extra_params_leaves_kwargs_empty(self):
+        assert OpenAI(api_key='test-key-123').kwargs == {}
+
+
+class TestGenerationParamsReachTheRequestBody:
+    """Test cases asserting the params land in the outgoing payload."""
+
+    @staticmethod
+    def _mock_client(llm):
+        response = Mock()
+        response.choices = [Mock()]
+        response.choices[0].message = Mock()
+        response.choices[0].message.content = 'Hello, world!'
+        response.usage = None
+
+        llm.client = Mock()
+        llm.client.chat.completions.create = AsyncMock(return_value=response)
+        return llm.client.chat.completions.create
+
+    async def test_openai_body(self):
+        llm = OpenAI(
+            model='gpt-4o-mini',
+            api_key='test-key-123',
+            temperature=0.3,
+            top_p=0.9,
+            seed=42,
+        )
+        create = self._mock_client(llm)
+
+        await llm.generate([{'role': 'user', 'content': 'Hello'}])
+
+        body = create.call_args[1]
+        assert body['temperature'] == 0.3
+        assert body['top_p'] == 0.9
+        assert body['seed'] == 42
+
+    async def test_azure_openai_body(self):
+        llm = azure_llm(temperature=0.3, top_p=0.9, seed=42)
+        create = self._mock_client(llm)
+
+        await llm.generate([{'role': 'user', 'content': 'Hello'}])
+
+        body = create.call_args[1]
+        assert body['temperature'] == 0.3
+        assert body['top_p'] == 0.9
+        assert body['seed'] == 42
+
+    async def test_per_call_params_override_the_instance(self):
+        llm = OpenAI(model='gpt-4o-mini', api_key='test-key-123', top_p=0.9)
+        create = self._mock_client(llm)
+
+        await llm.generate([{'role': 'user', 'content': 'Hello'}], top_p=0.1)
+
+        assert create.call_args[1]['top_p'] == 0.1
+
+
+class TestGeminiGenerationParams:
+    """Gemini's config object rejects unknown fields and renames token limits."""
+
+    def _llm(self, **kwargs) -> Gemini:
+        return Gemini(model='gemini-2.5-flash', api_key='test-key-123', **kwargs)
+
+    def test_max_tokens_is_mapped_to_max_output_tokens(self):
+        llm = self._llm(temperature=0.3, max_tokens=100, top_p=0.9)
+
+        assert llm._generation_config_kwargs({}) == {
+            'max_output_tokens': 100,
+            'top_p': 0.9,
+        }
+
+    def test_unsupported_param_is_skipped_not_raised(self):
+        """service_tier is an OpenAI-only setting; it must not fail the call."""
+        llm = self._llm(service_tier='auto', top_p=0.9)
+
+        assert llm._generation_config_kwargs({}) == {'top_p': 0.9}
+
+    def test_shared_params_pass_through(self):
+        llm = self._llm(top_k=5, seed=42, frequency_penalty=0.5)
+
+        assert llm._generation_config_kwargs({}) == {
+            'top_k': 5,
+            'seed': 42,
+            'frequency_penalty': 0.5,
+        }
+
+    def test_per_call_params_override_the_instance(self):
+        llm = self._llm(top_p=0.9)
+
+        assert llm._generation_config_kwargs({'top_p': 0.1}) == {'top_p': 0.1}
+
+
+@pytest.mark.parametrize(
+    'factory',
+    [
+        lambda: OpenAI(api_key='k', top_p=0.9),
+        lambda: azure_llm(top_p=0.9),
+        lambda: Anthropic(api_key='k', top_p=0.9),
+        lambda: OpenAIVLLM(
+            base_url='http://localhost:8000/v1', model='m', api_key='k', top_p=0.9
+        ),
+    ],
+    ids=['openai', 'azure_openai', 'anthropic', 'vllm'],
+)
+def test_constructing_with_a_generation_param_does_not_raise(factory):
+    """Regression: these params used to be handed to the SDK client."""
+    assert factory().kwargs == {'top_p': 0.9}
