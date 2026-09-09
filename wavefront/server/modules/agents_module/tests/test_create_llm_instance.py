@@ -78,6 +78,7 @@ class TestCreateLlmInstanceParameters:
         assert llm.client._api_version == '2024-10-21'
 
     def test_anthropic_receives_its_parameters(self, service):
+        """Test anthropic receives its parameters."""
         llm = service._create_llm_instance(
             config(
                 'anthropic',
@@ -90,6 +91,7 @@ class TestCreateLlmInstanceParameters:
         assert llm.kwargs == {'max_tokens': 500, 'top_p': 0.9, 'top_k': 5}
 
     def test_gemini_receives_its_parameters(self, service):
+        """Test gemini receives its parameters."""
         llm = service._create_llm_instance(
             config(
                 'gemini',
@@ -106,6 +108,7 @@ class TestCreateLlmInstanceParameters:
         }
 
     def test_vllm_receives_its_parameters(self, service):
+        """Test vllm receives its parameters."""
         llm = service._create_llm_instance(
             config(
                 'vllm',
@@ -128,12 +131,14 @@ class TestCreateLlmInstanceParameters:
         assert llm.kwargs == {'top_p': 0.9}
 
     def test_missing_parameters_are_tolerated(self, service):
+        """Test missing parameters are tolerated."""
         llm = service._create_llm_instance(config('openai', None))
 
         assert llm.temperature == 0.7
         assert llm.kwargs == {}
 
     def test_temperature_zero_survives(self, service):
+        """Test temperature zero survives."""
         llm = service._create_llm_instance(config('openai', {'temperature': 0}))
 
         assert llm.temperature == 0
@@ -152,5 +157,6 @@ class TestCreateLlmInstanceParameters:
         assert llm.kwargs == {'top_p': 0.9}
 
     def test_unsupported_type_still_raises(self, service):
+        """Test unsupported type still raises."""
         with pytest.raises(ValueError, match='Unsupported LLM type: groq'):
             service._create_llm_instance(config('groq', {'temperature': 0.3}))

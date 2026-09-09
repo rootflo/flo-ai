@@ -3,17 +3,19 @@ Pytest tests for forwarding generation params (top_p, seed, penalties, token
 limits) from a wrapper's constructor through to the provider's request.
 """
 
+import inspect
 from unittest.mock import AsyncMock, Mock
 
 import pytest
 from anthropic import AsyncAnthropic
-from openai import AsyncOpenAI
+from openai import AsyncAzureOpenAI, AsyncOpenAI
 
 from flo_ai.llm import Anthropic, AzureOpenAI, Gemini, OpenAI, OpenAIVLLM
 from flo_ai.llm.base_llm import split_client_kwargs
 
 
 def azure_llm(**kwargs) -> AzureOpenAI:
+    """Azure llm."""
     return AzureOpenAI(
         model='gpt-4.1-mini',
         api_key='test-key-123',
@@ -27,6 +29,7 @@ class TestSplitClientKwargs:
     """Test cases for splitting client options from generation params."""
 
     def test_generation_params_go_to_the_request(self):
+        """Test generation params go to the request."""
         client_kwargs, request_kwargs = split_client_kwargs(
             AsyncOpenAI, {'top_p': 0.9, 'seed': 42}
         )
@@ -35,6 +38,7 @@ class TestSplitClientKwargs:
         assert request_kwargs == {'top_p': 0.9, 'seed': 42}
 
     def test_client_options_go_to_the_client(self):
+        """Test client options go to the client."""
         client_kwargs, request_kwargs = split_client_kwargs(
             AsyncOpenAI, {'timeout': 30, 'max_retries': 2, 'top_p': 0.9}
         )
@@ -53,11 +57,37 @@ class TestSplitClientKwargs:
         assert client_kwargs == {}
         assert request_kwargs == {'top_p': 0.9}
 
+    def test_no_generation_param_is_shadowed_by_a_client_option(self):
+        """The split routes by name, so an overlap would misroute silently.
+
+        Mirrors the params the config UI collects (client/src/config/
+        llm-providers.ts). An SDK release adding one of these as a client
+        option must fail here rather than quietly stop sending it.
+        """
+        ui_params = {
+            'temperature',
+            'max_tokens',
+            'max_completion_tokens',
+            'top_p',
+            'top_k',
+            'frequency_penalty',
+            'presence_penalty',
+            'seed',
+            'service_tier',
+        }
+
+        for client_cls in (AsyncOpenAI, AsyncAzureOpenAI, AsyncAnthropic):
+            shadowed = ui_params & set(
+                inspect.signature(client_cls.__init__).parameters
+            )
+            assert not shadowed, f'{client_cls.__name__} shadows {shadowed}'
+
 
 class TestConstructorsAcceptGenerationParams:
     """The SDK clients declare no **kwargs, so a stray param raises TypeError."""
 
     def test_openai(self):
+        """Test openai."""
         llm = OpenAI(
             model='gpt-4o-mini',
             api_key='test-key-123',
@@ -81,12 +111,14 @@ class TestConstructorsAcceptGenerationParams:
         }
 
     def test_azure_openai(self):
+        """Test azure openai."""
         llm = azure_llm(temperature=0.3, top_p=0.9, seed=42, frequency_penalty=0.5)
 
         assert llm.temperature == 0.3
         assert llm.kwargs == {'top_p': 0.9, 'seed': 42, 'frequency_penalty': 0.5}
 
     def test_anthropic(self):
+        """Test anthropic."""
         llm = Anthropic(
             model='claude-3-5-sonnet-20240620',
             api_key='test-key-123',
@@ -99,6 +131,7 @@ class TestConstructorsAcceptGenerationParams:
         assert llm.kwargs == {'top_p': 0.9, 'top_k': 5, 'max_tokens': 100}
 
     def test_openai_vllm(self):
+        """Test openai vllm."""
         llm = OpenAIVLLM(
             base_url='http://localhost:8000/v1',
             model='mistral',
@@ -111,12 +144,14 @@ class TestConstructorsAcceptGenerationParams:
         assert llm.kwargs == {'top_p': 0.9, 'presence_penalty': 0.25}
 
     def test_client_options_still_configure_the_client(self):
+        """Test client options still configure the client."""
         llm = OpenAI(model='gpt-4o-mini', api_key='test-key-123', max_retries=7)
 
         assert llm.client.max_retries == 7
         assert 'max_retries' not in llm.kwargs
 
     def test_no_extra_params_leaves_kwargs_empty(self):
+        """Test no extra params leaves kwargs empty."""
         assert OpenAI(api_key='test-key-123').kwargs == {}
 
 
@@ -125,6 +160,7 @@ class TestGenerationParamsReachTheRequestBody:
 
     @staticmethod
     def _mock_client(llm):
+        """Mock client."""
         response = Mock()
         response.choices = [Mock()]
         response.choices[0].message = Mock()
@@ -136,6 +172,7 @@ class TestGenerationParamsReachTheRequestBody:
         return llm.client.chat.completions.create
 
     async def test_openai_body(self):
+        """Test openai body."""
         llm = OpenAI(
             model='gpt-4o-mini',
             api_key='test-key-123',
@@ -153,6 +190,7 @@ class TestGenerationParamsReachTheRequestBody:
         assert body['seed'] == 42
 
     async def test_azure_openai_body(self):
+        """Test azure openai body."""
         llm = azure_llm(temperature=0.3, top_p=0.9, seed=42)
         create = self._mock_client(llm)
 
@@ -164,6 +202,7 @@ class TestGenerationParamsReachTheRequestBody:
         assert body['seed'] == 42
 
     async def test_per_call_params_override_the_instance(self):
+        """Test per call params override the instance."""
         llm = OpenAI(model='gpt-4o-mini', api_key='test-key-123', top_p=0.9)
         create = self._mock_client(llm)
 
@@ -176,9 +215,11 @@ class TestGeminiGenerationParams:
     """Gemini's config object rejects unknown fields and renames token limits."""
 
     def _llm(self, **kwargs) -> Gemini:
+        """Llm."""
         return Gemini(model='gemini-2.5-flash', api_key='test-key-123', **kwargs)
 
     def test_max_tokens_is_mapped_to_max_output_tokens(self):
+        """Test max tokens is mapped to max output tokens."""
         llm = self._llm(temperature=0.3, max_tokens=100, top_p=0.9)
 
         assert llm._generation_config_kwargs({}) == {
@@ -193,6 +234,7 @@ class TestGeminiGenerationParams:
         assert llm._generation_config_kwargs({}) == {'top_p': 0.9}
 
     def test_shared_params_pass_through(self):
+        """Test shared params pass through."""
         llm = self._llm(top_k=5, seed=42, frequency_penalty=0.5)
 
         assert llm._generation_config_kwargs({}) == {
@@ -202,6 +244,7 @@ class TestGeminiGenerationParams:
         }
 
     def test_per_call_params_override_the_instance(self):
+        """Test per call params override the instance."""
         llm = self._llm(top_p=0.9)
 
         assert llm._generation_config_kwargs({'top_p': 0.1}) == {'top_p': 0.1}

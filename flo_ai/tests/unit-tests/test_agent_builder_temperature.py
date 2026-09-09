@@ -139,6 +139,7 @@ class TestModelBlockTemperature:
         assert agent.llm.temperature == 0.4
 
     def test_model_temperature_survives_with_llm_override(self):
+        """Test model temperature survives with llm override."""
         builder = AgentBuilder.from_yaml(yaml_str=YAML_MODEL_BLOCK_TEMPERATURE)
         override = OpenAI(model='gpt-4o-mini', api_key='sk-test', temperature=0.9)
 
@@ -157,6 +158,7 @@ class TestRootFloLLMTemperature:
     """Test cases for temperature handling on the RootFlo proxy LLM."""
 
     def _llm(self, **kwargs) -> RootFloLLM:
+        """Llm."""
         return RootFloLLM(
             base_url='https://example.invalid',
             model_id='68baf67b-ff67-4bb1-a663-bcf08227d012',
@@ -164,6 +166,7 @@ class TestRootFloLLMTemperature:
         )
 
     def test_constructor_temperature_is_readable(self):
+        """Test constructor temperature is readable."""
         assert self._llm().temperature == 0.7
         assert self._llm(temperature=0.1).temperature == 0.1
 
