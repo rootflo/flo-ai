@@ -31,7 +31,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
   deleteTitle = 'Delete',
   editTitle = 'Edit',
 }) => {
-  const { notifySuccess } = useNotifyStore();
+  const { notifySuccess, notifyError } = useNotifyStore();
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -43,9 +43,14 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
     };
   }, []);
 
-  const handleCopy = (e: React.MouseEvent, value: string, index: number) => {
+  const handleCopy = async (e: React.MouseEvent, value: string, index: number) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(value);
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      notifyError('Failed to copy to clipboard');
+      return;
+    }
     notifySuccess('Copied to clipboard');
     setCopiedIndex(index);
     if (timeoutRef.current) {
@@ -95,7 +100,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
             <div className="flex items-center space-x-1">
               {item.isCopyable && (
                 <button
-                  onClick={(e) => handleCopy(e, item.value, index)}
+                  onClick={(e) => void handleCopy(e, item.value, index)}
                   className={`cursor-pointer rounded p-1 transition-colors ${
                     copiedIndex === index
                       ? 'text-green-600 hover:bg-green-50'

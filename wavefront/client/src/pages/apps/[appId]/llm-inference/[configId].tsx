@@ -32,7 +32,7 @@ import {
   getNumberParameterWithDefault,
   getStringParameter,
 } from '@app/utils/parameter-helpers';
-import { InferenceEngineType, UpdateLLMConfigRequest } from '@app/types/llm-inference-config';
+import { InferenceEngineType, LLMInferenceConfig, UpdateLLMConfigRequest } from '@app/types/llm-inference-config';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
@@ -74,6 +74,23 @@ const llmConfigFormSchema = z
 
 type LLMConfigForm = z.infer<typeof llmConfigFormSchema>;
 
+/**
+ * Build the complete set of form values from a saved config.
+ * Shared by the initial load and the edit-cancel revert so neither can omit a
+ * field: `form.reset` replaces every value, so a partial payload would silently
+ * blank out whatever it left out (e.g. the Azure-only `api_version`).
+ */
+const buildFormValues = (config: LLMInferenceConfig, mergedParams: Record<string, unknown>): LLMConfigForm => ({
+  display_name: config.display_name,
+  llm_model: config.llm_model,
+  type: config.type,
+  model_type: (config.model_type as 'llm' | 'embedding') || 'llm',
+  api_key: '', // API key is never returned for security
+  base_url: config.base_url || '',
+  api_version: (config.parameters?.api_version as string) || '',
+  parameters: mergedParams,
+});
+
 const LLMInferenceConfigDetail: React.FC = () => {
   const { app: appId, llmId } = useParams<{ app: string; llmId: string }>();
   const navigate = useNavigate();
@@ -109,16 +126,7 @@ const LLMInferenceConfigDetail: React.FC = () => {
       // Merge saved parameters with defaults
       const mergedParams = mergeParameters(config.type, config.parameters);
       setParameters(mergedParams);
-      form.reset({
-        display_name: config.display_name,
-        llm_model: config.llm_model,
-        type: config.type,
-        model_type: (config.model_type as 'llm' | 'embedding') || 'llm',
-        api_key: '', // API key is never returned for security
-        base_url: config.base_url || '',
-        api_version: (config.parameters?.api_version as string) || '',
-        parameters: mergedParams,
-      });
+      form.reset(buildFormValues(config, mergedParams));
     }
   }, [config, form]);
 
@@ -267,15 +275,7 @@ const LLMInferenceConfigDetail: React.FC = () => {
                       // Revert changes by resetting form to config data
                       if (config) {
                         const mergedParams = mergeParameters(config.type, config.parameters);
-                        form.reset({
-                          display_name: config.display_name,
-                          llm_model: config.llm_model,
-                          type: config.type,
-                          model_type: (config.model_type as 'llm' | 'embedding') || 'llm',
-                          api_key: '',
-                          base_url: config.base_url || '',
-                          parameters: mergedParams,
-                        });
+                        form.reset(buildFormValues(config, mergedParams));
                         setParameters(mergedParams);
                       }
                     }}
