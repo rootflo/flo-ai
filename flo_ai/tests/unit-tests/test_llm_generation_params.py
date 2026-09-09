@@ -249,6 +249,68 @@ class TestGeminiGenerationParams:
 
         assert llm._generation_config_kwargs({'top_p': 0.1}) == {'top_p': 0.1}
 
+    @staticmethod
+    def _mock_generate(llm):
+        """generate_content runs via asyncio.to_thread, so mock it as sync."""
+        response = Mock()
+        response.usage_metadata = None
+        response.candidates = []
+        response.text = 'Hello, world!'
+
+        llm.client = Mock()
+        llm.client.models.generate_content = Mock(return_value=response)
+        return llm.client.models.generate_content
+
+    @staticmethod
+    def _mock_stream(llm):
+        """Stream chunk."""
+        chunk = Mock()
+        chunk.text = 'Hello, world!'
+
+        llm.client = Mock()
+        llm.client.models.generate_content_stream = Mock(return_value=iter([chunk]))
+        return llm.client.models.generate_content_stream
+
+    async def test_generate_accepts_a_per_call_temperature(self):
+        """Regression: temperature is a config field, so it arrived twice."""
+        llm = self._llm(temperature=0.3)
+        generate_content = self._mock_generate(llm)
+
+        await llm.generate([{'role': 'user', 'content': 'Hello'}], temperature=0.1)
+
+        assert generate_content.call_args[1]['config'].temperature == 0.1
+
+    async def test_generate_falls_back_to_the_instance_temperature(self):
+        """Test generate falls back to the instance temperature."""
+        llm = self._llm(temperature=0.3)
+        generate_content = self._mock_generate(llm)
+
+        await llm.generate([{'role': 'user', 'content': 'Hello'}])
+
+        assert generate_content.call_args[1]['config'].temperature == 0.3
+
+    async def test_stream_accepts_a_per_call_temperature(self):
+        """Regression: stream propagated the duplicate-argument TypeError."""
+        llm = self._llm(temperature=0.3)
+        stream = self._mock_stream(llm)
+
+        async for _ in llm.stream(
+            [{'role': 'user', 'content': 'Hello'}], temperature=0.1
+        ):
+            pass
+
+        assert stream.call_args[1]['config'].temperature == 0.1
+
+    async def test_stream_falls_back_to_the_instance_temperature(self):
+        """Test stream falls back to the instance temperature."""
+        llm = self._llm(temperature=0.3)
+        stream = self._mock_stream(llm)
+
+        async for _ in llm.stream([{'role': 'user', 'content': 'Hello'}]):
+            pass
+
+        assert stream.call_args[1]['config'].temperature == 0.3
+
 
 @pytest.mark.parametrize(
     'factory',

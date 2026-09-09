@@ -96,8 +96,12 @@ class Gemini(BaseLLM):
             # Prepare generation config
             # Merge instance kwargs with method kwargs
             config_kwargs = self._generation_config_kwargs(kwargs)
+            # temperature is a config field like any other, so a per-call one
+            # lands in config_kwargs; passing it alongside the keyword below
+            # is a duplicate-argument TypeError.
+            temperature = config_kwargs.pop('temperature', self.temperature)
             generation_config = types.GenerateContentConfig(
-                temperature=self.temperature,
+                temperature=temperature,
                 system_instruction=system_prompt,
                 **config_kwargs,
             )
@@ -198,8 +202,9 @@ class Gemini(BaseLLM):
         # Prepare generation config
         # Merge instance kwargs with method kwargs
         config_kwargs = self._generation_config_kwargs(kwargs)
+        temperature = config_kwargs.pop('temperature', self.temperature)
         generation_config = types.GenerateContentConfig(
-            temperature=self.temperature,
+            temperature=temperature,
             system_instruction=system_prompt,
             **config_kwargs,
         )
