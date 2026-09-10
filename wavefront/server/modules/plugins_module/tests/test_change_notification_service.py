@@ -258,9 +258,11 @@ class TestBatchCap:
     async def test_trailing_changes_dropped_when_the_batch_is_too_large(
         self, audit_repository, notification_repository, flag_on
     ):
+        # Sized so shedding the trailing table's `changes` alone gets under it,
+        # isolating step 1 from the rest of the ladder.
         notifications = ChangeNotificationService(
             notification_repository=notification_repository,
-            max_payload_bytes=400,
+            max_payload_bytes=1_500,
         )
         service = DatasourceAuditService(
             audit_log_repository=audit_repository,
@@ -279,20 +281,27 @@ class TestBatchCap:
         data = _published(notification_repository)['data']
         assert data['truncation_reason'] == 'batch_size_cap'
         # Front to back: the entries a feed shows first keep their detail.
+        assert data['tables'][0]['changes'] is not None
         assert data['tables'][-1]['changes'] is None
-        # Metadata survives, so the notification still reports that the table
-        # changed and by how much.
+        # Nothing cheaper had to go, so the metadata is intact and the
+        # notification still reports that the table changed and by how much.
+        assert data.get('metadata_dropped') is None
         assert data['tables'][-1]['table_name'] == 'line_items'
         assert data['tables'][-1]['rows_affected'] == 1
 
-    async def test_leading_table_keeps_its_changes_however_small_the_budget(
+    async def test_leading_table_changes_outlive_the_uncapped_metadata(
         self, audit_repository, notification_repository, flag_on
     ):
-        # A budget nothing can fit under. Stripping every table would leave a
-        # notification with no detail at all, which is worse than a partial one
-        # -- and pointless, since the audit service already bounded these rows.
+        """Ordering guarantee: detail is shed after the uncapped fields.
+
+        The leading table's `changes` is the last thing a reader can still act
+        on, and it is already bounded by the audit service's per-table cap.
+        `meta` and `filter_params` are bounded by nothing, so they go first.
+        """
+        # Big enough that dropping the uncapped fields suffices, small enough
+        # that something has to go.
         notifications = ChangeNotificationService(
-            notification_repository=notification_repository, max_payload_bytes=1
+            notification_repository=notification_repository, max_payload_bytes=800
         )
         service = DatasourceAuditService(
             audit_log_repository=audit_repository,
@@ -305,8 +314,147 @@ class TestBatchCap:
         )
 
         data = _published(notification_repository)['data']
+        assert data['metadata_dropped'] is True
+        assert all(t['meta'] is None for t in data['tables'])
+        # Detail survived the metadata.
         assert data['tables'][0]['changes'] is not None
-        assert data['tables'][1]['changes'] is None
+
+    async def test_leading_table_changes_go_last_when_nothing_else_is_left(
+        self, audit_repository, notification_repository, flag_on
+    ):
+        # Below what the metadata drop alone can achieve, so step 3 has to run.
+        notifications = ChangeNotificationService(
+            notification_repository=notification_repository, max_payload_bytes=700
+        )
+        service = DatasourceAuditService(
+            audit_log_repository=audit_repository,
+            change_notification_service=notifications,
+        )
+
+        await _record(
+            service,
+            [_entry(table_name='orders'), _entry(table_name='line_items')],
+        )
+
+        data = _published(notification_repository)['data']
+        assert ChangeNotificationService._encoded_size(data) <= 700
+        assert data['tables'][0]['changes'] is None
+        # The tables themselves are still reported; only their detail is gone.
+        assert [t['table_name'] for t in data['tables']] == ['orders', 'line_items']
+
+    async def test_budget_is_enforced_when_the_bloat_is_uncapped_metadata(
+        self, audit_repository, notification_repository, flag_on
+    ):
+        """`changes` is not the only thing that can overflow.
+
+        meta.patch is copied through uncapped, so a document can exceed the
+        budget with every `changes` already empty -- in which case dropping
+        detail frees nothing and only `meta` will do.
+        """
+        budget = 50_000
+        notifications = ChangeNotificationService(
+            notification_repository=notification_repository,
+            max_payload_bytes=budget,
+        )
+        service = DatasourceAuditService(
+            audit_log_repository=audit_repository,
+            change_notification_service=notifications,
+        )
+
+        await _record(
+            service,
+            [
+                _entry(
+                    table_name=f't{i}',
+                    rows=[],
+                    before_rows=None,
+                    meta={'patch': {'col': 'y' * 40000}},
+                    filter_params={'id': f'r-{i}'},
+                )
+                for i in range(4)
+            ],
+        )
+
+        published = _published(notification_repository)['data']
+        assert ChangeNotificationService._encoded_size(published) <= budget
+        assert published['metadata_dropped'] is True
+        assert published['truncation_reason'] == 'batch_size_cap'
+        assert all(t['meta'] is None for t in published['tables'])
+        # Which rows were targeted survives dropping what they became.
+        assert [t['filter_params'] for t in published['tables']] == [
+            {'id': f'r-{i}'} for i in range(4)
+        ]
+
+    async def test_filter_params_is_never_dropped(
+        self, audit_repository, notification_repository, flag_on
+    ):
+        """Identity outlives detail, at every level of trimming.
+
+        filter_params says which rows were targeted. `filter` carries the same
+        thing but is clipped to 512 characters, so nothing else here recovers
+        it -- unlike meta.patch, which changes.after duplicates.
+        """
+        for budget in (1, 200, 700, 800, 1_500):
+            notification_repository.create.reset_mock()
+            notifications = ChangeNotificationService(
+                notification_repository=notification_repository,
+                max_payload_bytes=budget,
+            )
+            service = DatasourceAuditService(
+                audit_log_repository=audit_repository,
+                change_notification_service=notifications,
+            )
+
+            await _record(
+                service,
+                [
+                    _entry(table_name='orders', filter_params={'id': 'r-1'}),
+                    _entry(table_name='line_items', filter_params={'id': 'r-2'}),
+                ],
+            )
+
+            published = _published(notification_repository)['data']
+            # Whatever else went, every table still present says which rows it
+            # touched.
+            assert all(
+                t['filter_params'] is not None for t in published['tables']
+            ), budget
+
+    @pytest.mark.parametrize('budget', [1, 200, 2_000, 50_000])
+    async def test_never_published_over_budget(
+        self, audit_repository, notification_repository, flag_on, budget
+    ):
+        """The invariant, across budgets no trimming step alone can satisfy."""
+        notifications = ChangeNotificationService(
+            notification_repository=notification_repository,
+            max_payload_bytes=budget,
+        )
+        service = DatasourceAuditService(
+            audit_log_repository=audit_repository,
+            change_notification_service=notifications,
+        )
+
+        await _record(
+            service,
+            [
+                _entry(
+                    table_name=f'table_{i}' * 20,
+                    rows=[{'id': f'r-{i}', 'blob': 'x' * 5000}],
+                    before_rows=None,
+                    meta={'patch': {'col': 'y' * 5000}},
+                )
+                for i in range(12)
+            ],
+        )
+
+        published = _published(notification_repository)['data']
+        size = ChangeNotificationService._encoded_size(published)
+        # A budget below the size of the envelope alone is unsatisfiable; the
+        # document must still be trimmed as far as it can go.
+        assert published['truncation_reason'] == 'batch_size_cap'
+        if budget >= 2_000:
+            assert size <= budget, (budget, size)
+        assert len(published['tables']) >= 1
 
     async def test_single_table_at_the_per_table_cap_keeps_its_changes(
         self, service, notification_repository, flag_on

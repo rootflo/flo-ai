@@ -166,27 +166,82 @@ class ChangeNotificationService:
 
         Every `changes` document arrives already capped, but those caps are per
         table and a batch multiplies them -- an N-table request can carry N times
-        the per-table limit in a single jsonb value. Trailing entries lose their
-        `changes` and keep their metadata, so the notification still reports that
-        those tables changed and by how much.
+        the per-table limit in a single jsonb value.
+
+        `changes` is not the only thing that can overflow, though, and often is
+        not the thing that did: `meta` carries `patch`, the submitted update
+        payload, and the audit service does not cap it. A document can exceed
+        the budget with every `changes` already empty, so dropping detail alone
+        cannot enforce it.
+
+        Trimming therefore escalates, shedding the least useful thing that is
+        still large, and the size is re-checked after each step so the document
+        is never published over budget:
+
+        1. trailing tables lose `changes`, keeping their metadata, so the feed
+           still reports that they changed and by how much;
+        2. every table loses `meta` -- uncapped, and the one field that is safe
+           to lose, since `patch` is the values that were set and
+           `changes.after` already shows those;
+        3. the leading table loses `changes`;
+        4. the table list itself is halved.
+
+        Step 3 comes late deliberately. It is the last thing a reader can still
+        act on, and it is already bounded by the audit service's per-table cap,
+        so shedding it before `meta` would trade real detail for nothing.
+
+        `filter_params` is never dropped. It says which rows were targeted,
+        which is identity rather than detail and is recoverable from nothing
+        else here -- `filter` holds the same thing but is clipped to 512
+        characters. It is uncapped, so a large enough predicate can hold a
+        document above the budget on its own; step 4 is what bounds that, by
+        removing whole entries rather than hollowing them out.
         """
         if self.max_payload_bytes is None:
             return
 
         tables = data['tables']
-        # Back to front, so the entries a feed shows first keep their detail; and
-        # stopping at 1, never 0, so the leading table's `changes` always
-        # survives. Letting the loop reach it meant an oversized document could
-        # end up with no detail at all, which is strictly worse than a partial
-        # one -- and it is already bounded, because the audit service capped that
-        # table's rows before they got here.
+
+        def over_budget() -> bool:
+            return self._encoded_size(data) > self.max_payload_bytes
+
+        if not over_budget():
+            return
+
+        # 1. Back to front, so the entries a feed shows first are the last to
+        #    lose their detail. Stops at 1; the leading table is step 3.
         for index in range(len(tables) - 1, 0, -1):
-            if self._encoded_size(data) <= self.max_payload_bytes:
-                return
+            if not over_budget():
+                break
             if tables[index]['changes'] is None:
                 continue
             tables[index]['changes'] = None
-            data['truncation_reason'] = 'batch_size_cap'
+
+        # 2. `meta` only. It is uncapped, and `patch` -- the bulk of it on the
+        #    update paths -- is the values that were set, which changes.after
+        #    already shows. filter_params is uncapped too but is deliberately
+        #    kept: it is which rows were touched, not what they became.
+        if over_budget():
+            for table in tables:
+                table['meta'] = None
+            data['metadata_dropped'] = True
+
+        # 3. The leading table's detail, once there is nothing cheaper left.
+        if over_budget() and tables and tables[0]['changes'] is not None:
+            tables[0]['changes'] = None
+
+        # 4. Only bare table names remain, so this needs a pathological number of
+        #    tables in one request. Halved rather than popped one at a time: the
+        #    same reasoning as the audit service's row trimming, O(log n) encodes
+        #    of an already-large payload instead of O(n).
+        while over_budget() and len(tables) > 1:
+            removed = len(tables) - len(tables) // 2
+            del tables[len(tables) // 2 :]
+            data['tables_omitted'] = data.get('tables_omitted', 0) + removed
+
+        # One canonical "this was trimmed" signal, whichever steps ran. The
+        # specific flags above say what was lost.
+        data['truncation_reason'] = 'batch_size_cap'
 
     @staticmethod
     def _encoded_size(document: Dict[str, Any]) -> int:
