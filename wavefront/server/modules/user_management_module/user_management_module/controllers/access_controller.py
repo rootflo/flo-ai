@@ -17,6 +17,7 @@ from sqlalchemy import or_
 from sqlalchemy import Result
 from sqlalchemy import select
 from sqlalchemy import tuple_
+from sqlalchemy import update
 from sqlalchemy.orm import selectinload
 from user_management_module.dependencies.injection import (
     ResourceRepositoryDep,
@@ -663,7 +664,14 @@ async def patch_role_resources(
                 ),
             )
 
-        async with role_resource_repository.session() as session:
+    update_fields = {}
+    if payload.name is not None:
+        update_fields['name'] = payload.name
+    if payload.description is not None:
+        update_fields['description'] = payload.description
+
+    async with role_repository.session() as session:
+        if payload.resources is not None:
             await role_resource_repository.delete_all(role_id=role_id, session=session)
             if payload.resources:
                 role_resources = [
@@ -673,15 +681,21 @@ async def patch_role_resources(
                 await role_resource_repository.create_all(
                     role_resources, session=session
                 )
-            await session.commit()
 
-    update_fields = {}
-    if payload.name is not None:
-        update_fields['name'] = payload.name
-    if payload.description is not None:
-        update_fields['description'] = payload.description
-    if update_fields:
-        await role_repository.find_one_and_update({'id': role_id}, **update_fields)
+        if update_fields:
+            result = await session.execute(
+                update(Role).where(Role.id == role_id).values(**update_fields)
+            )
+            if result.rowcount != 1:
+                await session.rollback()
+                return JSONResponse(
+                    status_code=status.HTTP_409_CONFLICT,
+                    content=response_formatter.buildErrorResponse(
+                        'Failed to update role. Please retry.'
+                    ),
+                )
+
+        await session.commit()
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
