@@ -4,13 +4,18 @@ from typing import Any, Dict, Tuple, Optional
 from db_repo_module.models.knowledge_base_documents import KnowledgeBaseDocuments
 from db_repo_module.models.knowledge_base_embeddings import KnowledgeBaseEmbeddings
 from datasource.odata_parser import ODataQueryParser
+from datasource.dialect import PostgresSqlDialect
 
 
 class QueryGenerator:
     """Class to generate SQL queries for knowledge base operations."""
 
     def __init__(self):
-        self.odata_parser = ODataQueryParser(type='sql', dynamic_var_char=':')
+        self.odata_parser = ODataQueryParser(
+            type='sql',
+            dynamic_var_char=':',
+            dialect=PostgresSqlDialect(),
+        )
 
     def build_metadata_clause(
         self,
