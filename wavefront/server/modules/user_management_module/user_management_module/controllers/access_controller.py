@@ -602,58 +602,91 @@ async def patch_role_resources(
             ),
         )
 
-    # Console roles are the user's UI identity marker and are managed separately,
-    # so their resource assignments must not be edited here. A console role is a
-    # single-resource role whose only resource is console-scoped; a composite role
-    # (2+ resources) that merely includes a console resource is still editable.
-    async with role_resource_repository.session() as session:
-        counts_stmt = (
-            select(
-                func.count(RoleResource.resource_id),
-                func.count(RoleResource.resource_id).filter(
-                    Resource.scope == ResourceScope.CONSOLE
+    if (
+        payload.name is None
+        and payload.description is None
+        and payload.resources is None
+    ):
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=response_formatter.buildErrorResponse(
+                'No fields provided for update'
+            ),
+        )
+
+    if payload.name is not None and payload.name != role.name:
+        existing_role = await role_repository.find_one(name=payload.name)
+        if existing_role:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content=response_formatter.buildErrorResponse(
+                    f"A role with the name '{payload.name}' already exists"
                 ),
             )
-            .select_from(RoleResource)
-            .join(Resource, Resource.id == RoleResource.resource_id)
-            .where(RoleResource.role_id == role_id)
-        )
-        total_resource_count, console_resource_count = (
-            await session.execute(counts_stmt)
-        ).one()
 
-    if console_resource_count > 0 and total_resource_count == 1:
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content=response_formatter.buildErrorResponse(
-                'Cannot update resources of a console role'
-            ),
-        )
+    if payload.resources is not None:
+        # Console roles are the user's UI identity marker and are managed separately,
+        # so their resource assignments must not be edited here. A console role is a
+        # single-resource role whose only resource is console-scoped; a composite role
+        # (2+ resources) that merely includes a console resource is still editable.
+        async with role_resource_repository.session() as session:
+            counts_stmt = (
+                select(
+                    func.count(RoleResource.resource_id),
+                    func.count(RoleResource.resource_id).filter(
+                        Resource.scope == ResourceScope.CONSOLE
+                    ),
+                )
+                .select_from(RoleResource)
+                .join(Resource, Resource.id == RoleResource.resource_id)
+                .where(RoleResource.role_id == role_id)
+            )
+            total_resource_count, console_resource_count = (
+                await session.execute(counts_stmt)
+            ).one()
 
-    resources = await resource_repository.find(id=payload.resources)
-    unknown_resource_count = len(payload.resources) - len(resources)
-    if unknown_resource_count != 0:
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content=response_formatter.buildErrorResponse(
-                f'Found {unknown_resource_count} unknown resource(s) in the payload. Remove these resources from the payload or create these resources and then proceed'
-            ),
-        )
+        if console_resource_count > 0 and total_resource_count == 1:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content=response_formatter.buildErrorResponse(
+                    'Cannot update resources of a console role'
+                ),
+            )
 
-    async with role_resource_repository.session() as session:
-        await role_resource_repository.delete_all(role_id=role_id, session=session)
-        if payload.resources:
-            role_resources = [
-                RoleResource(role_id=role_id, resource_id=resource_id)
-                for resource_id in payload.resources
-            ]
-            await role_resource_repository.create_all(role_resources, session=session)
-        await session.commit()
+        resources = await resource_repository.find(id=payload.resources)
+        unknown_resource_count = len(payload.resources) - len(resources)
+        if unknown_resource_count != 0:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content=response_formatter.buildErrorResponse(
+                    f'Found {unknown_resource_count} unknown resource(s) in the payload. Remove these resources from the payload or create these resources and then proceed'
+                ),
+            )
+
+        async with role_resource_repository.session() as session:
+            await role_resource_repository.delete_all(role_id=role_id, session=session)
+            if payload.resources:
+                role_resources = [
+                    RoleResource(role_id=role_id, resource_id=resource_id)
+                    for resource_id in payload.resources
+                ]
+                await role_resource_repository.create_all(
+                    role_resources, session=session
+                )
+            await session.commit()
+
+    update_fields = {}
+    if payload.name is not None:
+        update_fields['name'] = payload.name
+    if payload.description is not None:
+        update_fields['description'] = payload.description
+    if update_fields:
+        await role_repository.find_one_and_update({'id': role_id}, **update_fields)
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content=response_formatter.buildSuccessResponse(
-            data={'message': 'Role resources updated successfully'}
+            data={'message': 'Role updated successfully'}
         ),
     )
 
