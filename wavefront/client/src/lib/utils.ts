@@ -145,3 +145,48 @@ export const validateDynamicQueryYaml = (yaml_str: string) => {
     return { valid: false, error: 'Invalid YAML format' };
   }
 };
+
+export const downloadTextFile = (filename: string, content: string, mimeType = 'text/yaml;charset=utf-8') => {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+};
+
+export const getYamlFilename = (name: string): string => {
+  const base = (name.trim() || 'file').replace(/[<>:"/\\|?*]/g, '-');
+  return /\.ya?ml$/i.test(base) ? base : `${base}.yaml`;
+};
+
+export const copyToClipboard = async (text: string): Promise<boolean> => {
+  if (!text) return false;
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // Fall back to execCommand when Clipboard API is unavailable.
+  }
+
+  try {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand('copy');
+    textarea.remove();
+    return copied;
+  } catch {
+    return false;
+  }
+};
